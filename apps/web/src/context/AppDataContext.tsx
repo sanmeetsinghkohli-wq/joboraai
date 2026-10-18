@@ -66,8 +66,11 @@ export interface LiveUserProfile {
 interface AppDataContextType {
   profile: LiveUserProfile;
   updateProfile: (partial: Partial<LiveUserProfile>) => Promise<void>;
+  resetProfileData: () => Promise<void>;
   jobs: LiveJob[];
   loadingJobs: boolean;
+  jobsSyncedAt: string | null;
+  providerStatus: Record<string, 'ok' | 'degraded'>;
   refreshJobs: (query?: string, location?: string) => Promise<void>;
   addCustomJob: (job: Partial<LiveJob>) => Promise<LiveJob | null>;
   savedJobIds: string[];
@@ -77,6 +80,8 @@ interface AppDataContextType {
   applications: LiveApplication[];
   addApplication: (app: Partial<LiveApplication>) => Promise<LiveApplication | null>;
   updateApplicationStatus: (id: string, status: string) => Promise<void>;
+  updateApplicationDetails: (id: string, partial: Partial<LiveApplication>) => Promise<void>;
+  deleteApplication: (id: string) => Promise<boolean>;
   activities: Array<{ id: string; icon: string; title: string; subtitle: string; timestamp: string }>;
   logActivity: (icon: string, title: string, subtitle: string) => void;
 }
@@ -115,8 +120,7 @@ export function computeRealMatchScore(job: LiveJob, profile: LiveUserProfile): n
     .filter((t) => t.length > 2);
 
   if (userSkills.length === 0 && targetRoleTokens.length === 0) {
-    // Baseline semantic match from job completeness when user hasn't added skills yet
-    return 84;
+    return 75;
   }
 
   const jobText = `${job.title} ${job.description} ${(job.skills || []).join(' ')}`.toLowerCase();
@@ -130,16 +134,18 @@ export function computeRealMatchScore(job: LiveJob, profile: LiveUserProfile): n
     if (job.title.toLowerCase().includes(r)) matchedRole++;
   }
 
-  const skillRatio = userSkills.length > 0 ? matchedSkills / userSkills.length : 0.6;
-  const roleRatio = targetRoleTokens.length > 0 ? matchedRole / targetRoleTokens.length : 0.6;
+  const skillRatio = userSkills.length > 0 ? matchedSkills / userSkills.length : 0.5;
+  const roleRatio = targetRoleTokens.length > 0 ? matchedRole / targetRoleTokens.length : 0.5;
   const raw = Math.round(62 + skillRatio * 24 + roleRatio * 12);
-  return Math.max(65, Math.min(99, raw));
+  return Math.max(60, Math.min(99, raw));
 }
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<LiveUserProfile>(DEFAULT_EMPTY_PROFILE);
   const [jobs, setJobs] = useState<LiveJob[]>([]);
   const [loadingJobs, setLoadingJobs] = useState<boolean>(true);
+  const [jobsSyncedAt, setJobsSyncedAt] = useState<string | null>(null);
+  const [providerStatus, setProviderStatus] = useState<Record<string, 'ok' | 'degraded'>>({});
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [selectedJob, setSelectedJob] = useState<LiveJob | null>(null);
   const [applications, setApplications] = useState<LiveApplication[]>([]);
@@ -162,6 +168,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if (storedActs) {
         setActivities(JSON.parse(storedActs));
       }
+      const storedApps = localStorage.getItem('jobora_live_applications');
+      if (storedApps) {
+        setApplications(JSON.parse(storedApps));
+      }
     } catch {}
 
     // Check authenticated session from /api/auth/me
@@ -170,13 +180,20 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data?.user) {
           setProfile((prev) => {
+            const serverProfile = data.profile || {};
             const updated: LiveUserProfile = {
               ...prev,
-              firstName: data.user.firstName || prev.firstName,
-              lastName: data.user.lastName || prev.lastName,
+              ...serverProfile,
+              firstName: data.user.firstName || serverProfile.firstName || prev.firstName,
+              lastName: data.user.lastName || serverProfile.lastName || prev.lastName,
               fullName:
-                [data.user.firstName, data.user.lastName].filter(Boolean).join(' ') || prev.fullName,
-              email: data.user.email || prev.email,
+                [
+                  data.user.firstName || serverProfile.firstName,
+                  data.user.lastName || serverProfile.lastName,
+                ]
+                  .filter(Boolean)
+                  .join(' ') || prev.fullName,
+              email: data.user.email || serverProfile.email || prev.email,
               connectedEmail: prev.connectedEmail || data.user.email || '',
             };
             localStorage.setItem('jobora_live_profile', JSON.stringify(updated));
@@ -190,8 +207,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     fetch('/api/applications')
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data?.applications)) {
+        if (Array.isArray(data?.applications) && data.applications.length > 0) {
           setApplications(data.applications);
+          try {
+            localStorage.setItem('jobora_live_applications', JSON.stringify(data.applications));
+          } catch {}
         }
       })
       .catch(() => {});
@@ -238,6 +258,27 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }).catch(() => {});
   }, []);
 
+  const resetProfileData = useCallback(async () => {
+    setProfile(DEFAULT_EMPTY_PROFILE);
+    setApplications([]);
+    setSavedJobIds([]);
+    setActivities([]);
+    try {
+      localStorage.removeItem('jobora_live_profile');
+      localStorage.removeItem('jobora_saved_jobs');
+      localStorage.removeItem('jobora_live_activities');
+      localStorage.removeItem('jobora_live_applications');
+      localStorage.removeItem('jobora_cover_letter_drafts');
+      localStorage.removeItem('jobora_interview_sessions');
+      localStorage.removeItem('jobora_vault_documents');
+    } catch {}
+    await fetch('/api/onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(DEFAULT_EMPTY_PROFILE),
+    }).catch(() => {});
+  }, []);
+
   const refreshJobs = useCallback(
     async (query = '', location = '') => {
       setLoadingJobs(true);
@@ -247,6 +288,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         if (location) params.set('location', location);
         const res = await fetch(`/api/jobs?${params.toString()}`);
         const data = await res.json();
+        if (data?.syncedAt) setJobsSyncedAt(data.syncedAt);
+        if (data?.providerStatus) setProviderStatus(data.providerStatus);
         if (Array.isArray(data?.jobs)) {
           const scored = data.jobs.map((j: LiveJob) => ({
             ...j,
@@ -267,6 +310,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addCustomJob = useCallback(
@@ -315,10 +359,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         });
         const data = await res.json();
         if (data?.application) {
-          setApplications((prev) => [data.application, ...prev]);
+          setApplications((prev) => {
+            const exists = prev.some((a) => a.id === data.application.id);
+            const next = exists ? prev : [data.application, ...prev];
+            try {
+              localStorage.setItem('jobora_live_applications', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
           logActivity(
             'forward_to_inbox',
-            `Application sent to ${data.application.company}`,
+            `Application logged for ${data.application.company}`,
             `${data.application.title} • ${data.application.syncChannel}`
           );
           return data.application;
@@ -338,18 +389,73 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (data?.application) {
-        setApplications((prev) => prev.map((a) => (a.id === id ? data.application : a)));
+        setApplications((prev) => {
+          const next = prev.map((a) => (a.id === id ? data.application : a));
+          try {
+            localStorage.setItem('jobora_live_applications', JSON.stringify(next));
+          } catch {}
+          return next;
+        });
       }
     } catch {}
   }, []);
+
+  const updateApplicationDetails = useCallback(
+    async (id: string, partial: Partial<LiveApplication>) => {
+      try {
+        const res = await fetch('/api/applications', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, ...partial }),
+        });
+        const data = await res.json();
+        if (data?.application) {
+          setApplications((prev) => {
+            const next = prev.map((a) => (a.id === id ? data.application : a));
+            try {
+              localStorage.setItem('jobora_live_applications', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+        }
+      } catch {}
+    },
+    []
+  );
+
+  const deleteApplication = useCallback(
+    async (id: string): Promise<boolean> => {
+      try {
+        const res = await fetch(`/api/applications?id=${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        });
+        if (res.ok) {
+          setApplications((prev) => {
+            const next = prev.filter((a) => a.id !== id);
+            try {
+              localStorage.setItem('jobora_live_applications', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+          logActivity('delete', 'Removed application record', `ID: ${id}`);
+          return true;
+        }
+      } catch {}
+      return false;
+    },
+    [logActivity]
+  );
 
   return (
     <AppDataContext.Provider
       value={{
         profile,
         updateProfile,
+        resetProfileData,
         jobs,
         loadingJobs,
+        jobsSyncedAt,
+        providerStatus,
         refreshJobs,
         addCustomJob,
         savedJobIds,
@@ -359,6 +465,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         applications,
         addApplication,
         updateApplicationStatus,
+        updateApplicationDetails,
+        deleteApplication,
         activities,
         logActivity,
       }}

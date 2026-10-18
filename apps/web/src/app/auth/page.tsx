@@ -351,9 +351,14 @@ function AuthPortalContent() {
                       />
                       <span className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
                         I agree to the{' '}
-                        <span className="text-secondary font-medium hover:underline">Terms of Service</span>,{' '}
-                        <span className="text-secondary font-medium hover:underline">Privacy Policy</span>, and consent
-                        to algorithmic profile analysis.
+                        <Link href="/settings" className="text-secondary font-medium hover:underline">
+                          Terms of Service
+                        </Link>
+                        ,{' '}
+                        <Link href="/settings" className="text-secondary font-medium hover:underline">
+                          Privacy Policy
+                        </Link>
+                        , and consent to algorithmic profile analysis.
                       </span>
                     </label>
 

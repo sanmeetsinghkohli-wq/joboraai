@@ -1,67 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCookie } from '../auth/_lib';
+import { getAuthenticatedUserId, resumesStore } from '../auth/_lib';
 
-// In-memory store for demo
-const resumes = new Map<string, any>();
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const token = getCookie(request, 'session');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
+    const userId = getAuthenticatedUserId(request);
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    // In a real app, this would use a storage service like Supabase Storage
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const contentType = request.headers.get('content-type') || '';
+    let fileName = 'Candidate_Resume.pdf';
+    let fileType = 'application/pdf';
+    let fileSize = 142000;
+    let rawText = '';
 
-    if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'No file provided' },
-        { status: 400 }
-      );
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      const file = formData.get('file') as File | null;
+      if (!file) {
+        return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
+      }
+      const acceptedTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+      if (!acceptedTypes.includes(file.type)) {
+        return NextResponse.json(
+          { success: false, error: 'Unsupported file type. Please upload PDF or DOCX.' },
+          { status: 400 }
+        );
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { success: false, error: 'File size exceeds 10MB limit' },
+          { status: 400 }
+        );
+      }
+      fileName = file.name;
+      fileType = file.type;
+      fileSize = file.size;
+      rawText = await file.text().catch(() => '');
+    } else {
+      const body = await request.json();
+      if (!body?.fileName && !body?.rawText) {
+        return NextResponse.json(
+          { success: false, error: 'fileName or rawText is required' },
+          { status: 400 }
+        );
+      }
+      fileName = String(body.fileName || 'Candidate_Resume.pdf');
+      fileType = String(body.fileType || 'application/pdf');
+      fileSize = Number(body.fileSize || (body.rawText ? String(body.rawText).length : 142000));
+      rawText = String(body.rawText || '');
     }
 
-    const acceptedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!acceptedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { success: false, error: 'Unsupported file type. Please upload PDF or DOCX.' },
-        { status: 400 }
-      );
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json(
-        { success: false, error: 'File size exceeds 10MB limit' },
-        { status: 400 }
-      );
-    }
-
-    // In a real app, this would upload to storage and trigger a parse job
     const resumeId = `resume-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const newResume = {
       id: resumeId,
-      userId: 'user-1',
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      filePath: `/uploads/resumes/${resumeId}.${file.name.split('.').pop()}`, // Server-side only
-      isMaster: false,
+      userId,
+      fileName,
+      fileType,
+      fileSize,
+      rawText,
+      filePath: `/uploads/resumes/${resumeId}.${fileName.split('.').pop()}`,
+      isMaster: true,
       status: 'uploaded',
       parsedProfile: null,
       previewUrl: null,
       createdAt: new Date().toISOString(),
     };
-    resumes.set(newResume.id, newResume);
 
-    return NextResponse.json({
-      success: true,
-      message: 'CV uploaded successfully. Parsing...',
-      resume: newResume,
-    });
+    resumesStore.set(newResume.id, newResume);
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'CV uploaded successfully.',
+        resume: newResume,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
@@ -73,17 +93,15 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getCookie(request, 'session');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
+    const userId = getAuthenticatedUserId(request);
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
+    const userResumes = Array.from(resumesStore.values()).filter((r) => r.userId === userId);
     return NextResponse.json({
       success: true,
-      resumes: Array.from(resumes.values()),
+      resumes: userResumes,
     });
   } catch (error) {
     console.error('List resumes error:', error);

@@ -16,12 +16,34 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
   const { profile, activities, jobs } = useAppData();
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const displayName = profile.firstName || profile.fullName || (profile.email ? profile.email.split('@')[0] : 'Profile Setup');
-  const compatibilityScore = profile.atsScore > 0 ? profile.atsScore : jobs.length > 0 ? 84 : 0;
+  const displayName =
+    profile.firstName ||
+    profile.fullName ||
+    (profile.email ? profile.email.split('@')[0] : 'Profile Setup');
+
+  // Transparent readiness calculation based on actual profile completion + ATS score
+  const profileChecks = [
+    Boolean(profile.firstName || profile.fullName),
+    Boolean(profile.email),
+    Boolean(profile.targetRole),
+    profile.skills.length > 0,
+    Boolean(profile.resumeFileName),
+  ];
+  const completedCount = profileChecks.filter(Boolean).length;
+  const compatibilityScore =
+    profile.atsScore > 0
+      ? profile.atsScore
+      : completedCount > 0
+      ? Math.round((completedCount / profileChecks.length) * 100)
+      : jobs.length > 0
+      ? 20
+      : 0;
 
   const navItems = [
     { id: 'home-dashboard', label: 'Home / Dashboard', icon: 'space_dashboard', href: '/dashboard' },
+    { id: 'ai-copilot', label: 'AI Copilot & Agent', icon: 'auto_awesome', href: '/ai-copilot' },
     { id: 'job-search', label: 'Job Search', icon: 'travel_explore', href: '/jobs' },
     { id: 'saved-jobs', label: 'Saved Jobs', icon: 'bookmark_border', href: '/saved-jobs' },
     { id: 'applications', label: 'Applications', icon: 'send', href: '/applications' },
@@ -53,19 +75,40 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
 
   return (
     <div className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
-      <aside className="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[0_1px_8px_rgba(53,27,50,0.03)] z-50 flex flex-col justify-between">
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-primary/40 backdrop-blur-xs z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[0_1px_8px_rgba(53,27,50,0.03)] z-50 flex flex-col justify-between transition-transform duration-200 ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
         <div className="flex flex-col flex-1 overflow-y-auto px-4 py-5">
-          <Link href="/" className="flex items-center gap-3 px-3 mb-6">
-            <img
-              alt="Jobora AI Logo"
-              className="h-8 w-auto object-contain"
-              src="https://lh3.googleusercontent.com/aida/AEtjO1UD0RQDL23COD4vvkGvPgLL6-sKCmE1485hqPsHnMByfJU_YPd5JVBuq57MN8vjXkzWM6OFUNV_3WdbRTnaM1HOMTHwFPN3hJwxRwUO_TKEOVc7VgH4u-1Pjby7L2fUY6iZdfWKut8N34Zo2Yw4qCZkL1GR58Rc8JI6Z4E4mvvmI8eozNUZ6iTwct8Gn7RrZCi2a6p1NR7ZPYgZSR-xXQ5FrJpJdOslDRrneh1HrFFC80iyRE253aFPAg"
-            />
-            <div className="flex flex-col">
-              <span className="font-headline-sm text-headline-sm text-primary tracking-tight">Jobora AI</span>
-              <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase tracking-wider">Career Copilot</span>
-            </div>
-          </Link>
+          <div className="flex items-center justify-between px-3 mb-6">
+            <Link href="/" className="flex items-center gap-3">
+              <img
+                alt="Jobora AI Logo"
+                className="h-8 w-auto object-contain"
+                src="https://lh3.googleusercontent.com/aida/AEtjO1UD0RQDL23COD4vvkGvPgLL6-sKCmE1485hqPsHnMByfJU_YPd5JVBuq57MN8vjXkzWM6OFUNV_3WdbRTnaM1HOMTHwFPN3hJwxRwUO_TKEOVc7VgH4u-1Pjby7L2fUY6iZdfWKut8N34Zo2Yw4qCZkL1GR58Rc8JI6Z4E4mvvmI8eozNUZ6iTwct8Gn7RrZCi2a6p1NR7ZPYgZSR-xXQ5FrJpJdOslDRrneh1HrFFC80iyRE253aFPAg"
+              />
+              <div className="flex flex-col">
+                <span className="font-headline-sm text-headline-sm text-primary tracking-tight">Jobora AI</span>
+                <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase tracking-wider">Career Copilot</span>
+              </div>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high"
+              aria-label="Close navigation menu"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
           <div className="px-3 pb-2">
             <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">Navigation</span>
           </div>
@@ -76,6 +119,7 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
                 <Link
                   key={item.id}
                   href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
                   aria-current={active ? 'page' : undefined}
                   className={
                     active
@@ -100,6 +144,7 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
                 <Link
                   key={item.id}
                   href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
                   aria-current={active ? 'page' : undefined}
                   className={
                     active
@@ -129,30 +174,42 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
             ></div>
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            {compatibilityScore}% job compatibility sync
+            {compatibilityScore}% profile readiness sync
           </p>
         </div>
       </aside>
-      <div className="pl-64 flex flex-col min-h-screen">
-        <header className="fixed top-0 left-64 right-0 h-16 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(53,27,50,0.04)] z-40 px-gutter flex items-center justify-between">
-          <form onSubmit={handleSearch} className="flex-1 max-w-lg">
-            <div className="relative flex items-center bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_-2px_rgba(53,27,50,0.04)] px-3 py-1.5 focus-within:ring-2 focus-within:ring-secondary/20 transition-all">
-              <span className="material-symbols-outlined text-on-surface-variant mr-2 text-[20px]">search</span>
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent font-body-sm text-body-sm text-on-surface placeholder-on-surface-variant focus:outline-none"
-                placeholder="Search jobs, companies or keywords..."
-                type="text"
-              />
-              <kbd className="font-caption-caps text-caption-caps bg-surface-container text-on-surface-variant px-2 py-0.5 rounded ml-2 whitespace-nowrap">⌘K</kbd>
-            </div>
-          </form>
-          <div className="flex items-center gap-3 relative">
+      <div className="lg:pl-64 flex flex-col min-h-screen">
+        <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(53,27,50,0.04)] z-30 px-4 lg:px-gutter flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 max-w-lg">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high"
+              aria-label="Open navigation menu"
+            >
+              <span className="material-symbols-outlined text-[22px]">menu</span>
+            </button>
+            <form onSubmit={handleSearch} className="flex-1">
+              <div className="relative flex items-center bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_-2px_rgba(53,27,50,0.04)] px-3 py-1.5 focus-within:ring-2 focus-within:ring-secondary/20 transition-all">
+                <span className="material-symbols-outlined text-on-surface-variant mr-2 text-[20px]">search</span>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-transparent font-body-sm text-body-sm text-on-surface placeholder-on-surface-variant focus:outline-none"
+                  placeholder="Search jobs, companies or keywords..."
+                  aria-label="Search jobs, companies or keywords"
+                  type="text"
+                />
+                <kbd className="hidden sm:inline-block font-caption-caps text-caption-caps bg-surface-container text-on-surface-variant px-2 py-0.5 rounded ml-2 whitespace-nowrap">⌘K</kbd>
+              </div>
+            </form>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
               type="button"
+              aria-label="Toggle notifications"
             >
               <span className="material-symbols-outlined text-[22px]">notifications</span>
               {activities.length > 0 && (
@@ -160,7 +217,7 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
               )}
             </button>
             {showNotifications && (
-              <div className="absolute top-12 right-24 w-80 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 p-4 z-50">
+              <div className="absolute top-12 right-0 sm:right-24 w-80 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 p-4 z-50">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-label-md text-label-md text-primary font-bold">Notifications</span>
                   <span className="font-caption-caps text-caption-caps text-secondary">
@@ -187,6 +244,7 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
             )}
             <Link
               href="/career-insights"
+              aria-label="Career insights and methodology"
               className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[22px]">help_outline</span>
@@ -212,7 +270,7 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
             </Link>
           </div>
         </header>
-        <main className="w-full pt-16 bg-surface min-h-screen px-gutter pb-space-xl">{children}</main>
+        <main className="w-full pt-16 bg-surface min-h-screen px-4 sm:px-gutter pb-space-xl">{children}</main>
       </div>
     </div>
   );

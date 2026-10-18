@@ -5,6 +5,8 @@ import Link from 'next/link';
 
 export default function LandingPage() {
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-rose-100 selection:text-rose-900 bg-[#FAF6F2] text-[#2A1728] font-sans overflow-x-hidden">
@@ -42,7 +44,7 @@ export default function LandingPage() {
             </Link>
           </nav>
           {/* CTA Actions */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 sm:gap-5">
             <Link
               className="text-sm font-semibold text-[#2A1728] hover:text-[#E05347] transition-colors hidden sm:inline-block"
               href="/auth?tab=login"
@@ -58,8 +60,38 @@ export default function LandingPage() {
                 <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" strokeLinecap="round" strokeLinejoin="round"></path>
               </svg>
             </Link>
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              className="md:hidden p-2 rounded-lg text-[#2A1728] hover:bg-[#EFE7E1] transition-colors"
+              aria-label="Toggle mobile navigation"
+            >
+              <span className="material-symbols-outlined text-[24px]">{mobileNavOpen ? 'close' : 'menu'}</span>
+            </button>
           </div>
         </div>
+        {mobileNavOpen && (
+          <div className="md:hidden border-t border-[#EFE7E1] bg-[#FAF6F2] px-6 py-4 flex flex-col gap-3 text-sm font-medium text-[#2A1728]">
+            <a onClick={() => setMobileNavOpen(false)} className="py-1.5 hover:text-[#E05347]" href="#features">
+              Features
+            </a>
+            <a onClick={() => setMobileNavOpen(false)} className="py-1.5 hover:text-[#E05347]" href="#how-it-works">
+              How It Works
+            </a>
+            <a onClick={() => setMobileNavOpen(false)} className="py-1.5 hover:text-[#E05347]" href="#pricing">
+              Pricing
+            </a>
+            <Link onClick={() => setMobileNavOpen(false)} className="py-1.5 hover:text-[#E05347]" href="/jobs">
+              For Students
+            </Link>
+            <Link onClick={() => setMobileNavOpen(false)} className="py-1.5 hover:text-[#E05347]" href="/career-insights">
+              For Universities
+            </Link>
+            <Link onClick={() => setMobileNavOpen(false)} className="py-1.5 hover:text-[#E05347]" href="/auth?tab=login">
+              Log in
+            </Link>
+          </div>
+        )}
       </header>
       {/* END: MainHeader */}
 
@@ -777,22 +809,73 @@ export default function LandingPage() {
           onClick={() => setShowVideoModal(false)}
         >
           <div
-            className="relative w-full max-w-4xl bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/20"
+            className="relative w-full max-w-4xl bg-[#2A1728] rounded-3xl overflow-hidden shadow-2xl border border-white/20"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setShowVideoModal(false)}
               className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/60 text-white hover:bg-[#E05347] flex items-center justify-center transition-colors"
               type="button"
+              aria-label="Close product tour modal"
             >
               ✕
             </button>
-            <video
-              src="/Jobora_AI_Official_30s_Commercial.mp4"
-              controls
-              autoPlay
-              className="w-full aspect-video"
-            />
+            {!videoError ? (
+              <video
+                src="/Jobora_AI_Official_30s_Commercial.mp4"
+                controls
+                autoPlay
+                onError={() => setVideoError(true)}
+                className="w-full aspect-video"
+              />
+            ) : (
+              <div className="p-8 sm:p-12 text-white flex flex-col justify-between min-h-[380px] bg-gradient-to-br from-[#2A1728] via-[#3D223B] to-[#1D0F1B]">
+                <div>
+                  <span className="inline-block px-3 py-1 rounded-full bg-[#E05347]/20 text-[#FF8A80] text-xs font-bold uppercase tracking-wider mb-4">
+                    Interactive Product Walkthrough
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-bold mb-3">
+                    Experience Jobora AI Career Copilot
+                  </h3>
+                  <p className="text-white/80 text-sm sm:text-base max-w-2xl mb-6">
+                    Explore live job synchronization across Remotive &amp; Arbeitnow, tailor your CV with real-time keyword analysis, generate grounded cover letters, and practice technical interviews.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <div className="p-4 rounded-2xl bg-white/10 border border-white/10">
+                      <div className="text-xs font-bold uppercase text-[#FF8A80] mb-1">Step 1 • Discover</div>
+                      <div className="text-sm font-semibold">Live Multi-Source Jobs</div>
+                      <p className="text-xs text-white/70 mt-1">Match scores computed transparently against your skills.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/10 border border-white/10">
+                      <div className="text-xs font-bold uppercase text-[#FF8A80] mb-1">Step 2 • Tailor</div>
+                      <div className="text-sm font-semibold">CV &amp; Cover Letter Studio</div>
+                      <p className="text-xs text-white/70 mt-1">Upload PDF/DOCX, review diffs, and export clean documents.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/10 border border-white/10">
+                      <div className="text-xs font-bold uppercase text-[#FF8A80] mb-1">Step 3 • Execute</div>
+                      <div className="text-sm font-semibold">Application &amp; Interview Prep</div>
+                      <p className="text-xs text-white/70 mt-1">Track every stage on a Kanban board and run STAR mock sessions.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setShowVideoModal(false)}
+                    className="px-6 py-3 rounded-full bg-[#E05347] hover:bg-[#D84F48] text-white text-sm font-semibold transition-all"
+                  >
+                    Launch Live Workspace →
+                  </Link>
+                  <Link
+                    href="/jobs"
+                    onClick={() => setShowVideoModal(false)}
+                    className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all"
+                  >
+                    Browse Live Jobs
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

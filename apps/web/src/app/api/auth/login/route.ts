@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCookie, setCookie, verifyToken, hashPassword, comparePassword, generateToken, usersStore } from '../_lib';
+import { getCookie, setCookie, verifyToken, comparePassword, generateToken, usersStore } from '../_lib';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,13 +15,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user
-    const normalizedEmail = email.toLowerCase().trim();
-    let userData = usersStore.get(normalizedEmail) || Array.from(usersStore.values()).find((u) => u.email === normalizedEmail);
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const userData =
+      usersStore.get(normalizedEmail) ||
+      Array.from(usersStore.values()).find((u) => u.email === normalizedEmail);
 
     if (!userData) {
-      // Check if user exists in cookie session (already authenticated)
-      const token = getCookie(request, 'session');
+      const token = getCookie(request, 'access_token') || getCookie(request, 'session');
       if (token) {
         const decoded = verifyToken(token);
         if (decoded) {
@@ -37,7 +39,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
     const valid = await comparePassword(password, userData.passwordHash);
     if (!valid) {
       return NextResponse.json(
@@ -46,10 +47,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate session token
-    const token = generateToken(userData.id, userData.firstName, userData.email, userData.emailVerified);
+    const token = generateToken(
+      userData.id,
+      userData.firstName,
+      userData.email,
+      userData.emailVerified
+    );
 
-    // Set cookie
     const res = NextResponse.json({
       success: true,
       message: 'Login successful',
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
       token,
     });
 
+    setCookie(res, 'access_token', token);
     setCookie(res, 'session', token);
 
     return res;

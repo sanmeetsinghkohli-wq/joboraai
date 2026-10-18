@@ -12,6 +12,8 @@ export default function ApplicationsPage() {
     applications,
     addApplication,
     updateApplicationStatus,
+    updateApplicationDetails,
+    deleteApplication,
     setSelectedJob,
     jobs,
   } = useAppData();
@@ -21,6 +23,7 @@ export default function ApplicationsPage() {
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newCompany, setNewCompany] = useState('');
   const [newLocation, setNewLocation] = useState('');
@@ -566,6 +569,38 @@ export default function ApplicationsPage() {
 
                   {/* Primary Action Triggers */}
                   <div className="pt-2 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2 pb-1">
+                      <label className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                        Update Stage:
+                      </label>
+                      <select
+                        value={activeApp.status}
+                        onChange={(e) => updateApplicationStatus(activeApp.id, e.target.value)}
+                        aria-label="Update application stage"
+                        className="bg-surface-container-low px-3 py-1.5 rounded-lg font-label-sm text-label-sm text-primary font-bold"
+                      >
+                        <option value="Discovered">Discovered</option>
+                        <option value="Saved">Saved</option>
+                        <option value="Preparing">Preparing</option>
+                        <option value="Ready to Apply">Ready to Apply</option>
+                        <option value="applied">Applied</option>
+                        <option value="Assessment">Assessment</option>
+                        <option value="screen">Passed Screen</option>
+                        <option value="interview">Interview</option>
+                        <option value="offer">Offer</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="Withdrawn">Withdrawn</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={() => router.push('/applications/prepare')}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-secondary text-white font-label-md text-label-md shadow hover:opacity-95 transition-all"
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">fact_check</span>
+                      <span>Application Preparation Copilot</span>
+                    </button>
                     <button
                       onClick={() => router.push('/email-composer')}
                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md shadow hover:bg-primary-container transition-all"
@@ -582,6 +617,39 @@ export default function ApplicationsPage() {
                       <span className="material-symbols-outlined text-[18px]">psychology</span>
                       <span>Schedule Interview Prep</span>
                     </button>
+                    {confirmDeleteId === activeApp.id ? (
+                      <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 flex items-center justify-between gap-2">
+                        <span className="font-label-sm text-label-sm text-rose-800">Confirm delete?</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await deleteApplication(activeApp.id);
+                              setConfirmDeleteId(null);
+                            }}
+                            className="px-2.5 py-1 rounded bg-rose-600 text-white font-label-sm text-label-sm"
+                          >
+                            Yes, Delete
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="px-2.5 py-1 rounded bg-white text-on-surface font-label-sm text-label-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(activeApp.id)}
+                        className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-rose-700 hover:bg-rose-50 font-label-sm text-label-sm transition-all"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                        <span>Delete Application</span>
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (

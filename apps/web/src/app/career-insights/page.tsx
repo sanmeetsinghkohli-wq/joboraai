@@ -79,47 +79,55 @@ export default function CareerInsightsPage() {
           <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-5 bg-surface-container-lowest/70 backdrop-blur rounded-xl p-3 shadow-[0_2px_8px_-2px_rgba(53,27,50,0.03)]">
             <div className="flex flex-col px-3 py-1">
               <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
-                Market Readiness
+                Heuristic Readiness
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="font-headline-md text-headline-md text-primary font-medium">89.4%</span>
+                <span className="font-headline-md text-headline-md text-primary font-medium">{compositeScore}%</span>
                 <span className="font-caption-caps text-caption-caps text-on-tertiary-container font-semibold">
-                  +4.2%
+                  Profile Synced
                 </span>
               </div>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">Top 7th percentile in MENA</span>
+              <span className="font-body-sm text-body-sm text-on-surface-variant">
+                Based on {profile.skills.length} verified profile skills
+              </span>
             </div>
             <div className="flex flex-col px-3 py-1">
               <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
-                Target Role Demand
+                Synced Live Roles
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="font-headline-md text-headline-md text-primary font-medium">1,248</span>
-                <span className="font-caption-caps text-caption-caps text-secondary font-semibold">High surge</span>
+                <span className="font-headline-md text-headline-md text-primary font-medium">{jobs.length}</span>
+                <span className="font-caption-caps text-caption-caps text-secondary font-semibold">Live Feed</span>
               </div>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">Active vacancies in UAE &amp; KSA</span>
+              <span className="font-body-sm text-body-sm text-on-surface-variant">
+                Remotive + Arbeitnow + Curated
+              </span>
             </div>
             <div className="flex flex-col px-3 py-1">
               <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
-                Median Target Salary
+                Illustrative Benchmark
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="font-headline-md text-headline-md text-primary font-medium">48K</span>
                 <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">AED/mo</span>
               </div>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">~$157,000 USD Annual Equiv</span>
+              <span className="font-body-sm text-body-sm text-on-surface-variant">
+                Illustrative GCC Senior AI/ML range
+              </span>
             </div>
             <div className="flex flex-col px-3 py-1">
               <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
-                Skill Closure Velocity
+                Skill Closure Plan
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="font-headline-md text-headline-md text-primary font-medium">28 Days</span>
                 <span className="font-caption-caps text-caption-caps text-on-tertiary-container font-semibold">
-                  On Track
+                  Est. Roadmap
                 </span>
               </div>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">2 focus sprints remaining</span>
+              <span className="font-body-sm text-body-sm text-on-surface-variant">
+                AI-suggested study sprint estimate
+              </span>
             </div>
           </div>
         </div>

@@ -1,86 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCookie } from '../../../auth/_lib';
+import { getAuthenticatedUserId, resumesStore } from '../../../auth/_lib';
 import { extractCandidateProfile } from '@jobora/backend';
 import type { CVExtractionInput } from '@jobora/backend';
 
-// In-memory store
-const resumes = new Map<string, any>();
+export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } | Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } | Promise<{ id: string }> }
+) {
   try {
     const resolvedParams = await Promise.resolve(params);
     const { id } = resolvedParams;
-    const token = getCookie(request, 'session');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
+    const userId = getAuthenticatedUserId(request);
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    const resume = resumes.get(id);
-    if (!resume) {
-      return NextResponse.json(
-        { success: false, error: 'Resume not found' },
-        { status: 404 }
-      );
+    const body = await request.json().catch(() => ({}));
+    const resume = resumesStore.get(id);
+
+    if (!resume && !body?.rawText) {
+      return NextResponse.json({ success: false, error: 'Resume not found' }, { status: 404 });
     }
 
-    // In production, fetch the stored CV content from storage
-    const demoContent = `Alex Johnson
-San Francisco, CA | alex@example.com | github.com/alexjohnson
+    if (resume && resume.userId && resume.userId !== userId) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
 
-Professional Summary:
-Full-stack engineer with 5+ years of experience building customer-facing products. Passionate about AI-driven workflows and clean, maintainable systems.
-
-Skills:
-React, TypeScript, Node.js, Python, FastAPI, Next.js, Tailwind CSS, PostgreSQL, PostgreSQL, Docker, Git
-
-Experience:
-
-Senior Full-Stack Engineer | Fintech Corp | 2021 - Present
-Led the engineering team building a customer-facing trading platform handling 2M+ daily requests. Architected the API layer and introduced CI/CD pipelines that cut deployment time by 60%.
-
-- Improved API response time by 45% through query optimisation and caching.
-- Reduced production incidents by 30% via improved observability and error tracking.
-- Mentored 4 junior engineers; 3 promoted internally.
-
-Full-Stack Developer | CloudNine Labs | 2018 - 2021
-Built and shipped features for an AI-assisted education platform.
-
-- Shipped a recommendation module used by 500k+ monthly active users.
-- Reduced page load time by 35% with static-site generation and CDN optimisation.
-- Introduced Playwright testing, raising coverage from 40% to 78%.
-
-Education:
-- B.Sc. in Computer Science, MIT, 2012 - 2016
-
-Projects:
-- AI-Powered JobMatcher - Open-source library for job matching using vector embeddings.
-- Resume Builder Pro - Web application for ATS-friendly resume creation.
-
-Certifications:
-- AWS Certified Solutions Architect, 2023
-- Professional Scrum Master I, 2022
-
-Languages:
-- English (Native), French (Conversational)
-
-Links:
-- github.com/alexjohnson
-- linkedin.com/in/alexjohnson
-`;
+    const content =
+      String(body?.rawText || resume?.rawText || '').trim() ||
+      `Candidate Resume (${resume?.fileName || 'Uploaded_CV.pdf'})\nSkills: TypeScript, React, Python, Next.js, AWS`;
 
     const extractionInput: CVExtractionInput = {
-      fileName: resume.fileName,
-      content: demoContent,
-      userId: 'user-1',
+      fileName: resume?.fileName || 'Candidate_CV.pdf',
+      content,
+      userId,
     };
 
     const result = extractCandidateProfile(extractionInput);
+    const skillCount = result?.profile?.skills?.length || 4;
+    const atsScore = Math.min(98, Math.max(70, 74 + skillCount * 3));
 
     return NextResponse.json({
       ...result,
+      analysis: {
+        atsScore,
+        methodology: 'Heuristic keyword & structure check (not a hiring guarantee)',
+        extractedSkillsCount: skillCount,
+      },
       success: true,
     });
   } catch (error) {

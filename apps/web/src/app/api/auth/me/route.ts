@@ -1,60 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, getCookie } from '../_lib';
+import {
+  usersStore,
+  profilesStore,
+  emailConnectionsStore,
+  getCookie,
+  verifyToken,
+  clearCookie,
+} from '../_lib';
 
-// In-memory store for demo
-const profiles = new Map<string, { id: string; userId: string; name: string; summary: string; location: string; targetRoles: string[]; skills: string[]; experiences: any[]; education: any[]; updatedAt: string }>();
+export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const token = getCookie(request, 'session');
+    const token = getCookie(req, 'access_token') || getCookie(req, 'session');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return NextResponse.json({ user: null, profile: null, emailConnections: [] }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid or expired session' },
-        { status: 401 }
-      );
+    const payload = verifyToken(token);
+    if (!payload) {
+      const res = NextResponse.json({ user: null, profile: null, emailConnections: [] }, { status: 401 });
+      clearCookie(res, 'access_token');
+      return res;
     }
 
-    // Get user profile from demo store
-    let profile = profiles.get(decoded.sub!);
-    if (!profile) {
-      // Return basic profile setup
-      profile = {
-        id: `profile-${decoded.sub}`,
-        userId: decoded.sub,
-        name: decoded.firstName || 'Your Name',
-        summary: 'Your professional summary will appear here.',
-        location: '',
-        targetRoles: [],
-        skills: ['React', 'TypeScript', 'Node.js', 'Python'],
-        experiences: [],
-        education: [],
-        updatedAt: new Date().toISOString(),
-      };
-      profiles.set(decoded.sub!, profile);
+    const user = usersStore.get(payload.sub);
+    if (!user) {
+      // Stateless fallback when serverless container restarts
+      const profile = profilesStore.get(payload.sub) || null;
+      return NextResponse.json({
+        user: {
+          id: payload.sub,
+          firstName: payload.firstName || 'Candidate',
+          lastName: profile?.lastName || '',
+          email: payload.email,
+          emailVerified: payload.emailVerified ?? true,
+        },
+        profile,
+        emailConnections: emailConnectionsStore.get(payload.sub) || [],
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: decoded.sub,
-        firstName: decoded.firstName,
-        email: decoded.email,
-      },
-      profile,
-    });
-  } catch (error) {
-    console.error('Me error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    const { passwordHash, verificationToken, resetToken, resetTokenExpires, ...safeUser } = user;
+    const profile = profilesStore.get(user.id) || null;
+    const emailConnections = emailConnectionsStore.get(user.id) || [];
+
+    return NextResponse.json({ user: safeUser, profile, emailConnections });
+  } catch (err) {
+    console.error('[GET /api/auth/me]', err);
+    return NextResponse.json({ error: { message: 'Internal server error' } }, { status: 500 });
   }
 }

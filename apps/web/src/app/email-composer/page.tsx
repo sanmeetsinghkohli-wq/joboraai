@@ -127,7 +127,37 @@ export default function EmailComposerPage() {
     showToast('Technical Portfolio attached to dispatch queue.');
   };
 
+  const handleOpenMailClient = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recruiterEmail.trim())) {
+      showToast('Invalid recipient email format.');
+      return;
+    }
+    const mailtoUrl = `mailto:${encodeURIComponent(recruiterEmail.trim())}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(emailBody)}`;
+    window.open(mailtoUrl, '_blank', 'noopener,noreferrer');
+    showToast('Opened draft in your system mail client (mailto:).');
+  };
+
+  const handleDownloadEml = () => {
+    const emlContent = `From: ${senderName} <${senderEmail}>\nTo: ${recruiterName} <${recruiterEmail}>\nSubject: ${subject}\nContent-Type: text/plain; charset=utf-8\n\n${emailBody}`;
+    const blob = new Blob([emlContent], { type: 'message/rfc822' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Application_${activeJob.company.replace(/\s+/g, '_')}.eml`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Downloaded standard .eml email draft file.');
+  };
+
   const handleConfirmSend = async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recruiterEmail.trim())) {
+      showToast('Please enter a valid recipient email address.');
+      return;
+    }
     setSending(true);
     await addApplication({
       jobId: activeJob.id,
@@ -135,8 +165,11 @@ export default function EmailComposerPage() {
       company: activeJob.company,
       location: activeJob.location || 'Dubai, UAE',
       status: 'Applied',
-      matchScore: activeJob.matchScore || 96,
-      syncChannel: `${profile.emailProvider === 'outlook' ? 'Outlook' : 'Gmail'} OAuth`,
+      matchScore: activeJob.matchScore || 88,
+      syncChannel:
+        profile.emailProvider !== 'none'
+          ? `${profile.emailProvider.toUpperCase()} Draft Queued`
+          : 'Manual / Mailto Dispatch',
       nextAction: 'Follow up in 5 days',
       recruiterName,
       recruiterEmail,
@@ -146,10 +179,12 @@ export default function EmailComposerPage() {
         badge: a.badge,
       })),
     });
-    logActivity('outgoing_mail', `Dispatched application to ${recruiterName}`, `${activeJob.company} • ${activeJob.title}`);
+    logActivity('outgoing_mail', `Confirmed outreach draft for ${recruiterName}`, `${activeJob.company} • ${activeJob.title}`);
     setSending(false);
     setModalOpen(false);
-    showToast(`Email successfully dispatched via ${senderEmail} and logged to Applications Tracker.`);
+    showToast(
+      `Outreach confirmed and logged to Applications Tracker. Use "Open in Mail Client" or configure live OAuth credentials to dispatch via SMTP.`
+    );
   };
 
   return (
@@ -253,20 +288,30 @@ export default function EmailComposerPage() {
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-body-md text-body-md text-on-surface font-semibold">Sending Account:</span>
+                  <span className="font-body-md text-body-md text-on-surface font-semibold">Sender Identity:</span>
                   <span className="font-body-md text-body-md text-on-surface-variant">{senderEmail}</span>
                 </div>
                 <span className="inline-flex items-center gap-1.5 font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-fixed-variant animate-pulse"></span>
-                  Connected via {profile.emailProvider === 'outlook' ? 'Microsoft' : 'Google'} OAuth
+                  <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-fixed-variant"></span>
+                  Manual Confirmation Required • Mailto &amp; .EML Export Ready
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 self-start sm:self-auto bg-surface-container-lowest px-3 py-1 rounded-lg">
-              <span className="material-symbols-outlined text-secondary text-[16px]">verified_user</span>
-              <span className="font-caption-caps text-caption-caps uppercase tracking-wider text-on-surface-variant font-bold">
-                Requires explicit approval before dispatch
-              </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleOpenMailClient}
+                className="px-3 py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold shadow-2xs transition-colors"
+              >
+                Open in Mail Client (mailto:)
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadEml}
+                className="px-3 py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold shadow-2xs transition-colors"
+              >
+                Export .EML
+              </button>
             </div>
           </div>
 

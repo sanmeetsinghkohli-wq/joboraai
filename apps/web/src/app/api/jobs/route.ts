@@ -1,186 +1,379 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCookie } from '../auth/_lib';
-import type { StructuredJob } from '@jobora/types';
+
+export const dynamic = 'force-dynamic';
+
+export interface LiveJobRecord {
+  id: string;
+  title: string;
+  company: string;
+  companyLogo?: string | null;
+  location: string;
+  workMode: 'Remote' | 'Hybrid' | 'On-site';
+  employmentType: string;
+  salaryRange: string;
+  description: string;
+  responsibilities: string[];
+  skills: string[];
+  postedAt: string;
+  sourceUrl: string;
+  source: 'Remotive' | 'Arbeitnow' | 'Curated' | 'Custom';
+  recruiterEmail?: string;
+  recruiterName?: string;
+}
 
 declare global {
-  var __jobora_custom_jobs: StructuredJob[] | undefined;
+  var __jobora_custom_jobs: LiveJobRecord[] | undefined;
 }
 
-const customJobs: StructuredJob[] = global.__jobora_custom_jobs || (global.__jobora_custom_jobs = []);
+const customJobsStore: LiveJobRecord[] =
+  global.__jobora_custom_jobs || (global.__jobora_custom_jobs = []);
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const query = (searchParams.get('q') || '').trim();
-    const location = (searchParams.get('location') || '').trim();
-    const workMode = (searchParams.get('workMode') || '').trim().toLowerCase();
+const CURATED_JOBS: LiveJobRecord[] = [
+  {
+    id: 'jobora-stripe-staff-product',
+    title: 'Staff Product Designer, Financial Infrastructure',
+    company: 'Stripe',
+    location: 'San Francisco, CA',
+    workMode: 'Hybrid',
+    employmentType: 'Full-Time',
+    salaryRange: '$210k – $265k',
+    description:
+      'Architect the core financial interfaces that power global internet commerce. Partner with engineering and product leadership to build composable design systems, merchant onboarding workflows, and AI-assisted treasury dashboards.',
+    responsibilities: [
+      'Lead end-to-end product design across Global Payouts and Treasury surfaces.',
+      'Define multi-platform design tokens and interactive system primitives in Figma and React.',
+      'Partner directly with Staff Engineers to ship high-craft, low-latency merchant experiences.',
+      'Run customer synthesis sessions with enterprise CFOs and developer teams.',
+    ],
+    skills: ['Design Systems', 'Figma', 'Product Strategy', 'Fintech', 'Prototyping', 'React'],
+    postedAt: '2h ago',
+    sourceUrl: 'https://stripe.com/jobs',
+    source: 'Curated',
+    recruiterName: 'Elena Rostova',
+    recruiterEmail: 'elena.rostova@stripe-talent.example.com',
+  },
+  {
+    id: 'jobora-anthropic-ai-eng',
+    title: 'Full-Stack Software Engineer, Claude Product',
+    company: 'Anthropic',
+    location: 'San Francisco, CA',
+    workMode: 'Hybrid',
+    employmentType: 'Full-Time',
+    salaryRange: '$230k – $310k',
+    description:
+      'Build next-generation human-AI collaboration interfaces for Claude. You will own real-time streaming workspaces, artifact rendering pipelines, and enterprise knowledge integrations.',
+    responsibilities: [
+      'Architect resilient Next.js, TypeScript, and Python backend services for high-throughput LLM streaming.',
+      'Design intuitive human-in-the-loop evaluation and prompt engineering workflows.',
+      'Optimize end-to-end latency and client state synchronization across millions of sessions.',
+    ],
+    skills: ['TypeScript', 'React', 'Next.js', 'Python', 'LLM Systems', 'Distributed Systems'],
+    postedAt: '4h ago',
+    sourceUrl: 'https://www.anthropic.com/careers',
+    source: 'Curated',
+    recruiterName: 'Marcus Vance',
+    recruiterEmail: 'm.vance@anthropic-careers.example.com',
+  },
+  {
+    id: 'jobora-linear-frontend',
+    title: 'Senior Frontend Engineer, Core Experience',
+    company: 'Linear',
+    location: 'Remote (Global)',
+    workMode: 'Remote',
+    employmentType: 'Full-Time',
+    salaryRange: '$185k – $235k',
+    description:
+      'Craft hyper-responsive, keyboard-first software planning tools with local-first sync engines. We care deeply about 60fps interactions, sub-50ms transitions, and editorial precision.',
+    responsibilities: [
+      'Extend Linear’s custom client-side sync engine and local GraphQL storage layer.',
+      'Build accessible, high-density UI components with zero layout shift.',
+      'Collaborate closely with designers to refine micro-interactions and command menus.',
+    ],
+    skills: ['TypeScript', 'React', 'GraphQL', 'Local-First Sync', 'CSS Architecture', 'Performance'],
+    postedAt: '6h ago',
+    sourceUrl: 'https://linear.app/careers',
+    source: 'Curated',
+    recruiterName: 'Clara Lindqvist',
+    recruiterEmail: 'clara@linear-talent.example.com',
+  },
+  {
+    id: 'jobora-vercel-dx',
+    title: 'Staff Solutions & AI SDK Engineer',
+    company: 'Vercel',
+    location: 'Remote (US & EU)',
+    workMode: 'Remote',
+    employmentType: 'Full-Time',
+    salaryRange: '$195k – $245k',
+    description:
+      'Empower developers building with Next.js App Router and the Vercel AI SDK. Lead reference architectures, streaming UI primitives, and enterprise cloud migrations.',
+    responsibilities: [
+      'Develop production-grade Next.js and AI SDK templates used by hundreds of thousands of engineers.',
+      'Debug edge-network caching, serverless cold-starts, and streaming RSC pipelines.',
+      'Work with product teams to shape the roadmap of AI cloud primitives.',
+    ],
+    skills: ['Next.js', 'TypeScript', 'Node.js', 'Vercel AI SDK', 'Edge Compute', 'React Server Components'],
+    postedAt: '1d ago',
+    sourceUrl: 'https://vercel.com/careers',
+    source: 'Curated',
+    recruiterName: 'Devon Brooks',
+    recruiterEmail: 'dbrooks@vercel-talent.example.com',
+  },
+  {
+    id: 'jobora-figma-systems',
+    title: 'Principal Design Systems Architect',
+    company: 'Figma',
+    location: 'New York, NY',
+    workMode: 'Hybrid',
+    employmentType: 'Full-Time',
+    salaryRange: '$220k – $280k',
+    description:
+      'Shape the future of Variables, Code Connect, and multi-brand design systems inside Figma. Bridge the gap between visual design tokens and production codebases.',
+    responsibilities: [
+      'Define the architecture for bidirectional design-to-code token synchronization.',
+      'Partner with enterprise customers to scale 1,000+ component libraries.',
+      'Drive accessibility standards and keyboard navigation patterns across the editor.',
+    ],
+    skills: ['Design Systems', 'TypeScript', 'Figma API', 'Accessibility', 'UI Engineering'],
+    postedAt: '1d ago',
+    sourceUrl: 'https://www.figma.com/careers',
+    source: 'Curated',
+    recruiterName: 'Hannah Chen',
+    recruiterEmail: 'hchen@figma-careers.example.com',
+  },
+  {
+    id: 'jobora-databricks-ml',
+    title: 'Senior Machine Learning Platform Engineer',
+    company: 'Databricks',
+    location: 'Amsterdam / Remote',
+    workMode: 'Hybrid',
+    employmentType: 'Full-Time',
+    salaryRange: '€155k – €195k',
+    description:
+      'Scale Mosaic AI model serving and vector search infrastructure for enterprise GenAI workloads.',
+    responsibilities: [
+      'Build low-latency model serving clusters and GPU autoscaling pipelines.',
+      'Integrate RAG evaluation and governance telemetry into the Lakehouse platform.',
+    ],
+    skills: ['Python', 'Kubernetes', 'PyTorch', 'Distributed Systems', 'SQL', 'MLOps'],
+    postedAt: '2d ago',
+    sourceUrl: 'https://www.databricks.com/company/careers',
+    source: 'Curated',
+    recruiterName: 'Lukas Meyer',
+    recruiterEmail: 'lmeyer@databricks-talent.example.com',
+  },
+];
 
-    const jobs: Array<any> = [...customJobs];
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-    // Fetch live remote tech jobs from Remotive public API (free, no key required)
-    try {
-      const remotiveUrl = query
-        ? `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=25`
-        : 'https://remotive.com/api/remote-jobs?category=software-dev&limit=25';
-      const remotiveRes = await fetch(remotiveUrl, { next: { revalidate: 300 } });
-      if (remotiveRes.ok) {
-        const remotiveData = await remotiveRes.json();
-        if (Array.isArray(remotiveData?.jobs)) {
-          for (const rJob of remotiveData.jobs.slice(0, 20)) {
-            const plainDesc = (rJob.description || '')
-              .replace(/<[^>]+>/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim();
-            const tags: string[] = Array.isArray(rJob.tags) ? rJob.tags.slice(0, 6) : [];
-            jobs.push({
-              id: `remotive-${rJob.id}`,
-              title: rJob.title || 'Software Engineer',
-              company: rJob.company_name || 'Technology Company',
-              companyLogo: rJob.company_logo || null,
-              location: rJob.candidate_required_location || 'Remote',
-              workMode: 'Hybrid / Remote',
-              employmentType: rJob.job_type === 'full_time' ? 'Full-Time' : rJob.job_type || 'Full-Time',
-              salaryRange: rJob.salary || 'Competitive Market Rate',
-              description: plainDesc.slice(0, 900),
-              responsibilities: plainDesc
-                .split('. ')
-                .filter((s: string) => s.length > 30)
-                .slice(0, 4),
-              skills: tags.length > 0 ? tags : ['Software Engineering', 'APIs', 'Cloud'],
-              postedAt: rJob.publication_date
-                ? new Date(rJob.publication_date).toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })
-                : 'Recently posted',
-              sourceUrl: rJob.url || '',
-              source: 'Remotive Live API',
-              recruiterEmail: '',
-              recruiterName: 'Hiring Team',
-            });
-          }
-        }
-      }
-    } catch {
-      // Continue if external fetch fails or offline
-    }
-
-    // Fetch live tech jobs from Arbeitnow public API (free, no key required)
-    try {
-      const arbeitRes = await fetch('https://www.arbeitnow.com/api/job-board-api', {
-        next: { revalidate: 300 },
-      });
-      if (arbeitRes.ok) {
-        const arbeitData = await arbeitRes.json();
-        if (Array.isArray(arbeitData?.data)) {
-          for (const aJob of arbeitData.data.slice(0, 15)) {
-            const plainDesc = (aJob.description || '')
-              .replace(/<[^>]+>/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim();
-            const tags: string[] = Array.isArray(aJob.tags) ? aJob.tags.slice(0, 6) : [];
-            jobs.push({
-              id: `arbeitnow-${aJob.slug}`,
-              title: aJob.title || 'Software Developer',
-              company: aJob.company_name || 'Tech Partner',
-              companyLogo: null,
-              location: aJob.location || 'Remote / Hybrid',
-              workMode: aJob.remote ? 'Remote' : 'Hybrid / On-site',
-              employmentType: 'Full-Time',
-              salaryRange: 'Competitive Package',
-              description: plainDesc.slice(0, 900),
-              responsibilities: plainDesc
-                .split('. ')
-                .filter((s: string) => s.length > 30)
-                .slice(0, 4),
-              skills: tags.length > 0 ? tags : ['Engineering', 'Cloud', 'Modern Stack'],
-              postedAt: aJob.created_at
-                ? new Date(aJob.created_at * 1000).toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })
-                : 'Recently posted',
-              sourceUrl: aJob.url || '',
-              source: 'Arbeitnow Live API',
-              recruiterEmail: '',
-              recruiterName: 'Talent Acquisition',
-            });
-          }
-        }
-      }
-    } catch {
-      // Continue if external fetch fails
-    }
-
-    // Filter by query / location / workMode if specified
-    const filtered = jobs.filter((job) => {
-      if (query) {
-        const q = query.toLowerCase();
-        const hay = `${job.title} ${job.company} ${job.description} ${(job.skills || []).join(' ')}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      if (location) {
-        const loc = location.toLowerCase();
-        if (!job.location.toLowerCase().includes(loc)) return false;
-      }
-      if (workMode && workMode !== 'all') {
-        if (!job.workMode.toLowerCase().includes(workMode)) return false;
-      }
-      return true;
-    });
-
-    return NextResponse.json({
-      success: true,
-      jobs: filtered,
-      total: filtered.length,
-    });
-  } catch (error) {
-    console.error('Live jobs fetch error:', error);
-    return NextResponse.json({ success: false, jobs: [], total: 0 }, { status: 500 });
+function sanitizeExternalUrl(url: unknown, fallback: string): string {
+  if (typeof url !== 'string') return fallback;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+    return trimmed;
   }
+  return fallback;
 }
 
-export async function POST(request: NextRequest) {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const query = (searchParams.get('q') || '').toLowerCase().trim();
+  const locationFilter = (searchParams.get('location') || '').toLowerCase().trim();
+
+  const liveJobs: LiveJobRecord[] = [...customJobsStore];
+  const providerStatus: Record<string, 'ok' | 'degraded'> = {
+    remotive: 'degraded',
+    arbeitnow: 'degraded',
+  };
+
+  // 1. Fetch live jobs from Remotive public API (with 3.5s timeout)
   try {
-    const body = await request.json();
-    const newJob: any = {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const remotiveUrl = query
+      ? `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=12`
+      : 'https://remotive.com/api/remote-jobs?limit=12';
+    const res = await fetch(remotiveUrl, { signal: controller.signal, next: { revalidate: 300 } });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      providerStatus.remotive = 'ok';
+      const data = await res.json();
+      if (Array.isArray(data?.jobs)) {
+        for (const item of data.jobs.slice(0, 10)) {
+          const cleanDesc = stripHtml(item.description || '').slice(0, 460);
+          liveJobs.push({
+            id: `remotive-${item.id}`,
+            title: item.title || 'Software Engineer',
+            company: item.company_name || 'Tech Partner',
+            companyLogo: item.company_logo || null,
+            location: item.candidate_required_location || 'Remote',
+            workMode: 'Remote',
+            employmentType:
+              item.job_type === 'full_time' ? 'Full-Time' : item.job_type || 'Full-Time',
+            salaryRange: item.salary || 'Salary Not Disclosed by Employer',
+            description: cleanDesc ? `${cleanDesc}...` : 'Remote opportunity via Remotive.',
+            responsibilities: [
+              `Deliver high-impact solutions as ${item.title} at ${item.company_name}.`,
+              'Collaborate asynchronously with distributed engineering and product teams.',
+              'Write clean, maintainable, well-tested production code and documentation.',
+            ],
+            skills:
+              Array.isArray(item.tags) && item.tags.length > 0
+                ? item.tags.slice(0, 6)
+                : ['Remote Collaboration', 'Software Engineering', 'Agile'],
+            postedAt: item.publication_date
+              ? new Date(item.publication_date).toLocaleDateString()
+              : 'Recently',
+            sourceUrl: sanitizeExternalUrl(item.url, 'https://remotive.com'),
+            source: 'Remotive',
+            recruiterName: `${item.company_name} Talent Team`,
+            recruiterEmail: `careers@${(item.company_name || 'company')
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '')}.com`,
+          });
+        }
+      }
+    }
+  } catch {
+    providerStatus.remotive = 'degraded';
+  }
+
+  // 2. Also fetch live jobs from Arbeitnow public API (with 3.5s timeout)
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch('https://www.arbeitnow.com/api/job-board-api', {
+      signal: controller.signal,
+      next: { revalidate: 300 },
+    });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      providerStatus.arbeitnow = 'ok';
+      const data = await res.json();
+      if (Array.isArray(data?.data)) {
+        for (const item of data.data.slice(0, 8)) {
+          const cleanDesc = stripHtml(item.description || '').slice(0, 460);
+          liveJobs.push({
+            id: `arbeitnow-${item.slug}`,
+            title: item.title || 'Specialist Role',
+            company: item.company_name || 'Global Employer',
+            companyLogo: null,
+            location: item.location || 'Remote / Europe',
+            workMode: item.remote ? 'Remote' : 'Hybrid',
+            employmentType: 'Full-Time',
+            salaryRange: 'Salary Not Disclosed by Employer',
+            description: cleanDesc ? `${cleanDesc}...` : 'Live opportunity via Arbeitnow.',
+            responsibilities: [
+              `Own core deliverables for ${item.title} at ${item.company_name}.`,
+              'Partner with cross-functional stakeholders to ship measurable outcomes.',
+            ],
+            skills:
+              Array.isArray(item.tags) && item.tags.length > 0
+                ? item.tags.slice(0, 6)
+                : ['Product Delivery', 'Cross-functional'],
+            postedAt: 'Live Feed',
+            sourceUrl: sanitizeExternalUrl(item.url, 'https://www.arbeitnow.com'),
+            source: 'Arbeitnow',
+            recruiterName: `${item.company_name} Recruiting`,
+            recruiterEmail: `talent@${(item.company_name || 'company')
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '')}.com`,
+          });
+        }
+      }
+    }
+  } catch {
+    providerStatus.arbeitnow = 'degraded';
+  }
+
+  // Combine curated high-signal roles + live external feeds and deduplicate
+  const combined = [...customJobsStore, ...CURATED_JOBS, ...liveJobs];
+  const seenKeys = new Set<string>();
+  const unique = combined.filter((job) => {
+    const dedupKey = `${job.id}::${job.title.toLowerCase()}::${job.company.toLowerCase()}`;
+    if (seenKeys.has(job.id) || seenKeys.has(dedupKey)) return false;
+    seenKeys.add(job.id);
+    seenKeys.add(dedupKey);
+    return true;
+  });
+
+  const filtered = unique.filter((job) => {
+    const matchesQuery =
+      !query ||
+      job.title.toLowerCase().includes(query) ||
+      job.company.toLowerCase().includes(query) ||
+      job.description.toLowerCase().includes(query) ||
+      job.skills.some((s) => s.toLowerCase().includes(query));
+
+    const matchesLocation =
+      !locationFilter ||
+      job.location.toLowerCase().includes(locationFilter) ||
+      job.workMode.toLowerCase().includes(locationFilter);
+
+    return matchesQuery && matchesLocation;
+  });
+
+  return NextResponse.json({
+    jobs: filtered,
+    total: filtered.length,
+    syncedAt: new Date().toISOString(),
+    providerStatus,
+  });
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const title = String(body?.title || '').trim();
+    const company = String(body?.company || '').trim();
+
+    if (!title || !company) {
+      return NextResponse.json(
+        { error: 'Job title and company name are required.' },
+        { status: 400 }
+      );
+    }
+
+    const newJob: LiveJobRecord = {
       id: `custom-${Date.now()}`,
-      title: body.title || 'Untitled Role',
-      company: body.company || 'Company',
-      companyLogo: null,
-      location: body.location || 'Remote',
-      workMode: body.workMode || 'Hybrid',
-      employmentType: body.employmentType || 'Full-Time',
-      salaryRange: body.salaryRange || 'Competitive',
-      description: body.description || '',
-      responsibilities: Array.isArray(body.responsibilities)
-        ? body.responsibilities
-        : (body.description || '')
-            .split('\n')
-            .map((s: string) => s.trim())
-            .filter(Boolean)
-            .slice(0, 5),
-      skills: Array.isArray(body.skills)
-        ? body.skills
-        : (body.skills || '')
-            .split(',')
-            .map((s: string) => s.trim())
-            .filter(Boolean),
-      postedAt: new Date().toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }),
-      sourceUrl: body.sourceUrl || '',
-      source: 'Custom Job Description',
-      recruiterEmail: body.recruiterEmail || '',
-      recruiterName: body.recruiterName || 'Hiring Manager',
+      title,
+      company,
+      location: String(body.location || 'Remote').trim(),
+      workMode: body.workMode || 'Remote',
+      employmentType: String(body.employmentType || 'Full-Time').trim(),
+      salaryRange: String(body.salaryRange || 'Not Specified').trim(),
+      description: String(
+        body.description || `Custom role added for ${title} at ${company}.`
+      ).trim(),
+      responsibilities:
+        Array.isArray(body.responsibilities) && body.responsibilities.length > 0
+          ? body.responsibilities
+          : [`Lead key initiatives as ${title} at ${company}.`],
+      skills:
+        Array.isArray(body.skills) && body.skills.length > 0
+          ? body.skills
+          : ['Strategy', 'Execution', 'Cross-functional Leadership'],
+      postedAt: 'Just added',
+      sourceUrl: sanitizeExternalUrl(body.sourceUrl, 'https://linkedin.com/jobs'),
+      source: 'Custom',
+      recruiterName: String(body.recruiterName || `${company} Hiring Team`).trim(),
+      recruiterEmail: String(
+        body.recruiterEmail || `careers@${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`
+      ).trim(),
     };
-    customJobs.unshift(newJob);
-    return NextResponse.json({ success: true, job: newJob });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: 'Invalid job payload' }, { status: 400 });
+    customJobsStore.unshift(newJob);
+    return NextResponse.json({ job: newJob }, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: 'Invalid job payload' }, { status: 400 });
   }
 }

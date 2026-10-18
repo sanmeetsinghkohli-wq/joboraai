@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import type { User, EmailConnection } from '@jobora/types';
@@ -12,13 +12,51 @@ export interface StoredUser extends User {
   resetTokenExpires?: number | null;
 }
 
+export interface StoredProfileRecord {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string;
+  targetRole: string;
+  summary: string;
+  university: string;
+  degree: string;
+  gpa: string;
+  graduationYear: string;
+  github: string;
+  linkedin: string;
+  skills: string[];
+  resumeFileName: string;
+  resumeSize: string;
+  resumeUploadedAt: string;
+  atsScore: number;
+  connectedEmail: string;
+  emailProvider: 'gmail' | 'outlook' | 'none';
+  updatedAt: string;
+}
+
 declare global {
   var __jobora_users: Map<string, StoredUser> | undefined;
   var __jobora_email_connections: Map<string, EmailConnection[]> | undefined;
+  var __jobora_profiles: Map<string, StoredProfileRecord> | undefined;
+  var __jobora_applications: Map<string, any[]> | undefined;
+  var __jobora_resumes: Map<string, any> | undefined;
 }
 
-export const usersStore: Map<string, StoredUser> = global.__jobora_users || (global.__jobora_users = new Map<string, StoredUser>());
-export const emailConnectionsStore: Map<string, EmailConnection[]> = global.__jobora_email_connections || (global.__jobora_email_connections = new Map<string, EmailConnection[]>());
+export const usersStore: Map<string, StoredUser> =
+  global.__jobora_users || (global.__jobora_users = new Map<string, StoredUser>());
+export const emailConnectionsStore: Map<string, EmailConnection[]> =
+  global.__jobora_email_connections ||
+  (global.__jobora_email_connections = new Map<string, EmailConnection[]>());
+export const profilesStore: Map<string, StoredProfileRecord> =
+  global.__jobora_profiles || (global.__jobora_profiles = new Map<string, StoredProfileRecord>());
+export const applicationsStore: Map<string, any[]> =
+  global.__jobora_applications || (global.__jobora_applications = new Map<string, any[]>());
+export const resumesStore: Map<string, any> =
+  global.__jobora_resumes || (global.__jobora_resumes = new Map<string, any>());
 
 export function generateToken(
   userId: string,
@@ -47,6 +85,20 @@ export function verifyToken(token: string) {
   } catch {
     return null;
   }
+}
+
+export function getAuthenticatedUserId(req: Request): string | null {
+  const token = getCookie(req, 'access_token') || getCookie(req, 'session');
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload?.sub) return payload.sub;
+  }
+  const authHeader = req.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const payload = verifyToken(authHeader.slice(7));
+    if (payload?.sub) return payload.sub;
+  }
+  return null;
 }
 
 export function hashPassword(password: string): Promise<string> {

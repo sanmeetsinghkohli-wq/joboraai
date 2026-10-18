@@ -67,6 +67,9 @@ export default function InterviewPrepPage() {
   const [pacingScore, setPacingScore] = useState(8.8);
   const [starScore, setStarScore] = useState(9.0);
   const [personaIdx, setPersonaIdx] = useState(0);
+  const [filterCategory, setFilterCategory] = useState<'all' | 'Technical' | 'Behavioral' | 'System'>('all');
+  const [savedPromptIds, setSavedPromptIds] = useState<string[]>([]);
+  const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
   const evalRef = useRef<HTMLDivElement | null>(null);
 
@@ -90,6 +93,46 @@ export default function InterviewPrepPage() {
   const handleSelectPrompt = (idx: number) => {
     setSelectedIdx(idx);
     setAnswerText(prompts[idx].defaultText);
+  };
+
+  const handleCycleFilter = () => {
+    const order: Array<'all' | 'Technical' | 'Behavioral' | 'System'> = ['all', 'Technical', 'Behavioral', 'System'];
+    const next = order[(order.indexOf(filterCategory) + 1) % order.length];
+    setFilterCategory(next);
+    setStatusNotice(next === 'all' ? 'Showing all interview prompt categories' : `Filtered prompts: ${next}`);
+  };
+
+  const handleToggleSavePrompt = () => {
+    const id = currentPrompt.id;
+    setSavedPromptIds((prev) => {
+      const exists = prev.includes(id);
+      const next = exists ? prev.filter((x) => x !== id) : [...prev, id];
+      setStatusNotice(exists ? 'Removed prompt from saved focus list' : 'Saved prompt to your interview focus list');
+      return next;
+    });
+  };
+
+  const handleSaveDraft = () => {
+    setPrompts((prev) =>
+      prev.map((p, idx) =>
+        idx === selectedIdx ? { ...p, defaultText: answerText, statusBadge: 'Draft Saved' } : p
+      )
+    );
+    try {
+      const saved = JSON.parse(localStorage.getItem('jobora_interview_sessions') || '[]');
+      saved.unshift({
+        id: `sess-${Date.now()}`,
+        promptId: currentPrompt.id,
+        title: currentPrompt.title,
+        company: activeJob.company,
+        answerText,
+        score: overallScore,
+        savedAt: new Date().toISOString(),
+      });
+      localStorage.setItem('jobora_interview_sessions', JSON.stringify(saved.slice(0, 20)));
+    } catch {}
+    logActivity('bookmark_added', `Saved interview response draft`, currentPrompt.title);
+    setStatusNotice('Response draft saved to session history.');
   };
 
   const handleGenerateCustomQuestion = () => {
@@ -117,14 +160,24 @@ export default function InterviewPrepPage() {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(currentPrompt.title);
       window.speechSynthesis.speak(utterance);
+      setStatusNotice('Reading question aloud via browser speech synthesis...');
+    } else {
+      setStatusNotice('Browser Speech Synthesis is unavailable in this environment.');
     }
   };
 
   const handleListenBack = () => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window && answerText.trim()) {
+    if (!answerText.trim()) {
+      setStatusNotice('Please enter a response before playing audio.');
+      return;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(answerText);
       window.speechSynthesis.speak(utterance);
+      setStatusNotice('Playing back your response via browser speech synthesis...');
+    } else {
+      setStatusNotice('Browser Speech Synthesis is unavailable in this environment.');
     }
   };
 
@@ -139,6 +192,7 @@ export default function InterviewPrepPage() {
       setPacingScore(Number((computed / 10 - 0.3).toFixed(1)));
       setStarScore(Number((computed / 10).toFixed(1)));
       setEvaluating(false);
+      setStatusNotice(`Heuristic STAR rubric evaluation complete: ${computed}/100`);
       logActivity('neurology', `Completed AI Interview Evaluation (${computed}/100)`, currentPrompt.title);
       evalRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 650);
@@ -298,15 +352,24 @@ export default function InterviewPrepPage() {
                     </span>
                   </div>
                   <button
-                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors"
-                    title="Filter Prompts"
+                    onClick={handleCycleFilter}
+                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors flex items-center gap-1"
+                    title={`Filter Prompts (${filterCategory})`}
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[20px]">filter_list</span>
+                    {filterCategory !== 'all' && (
+                      <span className="font-caption-caps text-caption-caps text-secondary font-bold">
+                        {filterCategory}
+                      </span>
+                    )}
                   </button>
                 </div>
 
-                {prompts.map((p, idx) => {
+                {prompts
+                  .map((p, idx) => ({ p, idx }))
+                  .filter(({ p }) => filterCategory === 'all' || p.badge.includes(filterCategory))
+                  .map(({ p, idx }) => {
                   const isSelected = idx === selectedIdx;
                   return (
                     <div
@@ -420,6 +483,18 @@ export default function InterviewPrepPage() {
 
             {/* Right Column: Interactive Practice Arena & AI Evaluation (8 Cols) */}
             <div className="lg:col-span-8 flex flex-col gap-6">
+              {statusNotice && (
+                <div className="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between text-label-sm font-label-sm text-primary">
+                  <span>{statusNotice}</span>
+                  <button
+                    type="button"
+                    onClick={() => setStatusNotice(null)}
+                    className="text-on-surface-variant hover:text-primary"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
               {/* Question Focal Arena */}
               <div className="bg-surface-container-lowest rounded-xl p-6 sm:p-7 shadow-[0_2px_8px_-2px_rgba(53,27,50,0.04),0_12px_24px_-4px_rgba(53,27,50,0.03)] flex flex-col gap-6 relative overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -438,10 +513,14 @@ export default function InterviewPrepPage() {
                       <span className="material-symbols-outlined text-[16px]">volume_up</span> Read Aloud
                     </button>
                     <button
+                      onClick={handleToggleSavePrompt}
                       className="px-2.5 py-1 rounded-lg bg-surface-container font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-1"
                       type="button"
                     >
-                      <span className="material-symbols-outlined text-[16px]">bookmark_border</span> Save
+                      <span className="material-symbols-outlined text-[16px]">
+                        {savedPromptIds.includes(currentPrompt.id) ? 'bookmark' : 'bookmark_border'}
+                      </span>{' '}
+                      {savedPromptIds.includes(currentPrompt.id) ? 'Saved' : 'Save'}
                     </button>
                   </div>
                 </div>
@@ -591,6 +670,7 @@ export default function InterviewPrepPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={handleSaveDraft}
                         className="px-4 py-2.5 rounded-xl bg-surface-container font-label-md text-label-md text-primary font-semibold hover:bg-surface-container-high transition-colors"
                         type="button"
                       >

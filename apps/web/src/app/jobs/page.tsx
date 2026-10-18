@@ -12,6 +12,8 @@ function JobSearchContent() {
     profile,
     jobs,
     loadingJobs,
+    jobsSyncedAt,
+    providerStatus,
     refreshJobs,
     addCustomJob,
     savedJobIds,
@@ -44,7 +46,8 @@ function JobSearchContent() {
       const found = jobs.find((j) => j.id === sel);
       if (found) setSelectedJob(found);
     }
-  }, [searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, jobs.length]);
 
   const currentJob: LiveJob | null = selectedJob || (jobs.length > 0 ? jobs[0] : null);
 
@@ -64,19 +67,24 @@ function JobSearchContent() {
 
   const handleQuickApply = async () => {
     if (!currentJob) return;
+    if (currentJob.sourceUrl && (currentJob.sourceUrl.startsWith('https://') || currentJob.sourceUrl.startsWith('http://'))) {
+      window.open(currentJob.sourceUrl, '_blank', 'noopener,noreferrer');
+    }
     await addApplication({
       jobId: currentJob.id,
       title: currentJob.title,
       company: currentJob.company,
       location: currentJob.location,
       status: 'applied',
-      matchScore: currentJob.matchScore || 92,
-      syncChannel: profile.emailProvider !== 'none' ? profile.emailProvider : 'Direct',
+      matchScore: currentJob.matchScore || 85,
+      syncChannel: `${currentJob.source} Portal`,
       recruiterName: currentJob.recruiterName || 'Hiring Team',
       recruiterEmail: currentJob.recruiterEmail || '',
     });
-    setToastMsg(`Application logged for ${currentJob.title} at ${currentJob.company}!`);
-    setTimeout(() => setToastMsg(null), 4000);
+    setToastMsg(
+      `Opened ${currentJob.company}'s application page and recorded this role in your Applications Tracker.`
+    );
+    setTimeout(() => setToastMsg(null), 4500);
   };
 
   const handleCreateCustomJob = async (e: React.FormEvent) => {
@@ -161,15 +169,30 @@ function JobSearchContent() {
               Live Feed Sources:
             </span>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  providerStatus.remotive === 'ok' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              />
               <span>Remotive Live API</span>
             </div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  providerStatus.arbeitnow === 'ok' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              />
               <span>Arbeitnow Tech API</span>
             </div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">
               <span className="material-symbols-outlined text-[14px] text-on-tertiary-fixed">auto_awesome</span>
-              <span>AI Match Scored</span>
+              <span>Heuristic Profile Match</span>
             </div>
+            {jobsSyncedAt && (
+              <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                Synced {new Date(jobsSyncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
             <button
               onClick={() => {
                 setQueryInput('');

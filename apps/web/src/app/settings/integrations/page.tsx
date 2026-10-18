@@ -132,18 +132,20 @@ export default function EmailIntegrationsPage() {
                   <span className="material-symbols-outlined text-[24px]">verified_user</span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-label-md text-label-md font-bold text-primary">
                       Enterprise OAuth Zero-Credential Storage
                     </span>
                     <span className="font-caption-caps text-caption-caps bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full">
-                      Encrypted
+                      Local / Manual Draft Mode Active
                     </span>
                   </div>
                   <p className="font-body-sm text-body-sm text-on-surface-variant max-w-3xl leading-relaxed">
-                    Jobora AI never stores your mailbox password. Applications are sent strictly on your manual approval
-                    via official Google and Microsoft OAuth APIs. Account email verification is distinct from mailbox
-                    connection.
+                    Jobora AI never stores your mailbox password. To enable live server-side OAuth token exchange in production, configure{' '}
+                    <code className="font-mono text-xs bg-surface-container px-1.5 py-0.5 rounded">GOOGLE_CLIENT_ID</code>,{' '}
+                    <code className="font-mono text-xs bg-surface-container px-1.5 py-0.5 rounded">GOOGLE_CLIENT_SECRET</code>,{' '}
+                    <code className="font-mono text-xs bg-surface-container px-1.5 py-0.5 rounded">MICROSOFT_CLIENT_ID</code>, and{' '}
+                    <code className="font-mono text-xs bg-surface-container px-1.5 py-0.5 rounded">SMTP_HOST</code> in your environment. When OAuth keys are not set, you can set your sender identity here and dispatch via <code className="font-mono text-xs">mailto:</code> or <code className="font-mono text-xs">.eml</code> export.
                   </p>
                 </div>
               </div>
@@ -153,7 +155,11 @@ export default function EmailIntegrationsPage() {
                   className="font-label-sm text-label-sm text-secondary hover:text-on-secondary-fixed-variant transition-colors flex items-center gap-1"
                   type="button"
                 >
-                  Audit Security Protocols
+                  {testingStatus === 'verifying'
+                    ? 'Checking Config...'
+                    : testingStatus === 'ok'
+                    ? 'Sender Identity Verified ✓'
+                    : 'Verify Sender Identity'}
                   <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
               </div>

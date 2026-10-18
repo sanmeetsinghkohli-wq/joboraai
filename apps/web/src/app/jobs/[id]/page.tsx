@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 export default function JobDetailRedirect() {
   const router = useRouter();
+  const params = useParams();
   useEffect(() => {
-    router.replace('/jobs');
-  }, [router]);
+    const id = params?.id ? String(params.id) : '';
+    router.replace(id ? `/jobs?selected=${encodeURIComponent(id)}` : '/jobs');
+  }, [router, params]);
   return null;
 }

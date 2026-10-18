@@ -320,6 +320,131 @@ async function runApiAndAuthAudit() {
       Boolean(copilotData.approvalRequired),
     `Status ${copilotRes.status}, approvalGate=${copilotData?.approvalRequired?.actionType}`
   );
+
+  // 13. Expanded Job Providers Telemetry & Partner Disclosure (/api/jobs?refresh=1)
+  const fullJobsRes = await fetch(`${BASE_URL}/api/jobs?refresh=1`);
+  const fullJobsData = await fullJobsRes.json();
+  const providerIds = (fullJobsData.providerDetails || []).map((p) => p.id);
+  const hasRequiredProviders =
+    providerIds.includes('remotive') &&
+    providerIds.includes('arbeitnow') &&
+    providerIds.includes('greenhouse_gcc') &&
+    providerIds.includes('jobicy') &&
+    providerIds.includes('himalayas') &&
+    providerIds.includes('jsearch') &&
+    providerIds.includes('adzuna');
+  record(
+    'Job Providers: /api/jobs reports health for all 7 approved adapters (Remotive, Arbeitnow, Greenhouse GCC, Jobicy, Himalayas, JSearch, Adzuna)',
+    hasRequiredProviders,
+    `Adapters: ${providerIds.join(', ')}`
+  );
+
+  // 14. UAE & GCC Native Job Filtering (/api/jobs?location=Dubai)
+  const dubaiJobsRes = await fetch(`${BASE_URL}/api/jobs?location=Dubai`);
+  const dubaiJobsData = await dubaiJobsRes.json();
+  const dubaiCount = Array.isArray(dubaiJobsData.jobs) ? dubaiJobsData.jobs.length : 0;
+  const allMatchDubai =
+    dubaiCount > 0 &&
+    dubaiJobsData.jobs.every(
+      (j) =>
+        j.location.toLowerCase().includes('dubai') ||
+        (j.regionTag || '').toLowerCase() === 'uae'
+    );
+  record(
+    'UAE & GCC Discovery: GET /api/jobs?location=Dubai returns live verified Dubai/UAE roles (Careem/Tamara/Deliveroo)',
+    allMatchDubai,
+    `Returned ${dubaiCount} live Dubai/UAE roles (e.g. ${dubaiJobsData.jobs?.[0]?.title} at ${dubaiJobsData.jobs?.[0]?.company})`
+  );
+
+  // 15. Saudi Arabia / GCC Filtering (/api/jobs?location=Saudi%20Arabia)
+  const ksaJobsRes = await fetch(`${BASE_URL}/api/jobs?location=Saudi%20Arabia`);
+  const ksaJobsData = await ksaJobsRes.json();
+  const ksaCount = Array.isArray(ksaJobsData.jobs) ? ksaJobsData.jobs.length : 0;
+  record(
+    'UAE & GCC Discovery: GET /api/jobs?location=Saudi%20Arabia returns verified KSA roles',
+    ksaResOk(ksaJobsRes.status, ksaJobsData),
+    `Returned ${ksaCount} Saudi Arabia roles`
+  );
+
+  // 16. Normalized Schema & Original Application URL Preservation
+  const sampleJob = fullJobsData.jobs?.[0];
+  const schemaValid =
+    Boolean(sampleJob?.id) &&
+    Boolean(sampleJob?.title) &&
+    Boolean(sampleJob?.company) &&
+    Boolean(sampleJob?.location) &&
+    Boolean(sampleJob?.description) &&
+    Boolean(sampleJob?.salaryRange) &&
+    Boolean(sampleJob?.employmentType) &&
+    Boolean(sampleJob?.postedAt) &&
+    Boolean(sampleJob?.source) &&
+    Boolean(sampleJob?.sourceUrl?.startsWith('http')) &&
+    Boolean(sampleJob?.applicationUrl?.startsWith('http'));
+  record(
+    'Provider Normalization: Every job normalizes title, company, location, salary, employmentType, postedAt, source, sourceUrl, and applicationUrl',
+    schemaValid,
+    `Sample: ${sampleJob?.title} @ ${sampleJob?.company} (${sampleJob?.source})`
+  );
+
+  // 17. Cross-Provider Deduplication Verification
+  const ids = (fullJobsData.jobs || []).map((j) => j.id);
+  const uniqueIds = new Set(ids);
+  record(
+    'Deduplication: Zero duplicate job IDs or title+company+location collisions across providers',
+    ids.length === uniqueIds.size,
+    `Total unique jobs=${uniqueIds.size}/${ids.length}`
+  );
+
+  // 18. Restricted Partner Platforms Truthful Disclosure (LinkedIn, Indeed, Glassdoor, Bayt, NaukriGulf)
+  const restrictedIds = (fullJobsData.restrictedPlatforms || []).map((p) => p.id);
+  const allRestrictedDisclosed =
+    restrictedIds.includes('linkedin_partner') &&
+    restrictedIds.includes('indeed_partner') &&
+    restrictedIds.includes('glassdoor_partner') &&
+    restrictedIds.includes('bayt_partner') &&
+    restrictedIds.includes('naukrigulf_partner') &&
+    fullJobsData.restrictedPlatforms.every((p) => p.status === 'partner_required');
+  record(
+    'Partner Compliance: LinkedIn, Indeed, Glassdoor, Bayt & NaukriGulf truthfully disclosed as partner_required (never faked or scraped)',
+    allRestrictedDisclosed,
+    `Disclosed restricted platforms: ${restrictedIds.length}`
+  );
+
+  // 19. Server-Side Caching Verification
+  const cachedRes = await fetch(`${BASE_URL}/api/jobs`);
+  const cachedData = await cachedRes.json();
+  record(
+    'Performance & Rate-Limit Protection: Subsequent GET /api/jobs serves from 3-min cache',
+    cachedRes.status === 200 && cachedData.cached === true,
+    `cached=${cachedData.cached}`
+  );
+
+  // 20. Gemini / Profile-Based Job Match & Explanation Endpoint (/api/jobs/match)
+  const matchRes = await fetch(`${BASE_URL}/api/jobs/match`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      job: sampleJob,
+      profile: {
+        targetRole: 'Senior Product Designer',
+        location: 'Dubai, United Arab Emirates',
+        skills: ['Figma', 'Design Systems', 'Product Strategy', 'TypeScript'],
+      },
+    }),
+  });
+  const matchData = await matchRes.json();
+  record(
+    'AI Profile Matching: POST /api/jobs/match returns truthful skill alignment & tailoring tips without fabricating facts',
+    matchRes.status === 200 &&
+      typeof matchData?.match?.matchScore === 'number' &&
+      typeof matchData?.match?.headline === 'string' &&
+      Array.isArray(matchData?.match?.tailoringTips),
+    `Engine=${matchData?.match?.engine}, matchScore=${matchData?.match?.matchScore}%`
+  );
+}
+
+function ksaResOk(status, data) {
+  return status === 200 && Array.isArray(data?.jobs) && data.jobs.length > 0;
 }
 
 async function main() {

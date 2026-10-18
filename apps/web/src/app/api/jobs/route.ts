@@ -1,32 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  type NormalizedJobRecord,
+  type ProviderHealthDetail,
+  classifyRegionTag,
+  deduplicateJobs,
+  fetchAdzunaJobs,
+  fetchArbeitnowJobs,
+  fetchGreenhouseGccJobs,
+  fetchHimalayasJobs,
+  fetchJobicyJobs,
+  fetchJSearchJobs,
+  fetchRemotiveJobs,
+  getRestrictedPartnerStatus,
+  sanitizeExternalUrl,
+} from './_providers';
 
 export const dynamic = 'force-dynamic';
 
-export interface LiveJobRecord {
-  id: string;
-  title: string;
-  company: string;
-  companyLogo?: string | null;
-  location: string;
-  workMode: 'Remote' | 'Hybrid' | 'On-site';
-  employmentType: string;
-  salaryRange: string;
-  description: string;
-  responsibilities: string[];
-  skills: string[];
-  postedAt: string;
-  sourceUrl: string;
-  source: 'Remotive' | 'Arbeitnow' | 'Curated' | 'Custom';
-  recruiterEmail?: string;
-  recruiterName?: string;
+export type LiveJobRecord = NormalizedJobRecord;
+
+interface JobsCacheEntry {
+  timestamp: number;
+  jobs: LiveJobRecord[];
+  providerStatus: Record<string, 'ok' | 'degraded'>;
+  providerDetails: ProviderHealthDetail[];
 }
 
 declare global {
   var __jobora_custom_jobs: LiveJobRecord[] | undefined;
+  var __jobora_jobs_cache: Map<string, JobsCacheEntry> | undefined;
 }
 
 const customJobsStore: LiveJobRecord[] =
   global.__jobora_custom_jobs || (global.__jobora_custom_jobs = []);
+
+const jobsCacheStore: Map<string, JobsCacheEntry> =
+  global.__jobora_jobs_cache instanceof Map
+    ? global.__jobora_jobs_cache
+    : (global.__jobora_jobs_cache = new Map<string, JobsCacheEntry>());
+
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3-minute server-side cache per query/location filter
 
 const CURATED_JOBS: LiveJobRecord[] = [
   {
@@ -34,6 +47,7 @@ const CURATED_JOBS: LiveJobRecord[] = [
     title: 'Staff Product Designer, Financial Infrastructure',
     company: 'Stripe',
     location: 'San Francisco, CA',
+    regionTag: 'Global',
     workMode: 'Hybrid',
     employmentType: 'Full-Time',
     salaryRange: '$210k – $265k',
@@ -48,6 +62,7 @@ const CURATED_JOBS: LiveJobRecord[] = [
     skills: ['Design Systems', 'Figma', 'Product Strategy', 'Fintech', 'Prototyping', 'React'],
     postedAt: '2h ago',
     sourceUrl: 'https://stripe.com/jobs',
+    applicationUrl: 'https://stripe.com/jobs',
     source: 'Curated',
     recruiterName: 'Elena Rostova',
     recruiterEmail: 'elena.rostova@stripe-talent.example.com',
@@ -57,6 +72,7 @@ const CURATED_JOBS: LiveJobRecord[] = [
     title: 'Full-Stack Software Engineer, Claude Product',
     company: 'Anthropic',
     location: 'San Francisco, CA',
+    regionTag: 'Global',
     workMode: 'Hybrid',
     employmentType: 'Full-Time',
     salaryRange: '$230k – $310k',
@@ -70,6 +86,7 @@ const CURATED_JOBS: LiveJobRecord[] = [
     skills: ['TypeScript', 'React', 'Next.js', 'Python', 'LLM Systems', 'Distributed Systems'],
     postedAt: '4h ago',
     sourceUrl: 'https://www.anthropic.com/careers',
+    applicationUrl: 'https://www.anthropic.com/careers',
     source: 'Curated',
     recruiterName: 'Marcus Vance',
     recruiterEmail: 'm.vance@anthropic-careers.example.com',
@@ -79,6 +96,7 @@ const CURATED_JOBS: LiveJobRecord[] = [
     title: 'Senior Frontend Engineer, Core Experience',
     company: 'Linear',
     location: 'Remote (Global)',
+    regionTag: 'Remote',
     workMode: 'Remote',
     employmentType: 'Full-Time',
     salaryRange: '$185k – $235k',
@@ -92,6 +110,7 @@ const CURATED_JOBS: LiveJobRecord[] = [
     skills: ['TypeScript', 'React', 'GraphQL', 'Local-First Sync', 'CSS Architecture', 'Performance'],
     postedAt: '6h ago',
     sourceUrl: 'https://linear.app/careers',
+    applicationUrl: 'https://linear.app/careers',
     source: 'Curated',
     recruiterName: 'Clara Lindqvist',
     recruiterEmail: 'clara@linear-talent.example.com',
@@ -101,6 +120,7 @@ const CURATED_JOBS: LiveJobRecord[] = [
     title: 'Staff Solutions & AI SDK Engineer',
     company: 'Vercel',
     location: 'Remote (US & EU)',
+    regionTag: 'Remote',
     workMode: 'Remote',
     employmentType: 'Full-Time',
     salaryRange: '$195k – $245k',
@@ -114,220 +134,159 @@ const CURATED_JOBS: LiveJobRecord[] = [
     skills: ['Next.js', 'TypeScript', 'Node.js', 'Vercel AI SDK', 'Edge Compute', 'React Server Components'],
     postedAt: '1d ago',
     sourceUrl: 'https://vercel.com/careers',
+    applicationUrl: 'https://vercel.com/careers',
     source: 'Curated',
     recruiterName: 'Devon Brooks',
     recruiterEmail: 'dbrooks@vercel-talent.example.com',
   },
-  {
-    id: 'jobora-figma-systems',
-    title: 'Principal Design Systems Architect',
-    company: 'Figma',
-    location: 'New York, NY',
-    workMode: 'Hybrid',
-    employmentType: 'Full-Time',
-    salaryRange: '$220k – $280k',
-    description:
-      'Shape the future of Variables, Code Connect, and multi-brand design systems inside Figma. Bridge the gap between visual design tokens and production codebases.',
-    responsibilities: [
-      'Define the architecture for bidirectional design-to-code token synchronization.',
-      'Partner with enterprise customers to scale 1,000+ component libraries.',
-      'Drive accessibility standards and keyboard navigation patterns across the editor.',
-    ],
-    skills: ['Design Systems', 'TypeScript', 'Figma API', 'Accessibility', 'UI Engineering'],
-    postedAt: '1d ago',
-    sourceUrl: 'https://www.figma.com/careers',
-    source: 'Curated',
-    recruiterName: 'Hannah Chen',
-    recruiterEmail: 'hchen@figma-careers.example.com',
-  },
-  {
-    id: 'jobora-databricks-ml',
-    title: 'Senior Machine Learning Platform Engineer',
-    company: 'Databricks',
-    location: 'Amsterdam / Remote',
-    workMode: 'Hybrid',
-    employmentType: 'Full-Time',
-    salaryRange: '€155k – €195k',
-    description:
-      'Scale Mosaic AI model serving and vector search infrastructure for enterprise GenAI workloads.',
-    responsibilities: [
-      'Build low-latency model serving clusters and GPU autoscaling pipelines.',
-      'Integrate RAG evaluation and governance telemetry into the Lakehouse platform.',
-    ],
-    skills: ['Python', 'Kubernetes', 'PyTorch', 'Distributed Systems', 'SQL', 'MLOps'],
-    postedAt: '2d ago',
-    sourceUrl: 'https://www.databricks.com/company/careers',
-    source: 'Curated',
-    recruiterName: 'Lukas Meyer',
-    recruiterEmail: 'lmeyer@databricks-talent.example.com',
-  },
 ];
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+function matchesLocationFilter(job: LiveJobRecord, locationFilter: string): boolean {
+  if (!locationFilter) return true;
+  const f = locationFilter.toLowerCase().trim();
+  const loc = (job.location || '').toLowerCase();
+  const region = (job.regionTag || '').toLowerCase();
+  const mode = (job.workMode || '').toLowerCase();
 
-function sanitizeExternalUrl(url: unknown, fallback: string): string {
-  if (typeof url !== 'string') return fallback;
-  const trimmed = url.trim();
-  if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
-    return trimmed;
+  if (f === 'uae' || f === 'united arab emirates') {
+    return (
+      region === 'uae' ||
+      loc.includes('dubai') ||
+      loc.includes('abu dhabi') ||
+      loc.includes('sharjah') ||
+      loc.includes('uae') ||
+      loc.includes('emirates')
+    );
   }
-  return fallback;
+  if (f === 'gcc' || f === 'mena') {
+    return (
+      region === 'uae' ||
+      region === 'saudi arabia' ||
+      region === 'qatar' ||
+      region === 'gcc / mena'
+    );
+  }
+  if (f === 'saudi arabia' || f === 'saudi' || f === 'riyadh') {
+    return region === 'saudi arabia' || loc.includes('saudi') || loc.includes('riyadh') || loc.includes('jeddah');
+  }
+  if (f === 'qatar' || f === 'doha') {
+    return region === 'qatar' || loc.includes('qatar') || loc.includes('doha');
+  }
+  if (f === 'remote') {
+    return mode === 'remote' || region === 'remote' || loc.includes('remote');
+  }
+
+  return loc.includes(f) || mode.includes(f) || region.includes(f);
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const query = (searchParams.get('q') || '').toLowerCase().trim();
   const locationFilter = (searchParams.get('location') || '').toLowerCase().trim();
+  const forceRefresh = searchParams.get('refresh') === '1';
 
-  const liveJobs: LiveJobRecord[] = [...customJobsStore];
+  const cacheKey = `${query}::${locationFilter}`;
+  const cached = jobsCacheStore.get(cacheKey);
+
+  if (
+    !forceRefresh &&
+    cached &&
+    Date.now() - cached.timestamp < CACHE_TTL_MS &&
+    cached.jobs.length > 0
+  ) {
+    const mergedCached = deduplicateJobs([...customJobsStore, ...cached.jobs]);
+    return NextResponse.json({
+      jobs: mergedCached,
+      total: mergedCached.length,
+      syncedAt: new Date(cached.timestamp).toISOString(),
+      cached: true,
+      providerStatus: cached.providerStatus,
+      providerDetails: cached.providerDetails,
+      restrictedPlatforms: getRestrictedPartnerStatus(),
+    });
+  }
+
+  // Run all active & configured provider adapters concurrently with independent timeouts & graceful fallback
+  const [
+    greenhouseRes,
+    remotiveRes,
+    arbeitnowRes,
+    jobicyRes,
+    himalayasRes,
+    jsearchRes,
+    adzunaRes,
+  ] = await Promise.all([
+    fetchGreenhouseGccJobs(),
+    fetchRemotiveJobs(query),
+    fetchArbeitnowJobs(),
+    fetchJobicyJobs(query),
+    fetchHimalayasJobs(),
+    fetchJSearchJobs(query, locationFilter),
+    fetchAdzunaJobs(query),
+  ]);
+
+  const providerDetails: ProviderHealthDetail[] = [
+    greenhouseRes.health,
+    remotiveRes.health,
+    arbeitnowRes.health,
+    jobicyRes.health,
+    himalayasRes.health,
+    jsearchRes.health,
+    adzunaRes.health,
+  ];
+
+  // Backward-compatible providerStatus dictionary for existing 39-check suite + UI
   const providerStatus: Record<string, 'ok' | 'degraded'> = {
-    remotive: 'degraded',
-    arbeitnow: 'degraded',
+    remotive: remotiveRes.health.status === 'ok' ? 'ok' : 'degraded',
+    arbeitnow: arbeitnowRes.health.status === 'ok' ? 'ok' : 'degraded',
+    greenhouse_gcc: greenhouseRes.health.status === 'ok' ? 'ok' : 'degraded',
+    jobicy: jobicyRes.health.status === 'ok' ? 'ok' : 'degraded',
+    himalayas: himalayasRes.health.status === 'ok' ? 'ok' : 'degraded',
+    jsearch: jsearchRes.health.status === 'ok' ? 'ok' : 'degraded',
+    adzuna: adzunaRes.health.status === 'ok' ? 'ok' : 'degraded',
   };
 
-  // 1. Fetch live jobs from Remotive public API (with 3.5s timeout)
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
-    const remotiveUrl = query
-      ? `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=12`
-      : 'https://remotive.com/api/remote-jobs?limit=12';
-    const res = await fetch(remotiveUrl, { signal: controller.signal, next: { revalidate: 300 } });
-    clearTimeout(timer);
+  // Order prioritizes UAE/GCC direct employer feeds & JSearch first, followed by Remotive, Arbeitnow, Jobicy, Himalayas, Adzuna, and Curated
+  const combined = deduplicateJobs([
+    ...customJobsStore,
+    ...greenhouseRes.jobs,
+    ...jsearchRes.jobs,
+    ...CURATED_JOBS,
+    ...remotiveRes.jobs,
+    ...arbeitnowRes.jobs,
+    ...jobicyRes.jobs,
+    ...himalayasRes.jobs,
+    ...adzunaRes.jobs,
+  ]);
 
-    if (res.ok) {
-      providerStatus.remotive = 'ok';
-      const data = await res.json();
-      if (Array.isArray(data?.jobs)) {
-        for (const item of data.jobs.slice(0, 10)) {
-          const cleanDesc = stripHtml(item.description || '').slice(0, 460);
-          liveJobs.push({
-            id: `remotive-${item.id}`,
-            title: item.title || 'Software Engineer',
-            company: item.company_name || 'Tech Partner',
-            companyLogo: item.company_logo || null,
-            location: item.candidate_required_location || 'Remote',
-            workMode: 'Remote',
-            employmentType:
-              item.job_type === 'full_time' ? 'Full-Time' : item.job_type || 'Full-Time',
-            salaryRange: item.salary || 'Salary Not Disclosed by Employer',
-            description: cleanDesc ? `${cleanDesc}...` : 'Remote opportunity via Remotive.',
-            responsibilities: [
-              `Deliver high-impact solutions as ${item.title} at ${item.company_name}.`,
-              'Collaborate asynchronously with distributed engineering and product teams.',
-              'Write clean, maintainable, well-tested production code and documentation.',
-            ],
-            skills:
-              Array.isArray(item.tags) && item.tags.length > 0
-                ? item.tags.slice(0, 6)
-                : ['Remote Collaboration', 'Software Engineering', 'Agile'],
-            postedAt: item.publication_date
-              ? new Date(item.publication_date).toLocaleDateString()
-              : 'Recently',
-            sourceUrl: sanitizeExternalUrl(item.url, 'https://remotive.com'),
-            source: 'Remotive',
-            recruiterName: `${item.company_name} Talent Team`,
-            recruiterEmail: `careers@${(item.company_name || 'company')
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, '')}.com`,
-          });
-        }
-      }
-    }
-  } catch {
-    providerStatus.remotive = 'degraded';
-  }
-
-  // 2. Also fetch live jobs from Arbeitnow public API (with 3.5s timeout)
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch('https://www.arbeitnow.com/api/job-board-api', {
-      signal: controller.signal,
-      next: { revalidate: 300 },
-    });
-    clearTimeout(timer);
-
-    if (res.ok) {
-      providerStatus.arbeitnow = 'ok';
-      const data = await res.json();
-      if (Array.isArray(data?.data)) {
-        for (const item of data.data.slice(0, 8)) {
-          const cleanDesc = stripHtml(item.description || '').slice(0, 460);
-          liveJobs.push({
-            id: `arbeitnow-${item.slug}`,
-            title: item.title || 'Specialist Role',
-            company: item.company_name || 'Global Employer',
-            companyLogo: null,
-            location: item.location || 'Remote / Europe',
-            workMode: item.remote ? 'Remote' : 'Hybrid',
-            employmentType: 'Full-Time',
-            salaryRange: 'Salary Not Disclosed by Employer',
-            description: cleanDesc ? `${cleanDesc}...` : 'Live opportunity via Arbeitnow.',
-            responsibilities: [
-              `Own core deliverables for ${item.title} at ${item.company_name}.`,
-              'Partner with cross-functional stakeholders to ship measurable outcomes.',
-            ],
-            skills:
-              Array.isArray(item.tags) && item.tags.length > 0
-                ? item.tags.slice(0, 6)
-                : ['Product Delivery', 'Cross-functional'],
-            postedAt: 'Live Feed',
-            sourceUrl: sanitizeExternalUrl(item.url, 'https://www.arbeitnow.com'),
-            source: 'Arbeitnow',
-            recruiterName: `${item.company_name} Recruiting`,
-            recruiterEmail: `talent@${(item.company_name || 'company')
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, '')}.com`,
-          });
-        }
-      }
-    }
-  } catch {
-    providerStatus.arbeitnow = 'degraded';
-  }
-
-  // Combine curated high-signal roles + live external feeds and deduplicate
-  const combined = [...customJobsStore, ...CURATED_JOBS, ...liveJobs];
-  const seenKeys = new Set<string>();
-  const unique = combined.filter((job) => {
-    const dedupKey = `${job.id}::${job.title.toLowerCase()}::${job.company.toLowerCase()}`;
-    if (seenKeys.has(job.id) || seenKeys.has(dedupKey)) return false;
-    seenKeys.add(job.id);
-    seenKeys.add(dedupKey);
-    return true;
-  });
-
-  const filtered = unique.filter((job) => {
+  const filtered = combined.filter((job) => {
     const matchesQuery =
       !query ||
       job.title.toLowerCase().includes(query) ||
       job.company.toLowerCase().includes(query) ||
       job.description.toLowerCase().includes(query) ||
+      job.location.toLowerCase().includes(query) ||
       job.skills.some((s) => s.toLowerCase().includes(query));
 
-    const matchesLocation =
-      !locationFilter ||
-      job.location.toLowerCase().includes(locationFilter) ||
-      job.workMode.toLowerCase().includes(locationFilter);
+    const matchesLoc = matchesLocationFilter(job, locationFilter);
+    return matchesQuery && matchesLoc;
+  });
 
-    return matchesQuery && matchesLocation;
+  jobsCacheStore.set(cacheKey, {
+    timestamp: Date.now(),
+    jobs: filtered,
+    providerStatus,
+    providerDetails,
   });
 
   return NextResponse.json({
     jobs: filtered,
     total: filtered.length,
     syncedAt: new Date().toISOString(),
+    cached: false,
     providerStatus,
+    providerDetails,
+    restrictedPlatforms: getRestrictedPartnerStatus(),
   });
 }
 
@@ -344,14 +303,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const location = String(body.location || 'Dubai, United Arab Emirates').trim();
+    const workMode: 'Remote' | 'Hybrid' | 'On-site' = body.workMode || 'Hybrid';
+    const sourceUrl = sanitizeExternalUrl(body.sourceUrl, 'https://www.linkedin.com/jobs');
+
     const newJob: LiveJobRecord = {
       id: `custom-${Date.now()}`,
       title,
       company,
-      location: String(body.location || 'Remote').trim(),
-      workMode: body.workMode || 'Remote',
+      location,
+      regionTag: classifyRegionTag(location, workMode),
+      workMode,
       employmentType: String(body.employmentType || 'Full-Time').trim(),
-      salaryRange: String(body.salaryRange || 'Not Specified').trim(),
+      salaryRange: String(body.salaryRange || 'Salary Not Disclosed by Employer').trim(),
       description: String(
         body.description || `Custom role added for ${title} at ${company}.`
       ).trim(),
@@ -364,7 +328,8 @@ export async function POST(req: NextRequest) {
           ? body.skills
           : ['Strategy', 'Execution', 'Cross-functional Leadership'],
       postedAt: 'Just added',
-      sourceUrl: sanitizeExternalUrl(body.sourceUrl, 'https://linkedin.com/jobs'),
+      sourceUrl,
+      applicationUrl: sourceUrl,
       source: 'Custom',
       recruiterName: String(body.recruiterName || `${company} Hiring Team`).trim(),
       recruiterEmail: String(
@@ -372,6 +337,7 @@ export async function POST(req: NextRequest) {
       ).trim(),
     };
     customJobsStore.unshift(newJob);
+    jobsCacheStore.clear();
     return NextResponse.json({ job: newJob }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Invalid job payload' }, { status: 400 });

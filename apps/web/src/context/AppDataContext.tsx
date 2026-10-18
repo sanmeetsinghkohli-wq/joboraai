@@ -8,6 +8,7 @@ export interface LiveJob {
   company: string;
   companyLogo?: string | null;
   location: string;
+  regionTag?: string;
   workMode: string;
   employmentType: string;
   salaryRange: string;
@@ -16,10 +17,24 @@ export interface LiveJob {
   skills: string[];
   postedAt: string;
   sourceUrl: string;
+  applicationUrl?: string;
   source: string;
   recruiterEmail?: string;
   recruiterName?: string;
   matchScore?: number;
+}
+
+export interface ProviderHealthSummary {
+  id: string;
+  name: string;
+  status: 'ok' | 'degraded' | 'rate_limited' | 'unconfigured' | 'partner_required';
+  latencyMs: number | null;
+  jobsReturned: number;
+  lastSyncedAt: string | null;
+  requiresCredentials: boolean;
+  configured: boolean;
+  gccCoverage: string;
+  note?: string;
 }
 
 export interface LiveApplication {
@@ -71,6 +86,8 @@ interface AppDataContextType {
   loadingJobs: boolean;
   jobsSyncedAt: string | null;
   providerStatus: Record<string, 'ok' | 'degraded'>;
+  providerDetails: ProviderHealthSummary[];
+  restrictedPlatforms: ProviderHealthSummary[];
   refreshJobs: (query?: string, location?: string) => Promise<void>;
   addCustomJob: (job: Partial<LiveJob>) => Promise<LiveJob | null>;
   savedJobIds: string[];
@@ -146,6 +163,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [loadingJobs, setLoadingJobs] = useState<boolean>(true);
   const [jobsSyncedAt, setJobsSyncedAt] = useState<string | null>(null);
   const [providerStatus, setProviderStatus] = useState<Record<string, 'ok' | 'degraded'>>({});
+  const [providerDetails, setProviderDetails] = useState<ProviderHealthSummary[]>([]);
+  const [restrictedPlatforms, setRestrictedPlatforms] = useState<ProviderHealthSummary[]>([]);
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [selectedJob, setSelectedJob] = useState<LiveJob | null>(null);
   const [applications, setApplications] = useState<LiveApplication[]>([]);
@@ -290,6 +309,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         if (data?.syncedAt) setJobsSyncedAt(data.syncedAt);
         if (data?.providerStatus) setProviderStatus(data.providerStatus);
+        if (Array.isArray(data?.providerDetails)) setProviderDetails(data.providerDetails);
+        if (Array.isArray(data?.restrictedPlatforms)) setRestrictedPlatforms(data.restrictedPlatforms);
         if (Array.isArray(data?.jobs)) {
           const scored = data.jobs.map((j: LiveJob) => ({
             ...j,
@@ -456,6 +477,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         loadingJobs,
         jobsSyncedAt,
         providerStatus,
+        providerDetails,
+        restrictedPlatforms,
         refreshJobs,
         addCustomJob,
         savedJobIds,

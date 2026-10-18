@@ -14,6 +14,8 @@ function JobSearchContent() {
     loadingJobs,
     jobsSyncedAt,
     providerStatus,
+    providerDetails,
+    restrictedPlatforms,
     refreshJobs,
     addCustomJob,
     savedJobIds,
@@ -28,6 +30,16 @@ function JobSearchContent() {
   const [activeTab, setActiveTab] = useState<'overview' | 'requirements' | 'match' | 'company'>('overview');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
+  const [showProviderHealthModal, setShowProviderHealthModal] = useState(false);
+  const [geminiMatch, setGeminiMatch] = useState<{
+    engine: string;
+    headline: string;
+    alignedSkills: string[];
+    missingOrAdjacentSkills: string[];
+    locationFit: string;
+    tailoringTips: string[];
+  } | null>(null);
+  const [loadingMatch, setLoadingMatch] = useState(false);
   const [newJobTitle, setNewJobTitle] = useState('');
   const [newJobCompany, setNewJobCompany] = useState('');
   const [newJobLocation, setNewJobLocation] = useState('');
@@ -51,9 +63,39 @@ function JobSearchContent() {
 
   const currentJob: LiveJob | null = selectedJob || (jobs.length > 0 ? jobs[0] : null);
 
+  useEffect(() => {
+    if (!currentJob) return;
+    let active = true;
+    setLoadingMatch(true);
+    fetch('/api/jobs/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job: currentJob, profile }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (active && data?.match) {
+          setGeminiMatch(data.match);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoadingMatch(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [currentJob, profile]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     refreshJobs(queryInput, locationFilter);
+  };
+
+  const handleLocationChipClick = (locValue: string) => {
+    const nextLoc = locationFilter.toLowerCase() === locValue.toLowerCase() ? '' : locValue;
+    setLocationFilter(nextLoc);
+    refreshJobs(queryInput, nextLoc);
   };
 
   const handleTailorAndApply = () => {
@@ -67,22 +109,23 @@ function JobSearchContent() {
 
   const handleQuickApply = async () => {
     if (!currentJob) return;
-    if (currentJob.sourceUrl && (currentJob.sourceUrl.startsWith('https://') || currentJob.sourceUrl.startsWith('http://'))) {
-      window.open(currentJob.sourceUrl, '_blank', 'noopener,noreferrer');
+    const applyLink = currentJob.applicationUrl || currentJob.sourceUrl;
+    if (applyLink && (applyLink.startsWith('https://') || applyLink.startsWith('http://'))) {
+      window.open(applyLink, '_blank', 'noopener,noreferrer');
     }
     await addApplication({
       jobId: currentJob.id,
       title: currentJob.title,
       company: currentJob.company,
       location: currentJob.location,
-      status: 'applied',
+      status: 'Applied',
       matchScore: currentJob.matchScore || 85,
       syncChannel: `${currentJob.source} Portal`,
       recruiterName: currentJob.recruiterName || 'Hiring Team',
       recruiterEmail: currentJob.recruiterEmail || '',
     });
     setToastMsg(
-      `Opened ${currentJob.company}'s application page and recorded this role in your Applications Tracker.`
+      `Opened ${currentJob.company}'s official application portal and recorded this role in your Applications Tracker.`
     );
     setTimeout(() => setToastMsg(null), 4500);
   };
@@ -93,7 +136,7 @@ function JobSearchContent() {
     await addCustomJob({
       title: newJobTitle,
       company: newJobCompany,
-      location: newJobLocation || 'Remote / Hybrid',
+      location: newJobLocation || 'Dubai, United Arab Emirates',
       description: newJobDesc,
       skills: newJobSkills
         .split(',')
@@ -110,11 +153,22 @@ function JobSearchContent() {
     setNewJobRecruiterEmail('');
   };
 
+  const gccFilterChips = [
+    { label: 'All Regions', value: '' },
+    { label: 'UAE (All)', value: 'UAE' },
+    { label: 'Dubai', value: 'Dubai' },
+    { label: 'Abu Dhabi', value: 'Abu Dhabi' },
+    { label: 'Sharjah', value: 'Sharjah' },
+    { label: 'Saudi Arabia', value: 'Saudi Arabia' },
+    { label: 'Qatar', value: 'Qatar' },
+    { label: 'Remote', value: 'Remote' },
+  ];
+
   return (
     <StitchShell activeNav="job-search">
       <div className="flex flex-col w-full">
         {/* Top Command & Filter Bar */}
-        <header className="w-full bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-4 shadow-[0_4px_20px_-4px_rgba(53,27,50,0.05)] mb-6 flex flex-col gap-4">
+        <header className="w-full bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-4 shadow-[0_4px_20px_-4px_rgba(53,27,50,0.05)] mb-6 flex flex-col gap-3.5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
               <span className="material-symbols-outlined text-on-surface-variant absolute left-3.5 text-[22px]">
@@ -124,7 +178,7 @@ function JobSearchContent() {
                 value={queryInput}
                 onChange={(e) => setQueryInput(e.target.value)}
                 className="w-full pl-11 pr-28 py-2.5 bg-surface-container-low rounded-xl font-body-md text-body-md text-on-surface placeholder-on-surface-variant focus:outline-none focus:bg-surface-container-lowest transition-all"
-                placeholder="Search live jobs, roles, companies, or keywords..."
+                placeholder="Search UAE, GCC & global roles, companies, or skills..."
                 type="text"
               />
               <span className="absolute right-3.5 px-2 py-0.5 rounded bg-surface-container-highest font-caption-caps text-caption-caps text-on-surface-variant">
@@ -133,25 +187,12 @@ function JobSearchContent() {
             </form>
             <div className="flex items-center gap-2.5 overflow-x-auto pb-1 lg:pb-0">
               <button
-                onClick={() => {
-                  const nextLoc = locationFilter === 'Remote' ? '' : 'Remote';
-                  setLocationFilter(nextLoc);
-                  refreshJobs(queryInput, nextLoc);
-                }}
+                onClick={() => setShowProviderHealthModal(true)}
                 className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors text-on-surface font-label-md text-label-md whitespace-nowrap"
                 type="button"
               >
-                <span className="material-symbols-outlined text-[18px] text-secondary">location_on</span>
-                <span>{locationFilter || profile.location || 'All Locations'}</span>
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
-              </button>
-              <button
-                onClick={() => refreshJobs('Intern', locationFilter)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors text-on-surface font-label-md text-label-md whitespace-nowrap"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">work_outline</span>
-                <span>Intern &amp; Full-Time</span>
+                <span className="material-symbols-outlined text-[18px] text-emerald-600">monitoring</span>
+                <span>Source Health &amp; APIs</span>
               </button>
               <button
                 onClick={() => setShowAddJobModal(true)}
@@ -163,18 +204,52 @@ function JobSearchContent() {
               </button>
             </div>
           </div>
-          {/* Active Filter Chips Bar */}
-          <div className="flex items-center flex-wrap gap-2 pt-2 border-t-0">
-            <span className="font-caption-caps text-caption-caps uppercase text-on-surface-variant tracking-wider">
-              Live Feed Sources:
+
+          {/* UAE & GCC Priority Location Filter Bar */}
+          <div className="flex items-center gap-2 overflow-x-auto py-1">
+            <span className="font-caption-caps text-caption-caps uppercase text-on-surface-variant tracking-wider flex items-center gap-1 whitespace-nowrap">
+              <span className="material-symbols-outlined text-[15px] text-secondary">public</span>
+              GCC &amp; Global Filters:
             </span>
+            {gccFilterChips.map((chip) => {
+              const isActive = locationFilter.toLowerCase() === chip.value.toLowerCase();
+              return (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => handleLocationChipClick(chip.value)}
+                  className={`px-3 py-1 rounded-full font-label-sm text-label-sm whitespace-nowrap transition-all ${
+                    isActive
+                      ? 'bg-primary text-on-primary font-bold shadow-sm'
+                      : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
+                  }`}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active Provider Health Strip */}
+          <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-surface-container">
+            <span className="font-caption-caps text-caption-caps uppercase text-on-surface-variant tracking-wider">
+              Live Feeds:
+            </span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  providerStatus.greenhouse_gcc === 'ok' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              />
+              <span>UAE/GCC Employer ATS</span>
+            </div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
                   providerStatus.remotive === 'ok' ? 'bg-emerald-500' : 'bg-amber-500'
                 }`}
               />
-              <span>Remotive Live API</span>
+              <span>Remotive</span>
             </div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
               <span
@@ -182,12 +257,36 @@ function JobSearchContent() {
                   providerStatus.arbeitnow === 'ok' ? 'bg-emerald-500' : 'bg-amber-500'
                 }`}
               />
-              <span>Arbeitnow Tech API</span>
+              <span>Arbeitnow</span>
             </div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">
-              <span className="material-symbols-outlined text-[14px] text-on-tertiary-fixed">auto_awesome</span>
-              <span>Heuristic Profile Match</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  providerStatus.jobicy === 'ok' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              />
+              <span>Jobicy</span>
             </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  providerStatus.himalayas === 'ok' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              />
+              <span>Himalayas</span>
+            </div>
+            {providerStatus.jsearch === 'ok' && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>JSearch GCC</span>
+              </div>
+            )}
+            {providerStatus.adzuna === 'ok' && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Adzuna</span>
+              </div>
+            )}
             {jobsSyncedAt && (
               <span className="font-caption-caps text-caption-caps text-on-surface-variant">
                 Synced {new Date(jobsSyncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -379,11 +478,17 @@ function JobSearchContent() {
                       <span>Why you&apos;re a {currentJob.matchScore || 88}% match for this role</span>
                     </div>
                     <span className="font-caption-caps text-caption-caps uppercase text-on-surface-variant">
-                      {profile.resumeFileName ? 'CV Synced' : 'Live Analysis'}
+                      {loadingMatch
+                        ? 'Analyzing Fit...'
+                        : geminiMatch?.engine === 'gemini-2.0-flash'
+                        ? 'Gemini 2.0 Flash Match'
+                        : 'Profile Match Engine'}
                     </span>
                   </div>
                   <p className="font-body-sm text-body-sm text-on-surface">
-                    {profile.skills.length > 0 ? (
+                    {geminiMatch?.headline ? (
+                      geminiMatch.headline
+                    ) : profile.skills.length > 0 ? (
                       <>
                         Your profile skills (<strong className="font-semibold text-primary">{profile.skills.slice(0, 4).join(', ')}</strong>) align with{' '}
                         <strong className="font-semibold text-primary">{currentJob.company}</strong>&apos;s technical stack for{' '}
@@ -397,6 +502,11 @@ function JobSearchContent() {
                       </>
                     )}
                   </p>
+                  {geminiMatch?.locationFit && (
+                    <p className="font-body-sm text-body-sm text-on-surface-variant">
+                      {geminiMatch.locationFit}
+                    </p>
+                  )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     <div className="flex items-center gap-2 bg-surface-container-lowest p-2.5 rounded-xl">
                       <span className="material-symbols-outlined text-[18px] text-on-tertiary-container">
@@ -534,6 +644,121 @@ function JobSearchContent() {
             ) : null}
           </div>
         </div>
+
+        {/* Provider Health & Partner API Transparency Modal */}
+        {showProviderHealthModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/60 backdrop-blur-sm">
+            <div className="bg-surface-container-lowest max-w-3xl w-full max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-headline-sm text-headline-sm text-primary font-bold">
+                    Job Source Telemetry &amp; Partner API Status
+                  </h3>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    Real-time health, latency, UAE/GCC coverage, and partner API licensing status.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowProviderHealthModal(false)}
+                  className="text-on-surface-variant hover:text-primary"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div>
+                <h4 className="font-label-md text-label-md text-primary font-bold uppercase tracking-wider mb-2.5">
+                  Active &amp; Configurable Job Providers
+                </h4>
+                <div className="flex flex-col gap-2.5">
+                  {providerDetails.map((prov) => (
+                    <div
+                      key={prov.id}
+                      className="p-3.5 rounded-xl bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              prov.status === 'ok'
+                                ? 'bg-emerald-500'
+                                : prov.status === 'unconfigured'
+                                ? 'bg-slate-400'
+                                : 'bg-amber-500'
+                            }`}
+                          />
+                          <span className="font-label-md text-label-md text-primary font-bold">
+                            {prov.name}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-surface-container-high font-caption-caps text-caption-caps text-on-surface-variant">
+                            {prov.gccCoverage}
+                          </span>
+                        </div>
+                        {prov.note && (
+                          <span className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                            {prov.note}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 self-end sm:self-center">
+                        <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                          {prov.jobsReturned} jobs
+                        </span>
+                        {prov.latencyMs !== null && (
+                          <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                            {prov.latencyMs}ms
+                          </span>
+                        )}
+                        <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm uppercase">
+                          {prov.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {restrictedPlatforms.length > 0 && (
+                <div>
+                  <h4 className="font-label-md text-label-md text-primary font-bold uppercase tracking-wider mb-2.5">
+                    Partner-Restricted Platforms (Enterprise Approval Required)
+                  </h4>
+                  <div className="flex flex-col gap-2">
+                    {restrictedPlatforms.map((plat) => (
+                      <div
+                        key={plat.id}
+                        className="p-3 rounded-xl bg-surface-container-low/70 flex flex-col gap-1"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-label-sm text-label-sm text-primary font-bold">
+                            {plat.name}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-surface-container font-caption-caps text-caption-caps text-on-surface-variant">
+                            Partner Approval Required
+                          </span>
+                        </div>
+                        <p className="font-body-sm text-body-sm text-on-surface-variant">
+                          {plat.note}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowProviderHealthModal(false)}
+                  className="px-5 py-2 rounded-xl bg-primary-container text-on-primary font-label-md font-bold"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Paste Custom Job Modal */}
         {showAddJobModal && (

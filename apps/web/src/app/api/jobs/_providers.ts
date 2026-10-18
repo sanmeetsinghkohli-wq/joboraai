@@ -391,8 +391,8 @@ export async function fetchRemotiveJobs(
 
   try {
     const remotiveUrl = query
-      ? `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=10`
-      : 'https://remotive.com/api/remote-jobs?limit=10';
+      ? `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=25`
+      : 'https://remotive.com/api/remote-jobs?limit=25';
     const res = await fetchWithTimeout(remotiveUrl, { timeoutMs: 3800 }, fetchImpl);
     const latencyMs = Date.now() - start;
 
@@ -410,7 +410,7 @@ export async function fetchRemotiveJobs(
     }
 
     const data = await res.json();
-    const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 10) : [];
+    const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 20) : [];
     const jobs: NormalizedJobRecord[] = rawList
       .map((item: Record<string, unknown>): NormalizedJobRecord => {
         const title = String(item.title || '').trim();
@@ -513,7 +513,7 @@ export async function fetchArbeitnowJobs(fetchImpl: typeof fetch = fetch): Promi
     }
 
     const data = await res.json();
-    const rawList = Array.isArray(data?.data) ? data.data.slice(0, 8) : [];
+    const rawList = Array.isArray(data?.data) ? data.data.slice(0, 25) : [];
     const jobs: NormalizedJobRecord[] = rawList
       .map((item: Record<string, unknown>): NormalizedJobRecord => {
         const title = String(item.title || '').trim();
@@ -583,21 +583,23 @@ export async function fetchArbeitnowJobs(fetchImpl: typeof fetch = fetch): Promi
  * - Careem (Dubai, Amman)
  * - Tamara (Dubai, Riyadh)
  * - Deliveroo Middle East (Dubai, Abu Dhabi, Kuwait)
+ * - Binance (Dubai / UAE)
  * - Cloudflare (UAE, Saudi Arabia, Qatar, Oman)
- * - OKX (Dubai)
+ * - OKX MENA (Dubai)
  * - Elastic (Dubai, Saudi Arabia)
  * - Databricks (Dubai)
  * - MongoDB (Dubai / KSA)
  */
 const GCC_GREENHOUSE_BOARDS = [
-  { slug: 'careem', company: 'Careem', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 8 },
-  { slug: 'tamara', company: 'Tamara', defaultLocation: 'Riyadh, Saudi Arabia', maxRoles: 6 },
-  { slug: 'deliveroo', company: 'Deliveroo Middle East', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 5 },
-  { slug: 'cloudflare', company: 'Cloudflare', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 5 },
-  { slug: 'okx', company: 'OKX MENA', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 4 },
-  { slug: 'elastic', company: 'Elastic', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 3 },
-  { slug: 'databricks', company: 'Databricks', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 2 },
-  { slug: 'mongodb', company: 'MongoDB', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 2 },
+  { slug: 'careem', company: 'Careem', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 15 },
+  { slug: 'tamara', company: 'Tamara', defaultLocation: 'Riyadh, Saudi Arabia', maxRoles: 15 },
+  { slug: 'deliveroo', company: 'Deliveroo Middle East', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 15 },
+  { slug: 'binance', company: 'Binance UAE', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 15 },
+  { slug: 'cloudflare', company: 'Cloudflare', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 6 },
+  { slug: 'okx', company: 'OKX MENA', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 6 },
+  { slug: 'elastic', company: 'Elastic', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 5 },
+  { slug: 'databricks', company: 'Databricks', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 3 },
+  { slug: 'mongodb', company: 'MongoDB', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 3 },
 ];
 
 export async function fetchGreenhouseGccJobs(
@@ -763,8 +765,8 @@ export async function fetchJobicyJobs(
 
   try {
     const url = query
-      ? `https://jobicy.com/api/v2/remote-jobs?count=8&tag=${encodeURIComponent(query)}`
-      : 'https://jobicy.com/api/v2/remote-jobs?count=8';
+      ? `https://jobicy.com/api/v2/remote-jobs?count=25&tag=${encodeURIComponent(query)}`
+      : 'https://jobicy.com/api/v2/remote-jobs?count=25';
     const res = await fetchWithTimeout(url, { timeoutMs: 3800 }, fetchImpl);
     const latencyMs = Date.now() - start;
 
@@ -782,7 +784,7 @@ export async function fetchJobicyJobs(
     }
 
     const data = await res.json();
-    const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 8) : [];
+    const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 25) : [];
     const jobs: NormalizedJobRecord[] = rawList
       .map((item: Record<string, unknown>): NormalizedJobRecord => {
         const title = stripHtml(String(item.jobTitle || '')).trim();
@@ -877,7 +879,7 @@ export async function fetchHimalayasJobs(fetchImpl: typeof fetch = fetch): Promi
 
   try {
     const res = await fetchWithTimeout(
-      'https://himalayas.app/jobs/api?limit=8',
+      'https://himalayas.app/jobs/api?limit=20',
       { timeoutMs: 3800 },
       fetchImpl
     );
@@ -897,7 +899,7 @@ export async function fetchHimalayasJobs(fetchImpl: typeof fetch = fetch): Promi
     }
 
     const data = await res.json();
-    const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 8) : [];
+    const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 20) : [];
     const jobs: NormalizedJobRecord[] = rawList
       .map((item: Record<string, unknown>, idx: number): NormalizedJobRecord => {
         const title = String(item.title || '').trim();

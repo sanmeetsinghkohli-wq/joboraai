@@ -4,7 +4,7 @@
  * Supported Providers:
  * 1. Remotive (Public REST API — No Auth required, active)
  * 2. Arbeitnow (Public REST API — No Auth required, active)
- * 3. Greenhouse GCC & MENA Direct Employer Feeds (Public Official ATS JSON — Careem, Tamara, Deliveroo, Binance UAE — No Auth required, active)
+ * 3. Greenhouse GCC & MENA Direct Employer Feeds (Public Official ATS JSON — Careem, Tamara, Deliveroo, Cloudflare, OKX, Elastic, Databricks, MongoDB — No Auth required, active)
  * 4. Jobicy (Public REST API — No Auth required, active)
  * 5. Himalayas (Public REST API — No Auth required, active)
  * 6. JSearch / OpenWeb Ninja (RapidAPI / Direct REST — Requires JSEARCH_API_KEY, covers UAE/GCC/Global via Google for Jobs index)
@@ -53,6 +53,8 @@ export interface NormalizedJobRecord {
   company: string;
   companyLogo?: string | null;
   location: string;
+  city?: string;
+  country?: string;
   regionTag: 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'Remote' | 'Global';
   workMode: 'Remote' | 'Hybrid' | 'On-site';
   employmentType: string;
@@ -61,6 +63,7 @@ export interface NormalizedJobRecord {
   responsibilities: string[];
   skills: string[];
   postedAt: string;
+  postedTimestamp?: number;
   sourceUrl: string;
   applicationUrl: string;
   source: string;
@@ -81,7 +84,7 @@ export function stripHtml(html: string): string {
     .trim();
 }
 
-export function sanitizeExternalUrl(url: unknown, fallback: string): string {
+export function sanitizeExternalUrl(url: unknown, fallback = ''): string {
   if (typeof url !== 'string') return fallback;
   const trimmed = url.trim();
   if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
@@ -90,42 +93,155 @@ export function sanitizeExternalUrl(url: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * Infers the most accurate city, country, and display location from both the raw location field and job title.
+ * Fixes cases where an employer lists "Dubai, United Arab Emirates" as the default board location for a role
+ * explicitly titled "Business Development Manager - Abu Dhabi" or "Territory Account Executive, Qatar [Hybrid]".
+ */
+export function normalizeLocationAndRegion(
+  rawLocation: string,
+  title: string,
+  workMode: string
+): {
+  location: string;
+  city: string;
+  country: string;
+  regionTag: 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'Remote' | 'Global';
+} {
+  const combined = `${title} ${rawLocation}`.toLowerCase();
+  const locClean = (rawLocation || '').trim();
+
+  if (/\babu dhabi\b/.test(combined)) {
+    return {
+      location: 'Abu Dhabi, United Arab Emirates',
+      city: 'Abu Dhabi',
+      country: 'United Arab Emirates',
+      regionTag: 'UAE',
+    };
+  }
+  if (/\bsharjah\b/.test(combined)) {
+    return {
+      location: 'Sharjah, United Arab Emirates',
+      city: 'Sharjah',
+      country: 'United Arab Emirates',
+      regionTag: 'UAE',
+    };
+  }
+  if (/\bdubai\b/.test(combined)) {
+    return {
+      location: 'Dubai, United Arab Emirates',
+      city: 'Dubai',
+      country: 'United Arab Emirates',
+      regionTag: 'UAE',
+    };
+  }
+  if (/\b(uae|united arab emirates|emirati)\b/.test(combined)) {
+    return {
+      location:
+        locClean && !locClean.toLowerCase().includes('hybrid')
+          ? locClean
+          : 'United Arab Emirates',
+      city: 'Dubai / Abu Dhabi',
+      country: 'United Arab Emirates',
+      regionTag: 'UAE',
+    };
+  }
+  if (/\briyadh\b/.test(combined)) {
+    return {
+      location: 'Riyadh, Saudi Arabia',
+      city: 'Riyadh',
+      country: 'Saudi Arabia',
+      regionTag: 'Saudi Arabia',
+    };
+  }
+  if (/\bjeddah\b/.test(combined)) {
+    return {
+      location: 'Jeddah, Saudi Arabia',
+      city: 'Jeddah',
+      country: 'Saudi Arabia',
+      regionTag: 'Saudi Arabia',
+    };
+  }
+  if (/\b(saudi arabia|saudi|ksa)\b/.test(combined)) {
+    return {
+      location: 'Riyadh, Saudi Arabia',
+      city: 'Riyadh',
+      country: 'Saudi Arabia',
+      regionTag: 'Saudi Arabia',
+    };
+  }
+  if (/\b(doha|qatar)\b/.test(combined)) {
+    return {
+      location: 'Doha, Qatar',
+      city: 'Doha',
+      country: 'Qatar',
+      regionTag: 'Qatar',
+    };
+  }
+  if (/\b(kuwait)\b/.test(combined)) {
+    return {
+      location: 'Kuwait City, Kuwait',
+      city: 'Kuwait City',
+      country: 'Kuwait',
+      regionTag: 'GCC / MENA',
+    };
+  }
+  if (/\b(oman|muscat)\b/.test(combined)) {
+    return {
+      location: 'Muscat, Oman',
+      city: 'Muscat',
+      country: 'Oman',
+      regionTag: 'GCC / MENA',
+    };
+  }
+  if (/\b(bahrain|manama)\b/.test(combined)) {
+    return {
+      location: 'Manama, Bahrain',
+      city: 'Manama',
+      country: 'Bahrain',
+      regionTag: 'GCC / MENA',
+    };
+  }
+  if (/\b(amman|jordan)\b/.test(combined)) {
+    return {
+      location: 'Amman, Jordan',
+      city: 'Amman',
+      country: 'Jordan',
+      regionTag: 'GCC / MENA',
+    };
+  }
+  if (/\b(mena|gcc)\b/.test(combined)) {
+    return {
+      location: locClean || 'MENA / GCC Region',
+      city: 'GCC',
+      country: 'GCC / MENA',
+      regionTag: 'GCC / MENA',
+    };
+  }
+  if (locClean.toLowerCase().includes('remote') || workMode.toLowerCase() === 'remote') {
+    return {
+      location: locClean || 'Remote',
+      city: 'Remote',
+      country: locClean || 'Global',
+      regionTag: 'Remote',
+    };
+  }
+
+  const parts = locClean.split(',').map((p) => p.trim());
+  return {
+    location: locClean || 'Global',
+    city: parts[0] || 'Global',
+    country: parts[parts.length - 1] || 'Global',
+    regionTag: 'Global',
+  };
+}
+
 export function classifyRegionTag(
   location: string,
-  workMode: string
+  workMode: string,
+  title = ''
 ): 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'Remote' | 'Global' {
-  const loc = (location || '').toLowerCase();
-  if (
-    loc.includes('dubai') ||
-    loc.includes('abu dhabi') ||
-    loc.includes('sharjah') ||
-    loc.includes('united arab emirates') ||
-    loc.includes('uae')
-  ) {
-    return 'UAE';
-  }
-  if (loc.includes('riyadh') || loc.includes('jeddah') || loc.includes('saudi') || loc.includes('ksa')) {
-    return 'Saudi Arabia';
-  }
-  if (loc.includes('doha') || loc.includes('qatar')) {
-    return 'Qatar';
-  }
-  if (
-    loc.includes('bahrain') ||
-    loc.includes('kuwait') ||
-    loc.includes('oman') ||
-    loc.includes('amman') ||
-    loc.includes('jordan') ||
-    loc.includes('cairo') ||
-    loc.includes('mena') ||
-    loc.includes('gcc')
-  ) {
-    return 'GCC / MENA';
-  }
-  if (loc.includes('remote') || workMode.toLowerCase() === 'remote') {
-    return 'Remote';
-  }
-  return 'Global';
+  return normalizeLocationAndRegion(location, title, workMode).regionTag;
 }
 
 export function extractSkillsFromText(title: string, description: string, tags: string[] = []): string[] {
@@ -181,15 +297,55 @@ export function normalizeEmploymentType(raw: unknown): string {
   return 'Full-Time';
 }
 
+/**
+ * Correctly parses numeric Unix timestamps (seconds or milliseconds) as well as ISO 8601 strings.
+ * Prevents the `new Date("1792313716000")` Invalid Date bug in JavaScript.
+ */
+export function parseJobTimestamp(dateInput: unknown): Date | null {
+  if (dateInput === null || dateInput === undefined || dateInput === '') return null;
+  if (typeof dateInput === 'number') {
+    const ms = dateInput < 1e12 ? dateInput * 1000 : dateInput;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const str = String(dateInput).trim();
+  if (/^\d+$/.test(str)) {
+    const num = Number(str);
+    const ms = num < 1e12 ? num * 1000 : num;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const parsed = new Date(str);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function formatRelativeDate(dateInput: unknown): string {
-  if (!dateInput) return 'Recently';
-  const parsed = new Date(String(dateInput));
-  if (Number.isNaN(parsed.getTime())) return String(dateInput);
+  const parsed = parseJobTimestamp(dateInput);
+  if (!parsed) return 'Recently';
   const diffHours = Math.max(1, Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60)));
   if (diffHours < 24) return `${diffHours}h ago`;
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays <= 14) return `${diffDays}d ago`;
-  return parsed.toLocaleDateString();
+  if (diffDays <= 30) return `${diffDays}d ago`;
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+export function isJobExpiredOrMalformed(job: {
+  title?: string;
+  company?: string;
+  sourceUrl?: string;
+  applicationUrl?: string;
+  postedTimestamp?: number;
+}): boolean {
+  if (!job.title || job.title.trim().length < 2) return true;
+  if (!job.company || job.company.trim().length < 2) return true;
+  if (!job.sourceUrl || !job.sourceUrl.startsWith('http')) return true;
+  if (!job.applicationUrl || !job.applicationUrl.startsWith('http')) return true;
+  // Filter out listings older than 120 days if timestamp is known
+  if (job.postedTimestamp) {
+    const ageDays = (Date.now() - job.postedTimestamp) / (1000 * 60 * 60 * 24);
+    if (ageDays > 120) return true;
+  }
+  return false;
 }
 
 export async function fetchWithTimeout(
@@ -197,7 +353,7 @@ export async function fetchWithTimeout(
   options: RequestInit & { timeoutMs?: number } = {},
   fetchImpl: typeof fetch = fetch
 ): Promise<Response> {
-  const { timeoutMs = 4000, ...rest } = options;
+  const { timeoutMs = 4200, ...rest } = options;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -213,7 +369,8 @@ export interface AdapterResult {
 }
 
 /**
- * 1. Remotive Public Adapter (Preserved)
+ * 1. Remotive Public Adapter (Preserved & Hardened)
+ * Attribution: Links directly to Remotive job URL per Remotive API terms.
  */
 export async function fetchRemotiveJobs(
   query: string,
@@ -254,38 +411,45 @@ export async function fetchRemotiveJobs(
 
     const data = await res.json();
     const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 10) : [];
-    const jobs: NormalizedJobRecord[] = rawList.map((item: Record<string, unknown>) => {
-      const title = String(item.title || 'Software Engineer');
-      const company = String(item.company_name || 'Tech Partner');
-      const location = String(item.candidate_required_location || 'Remote');
-      const cleanDesc = stripHtml(String(item.description || '')).slice(0, 480);
-      const url = sanitizeExternalUrl(item.url, 'https://remotive.com');
-      const tags = Array.isArray(item.tags) ? (item.tags as string[]) : [];
+    const jobs: NormalizedJobRecord[] = rawList
+      .map((item: Record<string, unknown>): NormalizedJobRecord => {
+        const title = String(item.title || '').trim();
+        const company = String(item.company_name || '').trim();
+        const rawLoc = String(item.candidate_required_location || 'Remote');
+        const locMeta = normalizeLocationAndRegion(rawLoc, title, 'Remote');
+        const cleanDesc = stripHtml(String(item.description || '')).slice(0, 480);
+        const url = sanitizeExternalUrl(item.url);
+        const tags = Array.isArray(item.tags) ? (item.tags as string[]) : [];
+        const parsedDate = parseJobTimestamp(item.publication_date);
 
-      return {
-        id: `remotive-${item.id}`,
-        title,
-        company,
-        companyLogo: typeof item.company_logo === 'string' ? item.company_logo : null,
-        location,
-        regionTag: classifyRegionTag(location, 'Remote'),
-        workMode: 'Remote',
-        employmentType: normalizeEmploymentType(item.job_type),
-        salaryRange: String(item.salary || '').trim() || 'Salary Not Disclosed by Employer',
-        description: cleanDesc ? `${cleanDesc}...` : 'Remote opportunity via Remotive.',
-        responsibilities: [
-          `Deliver high-impact solutions as ${title} at ${company}.`,
-          'Collaborate asynchronously with distributed engineering and product teams.',
-          'Write clean, maintainable, well-tested production code and documentation.',
-        ],
-        skills: extractSkillsFromText(title, cleanDesc, tags),
-        postedAt: formatRelativeDate(item.publication_date),
-        sourceUrl: url,
-        applicationUrl: url,
-        source: 'Remotive',
-        recruiterName: `${company} Talent Team`,
-      };
-    });
+        return {
+          id: `remotive-${item.id}`,
+          title,
+          company,
+          companyLogo: typeof item.company_logo === 'string' ? item.company_logo : null,
+          location: locMeta.location,
+          city: locMeta.city,
+          country: locMeta.country,
+          regionTag: locMeta.regionTag,
+          workMode: 'Remote',
+          employmentType: normalizeEmploymentType(item.job_type),
+          salaryRange: String(item.salary || '').trim() || 'Salary Not Disclosed by Employer',
+          description: cleanDesc ? `${cleanDesc}...` : 'Remote opportunity via Remotive.',
+          responsibilities: [
+            `Deliver high-impact solutions as ${title} at ${company}.`,
+            'Collaborate asynchronously with distributed engineering and product teams.',
+            'Write clean, maintainable, well-tested production code and documentation.',
+          ],
+          skills: extractSkillsFromText(title, cleanDesc, tags),
+          postedAt: formatRelativeDate(item.publication_date),
+          postedTimestamp: parsedDate?.getTime(),
+          sourceUrl: url,
+          applicationUrl: url,
+          source: 'Remotive',
+          recruiterName: `${company} Talent Team`,
+        };
+      })
+      .filter((j: NormalizedJobRecord) => !isJobExpiredOrMalformed(j));
 
     return {
       jobs,
@@ -311,7 +475,7 @@ export async function fetchRemotiveJobs(
 }
 
 /**
- * 2. Arbeitnow Public Adapter (Preserved)
+ * 2. Arbeitnow Public Adapter (Preserved & Fixed Unix Timestamp Parsing)
  */
 export async function fetchArbeitnowJobs(fetchImpl: typeof fetch = fetch): Promise<AdapterResult> {
   const start = Date.now();
@@ -350,38 +514,45 @@ export async function fetchArbeitnowJobs(fetchImpl: typeof fetch = fetch): Promi
 
     const data = await res.json();
     const rawList = Array.isArray(data?.data) ? data.data.slice(0, 8) : [];
-    const jobs: NormalizedJobRecord[] = rawList.map((item: Record<string, unknown>) => {
-      const title = String(item.title || 'Specialist Role');
-      const company = String(item.company_name || 'Global Employer');
-      const location = String(item.location || 'Remote / Europe');
-      const workMode: 'Remote' | 'Hybrid' = item.remote ? 'Remote' : 'Hybrid';
-      const cleanDesc = stripHtml(String(item.description || '')).slice(0, 480);
-      const url = sanitizeExternalUrl(item.url, 'https://www.arbeitnow.com');
-      const tags = Array.isArray(item.tags) ? (item.tags as string[]) : [];
+    const jobs: NormalizedJobRecord[] = rawList
+      .map((item: Record<string, unknown>): NormalizedJobRecord => {
+        const title = String(item.title || '').trim();
+        const company = String(item.company_name || '').trim();
+        const rawLoc = String(item.location || 'Remote / Europe');
+        const workMode: 'Remote' | 'Hybrid' = item.remote ? 'Remote' : 'Hybrid';
+        const locMeta = normalizeLocationAndRegion(rawLoc, title, workMode);
+        const cleanDesc = stripHtml(String(item.description || '')).slice(0, 480);
+        const url = sanitizeExternalUrl(item.url);
+        const tags = Array.isArray(item.tags) ? (item.tags as string[]) : [];
+        const parsedDate = parseJobTimestamp(item.created_at);
 
-      return {
-        id: `arbeitnow-${item.slug}`,
-        title,
-        company,
-        companyLogo: null,
-        location,
-        regionTag: classifyRegionTag(location, workMode),
-        workMode,
-        employmentType: 'Full-Time',
-        salaryRange: 'Salary Not Disclosed by Employer',
-        description: cleanDesc ? `${cleanDesc}...` : 'Live opportunity via Arbeitnow.',
-        responsibilities: [
-          `Own core deliverables for ${title} at ${company}.`,
-          'Partner with cross-functional stakeholders to ship measurable outcomes.',
-        ],
-        skills: extractSkillsFromText(title, cleanDesc, tags),
-        postedAt: formatRelativeDate(item.created_at ? Number(item.created_at) * 1000 : null),
-        sourceUrl: url,
-        applicationUrl: url,
-        source: 'Arbeitnow',
-        recruiterName: `${company} Recruiting`,
-      };
-    });
+        return {
+          id: `arbeitnow-${item.slug}`,
+          title,
+          company,
+          companyLogo: null,
+          location: locMeta.location,
+          city: locMeta.city,
+          country: locMeta.country,
+          regionTag: locMeta.regionTag,
+          workMode,
+          employmentType: 'Full-Time',
+          salaryRange: 'Salary Not Disclosed by Employer',
+          description: cleanDesc ? `${cleanDesc}...` : 'Live opportunity via Arbeitnow.',
+          responsibilities: [
+            `Own core deliverables for ${title} at ${company}.`,
+            'Partner with cross-functional stakeholders to ship measurable outcomes.',
+          ],
+          skills: extractSkillsFromText(title, cleanDesc, tags),
+          postedAt: formatRelativeDate(item.created_at),
+          postedTimestamp: parsedDate?.getTime(),
+          sourceUrl: url,
+          applicationUrl: url,
+          source: 'Arbeitnow',
+          recruiterName: `${company} Recruiting`,
+        };
+      })
+      .filter((j: NormalizedJobRecord) => !isJobExpiredOrMalformed(j));
 
     return {
       jobs,
@@ -407,14 +578,26 @@ export async function fetchArbeitnowJobs(fetchImpl: typeof fetch = fetch): Promi
 }
 
 /**
- * 3. Official Greenhouse Public ATS Feeds for UAE & GCC Employers
- * Fetches live UAE, Saudi Arabia, and MENA roles directly from official Greenhouse public JSON boards
- * (Careem Dubai, Tamara Dubai/Riyadh, Deliveroo UAE, Binance UAE).
+ * 3. Official Greenhouse Public ATS Feeds for UAE, GCC & Global Tech Employers
+ * Pulls live, verifiable roles directly from official Greenhouse public JSON boards:
+ * - Careem (Dubai, Amman)
+ * - Tamara (Dubai, Riyadh)
+ * - Deliveroo Middle East (Dubai, Abu Dhabi, Kuwait)
+ * - Cloudflare (UAE, Saudi Arabia, Qatar, Oman)
+ * - OKX (Dubai)
+ * - Elastic (Dubai, Saudi Arabia)
+ * - Databricks (Dubai)
+ * - MongoDB (Dubai / KSA)
  */
 const GCC_GREENHOUSE_BOARDS = [
-  { slug: 'careem', company: 'Careem', defaultLocation: 'Dubai, United Arab Emirates' },
-  { slug: 'tamara', company: 'Tamara', defaultLocation: 'Riyadh, Saudi Arabia / Dubai, UAE' },
-  { slug: 'deliveroo', company: 'Deliveroo Middle East', defaultLocation: 'Dubai, United Arab Emirates' },
+  { slug: 'careem', company: 'Careem', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 8 },
+  { slug: 'tamara', company: 'Tamara', defaultLocation: 'Riyadh, Saudi Arabia', maxRoles: 6 },
+  { slug: 'deliveroo', company: 'Deliveroo Middle East', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 5 },
+  { slug: 'cloudflare', company: 'Cloudflare', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 5 },
+  { slug: 'okx', company: 'OKX MENA', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 4 },
+  { slug: 'elastic', company: 'Elastic', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 3 },
+  { slug: 'databricks', company: 'Databricks', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 2 },
+  { slug: 'mongodb', company: 'MongoDB', defaultLocation: 'Dubai, United Arab Emirates', maxRoles: 2 },
 ];
 
 export async function fetchGreenhouseGccJobs(
@@ -423,7 +606,7 @@ export async function fetchGreenhouseGccJobs(
   const start = Date.now();
   const baseHealth: ProviderHealthDetail = {
     id: 'greenhouse_gcc',
-    name: 'UAE & GCC Employer ATS (Careem, Tamara, Deliveroo)',
+    name: 'UAE & GCC Employer ATS (Careem, Tamara, Deliveroo, Cloudflare, OKX, Elastic, Databricks, MongoDB)',
     status: 'degraded',
     latencyMs: null,
     jobsReturned: 0,
@@ -436,70 +619,87 @@ export async function fetchGreenhouseGccJobs(
   try {
     const boardPromises = GCC_GREENHOUSE_BOARDS.map(async (board) => {
       const url = `https://boards-api.greenhouse.io/v1/boards/${board.slug}/jobs?content=true`;
-      const res = await fetchWithTimeout(url, { timeoutMs: 4200 }, fetchImpl);
+      const res = await fetchWithTimeout(url, { timeoutMs: 4500 }, fetchImpl);
       if (!res.ok) return [];
       const data = await res.json();
       const rawJobs = Array.isArray(data?.jobs) ? data.jobs : [];
 
-      // Prioritize UAE, Saudi Arabia, Qatar, Jordan, and MENA locations
+      // Filter strictly for genuine UAE, Saudi Arabia, Qatar, Kuwait, Oman, Bahrain, or Jordan roles
+      // Use word-boundary regex to prevent false positives like "Romania" matching "oman"
+      const gccRegex =
+        /\b(dubai|abu dhabi|sharjah|uae|united arab emirates|emirati|riyadh|jeddah|saudi arabia|saudi|ksa|qatar|doha|kuwait|oman|muscat|bahrain|manama|amman|jordan)\b/i;
+
       const gccFiltered = rawJobs.filter((j: Record<string, unknown>) => {
         const locObj = j.location as { name?: string } | undefined;
-        const locName = String(locObj?.name || '').toLowerCase();
-        return (
-          locName.includes('dubai') ||
-          locName.includes('abu dhabi') ||
-          locName.includes('sharjah') ||
-          locName.includes('emirates') ||
-          locName.includes('uae') ||
-          locName.includes('riyadh') ||
-          locName.includes('jeddah') ||
-          locName.includes('saudi') ||
-          locName.includes('qatar') ||
-          locName.includes('doha') ||
-          locName.includes('amman') ||
-          locName.includes('jordan')
-        );
+        const locName = String(locObj?.name || '');
+        const titleStr = String(j.title || '');
+        const combined = `${titleStr} ${locName}`;
+        // Exclude roles explicitly located in Europe/UK/US that merely mention EMEA/Africa in title
+        if (/\b(london|paris|romania|bucharest|poland|dublin|amsterdam)\b/i.test(locName)) {
+          return false;
+        }
+        return gccRegex.test(combined);
       });
 
-      return gccFiltered.slice(0, 6).map((item: Record<string, unknown>): NormalizedJobRecord => {
-        const title = String(item.title || 'GCC Role');
-        const locObj = item.location as { name?: string } | undefined;
-        const location = String(locObj?.name || board.defaultLocation);
-        const cleanDesc = stripHtml(String(item.content || '')).slice(0, 480);
-        const url = sanitizeExternalUrl(
-          item.absolute_url,
-          `https://boards.greenhouse.io/${board.slug}`
-        );
-        const workMode: 'Remote' | 'Hybrid' | 'On-site' = location.toLowerCase().includes('remote')
-          ? 'Remote'
-          : 'Hybrid';
-
-        return {
-          id: `gh-${board.slug}-${item.id}`,
-          title,
-          company: board.company,
-          companyLogo: null,
-          location,
-          regionTag: classifyRegionTag(location, workMode),
-          workMode,
-          employmentType: 'Full-Time',
-          salaryRange: 'Salary Not Disclosed by Employer',
-          description: cleanDesc
-            ? `${cleanDesc}...`
-            : `Official ${board.company} opportunity in ${location}.`,
-          responsibilities: [
-            `Drive high-impact execution as ${title} at ${board.company} (${location}).`,
-            'Collaborate with regional product, engineering, and commercial teams across the GCC.',
-            'Deliver measurable customer and operational outcomes in a high-growth MENA market.',
-          ],
-          skills: extractSkillsFromText(title, cleanDesc),
-          postedAt: formatRelativeDate(item.updated_at),
-          sourceUrl: url,
-          applicationUrl: url,
-          source: `Greenhouse (${board.company})`,
-          recruiterName: `${board.company} Talent Acquisition`,
-        };
+      // Prioritize engineering, product, data, design, and commercial diversity before slicing
+      const sorted = [...gccFiltered].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+        const aTech = /\b(engineer|developer|scientist|product|designer|architect|security|data|ai)\b/i.test(
+          String(a.title || '')
+        )
+          ? 0
+          : 1;
+        const bTech = /\b(engineer|developer|scientist|product|designer|architect|security|data|ai)\b/i.test(
+          String(b.title || '')
+        )
+          ? 0
+          : 1;
+        return aTech - bTech;
       });
+
+      return sorted
+        .slice(0, board.maxRoles)
+        .map((item: Record<string, unknown>): NormalizedJobRecord => {
+          const title = String(item.title || '').trim();
+          const locObj = item.location as { name?: string } | undefined;
+          const rawLoc = String(locObj?.name || board.defaultLocation);
+          const workMode: 'Remote' | 'Hybrid' | 'On-site' = rawLoc.toLowerCase().includes('remote')
+            ? 'Remote'
+            : 'Hybrid';
+          const locMeta = normalizeLocationAndRegion(rawLoc, title, workMode);
+          const cleanDesc = stripHtml(String(item.content || '')).slice(0, 480);
+          const url = sanitizeExternalUrl(item.absolute_url);
+          const parsedDate = parseJobTimestamp(item.updated_at);
+
+          return {
+            id: `gh-${board.slug}-${item.id}`,
+            title,
+            company: board.company,
+            companyLogo: null,
+            location: locMeta.location,
+            city: locMeta.city,
+            country: locMeta.country,
+            regionTag: locMeta.regionTag,
+            workMode,
+            employmentType: 'Full-Time',
+            salaryRange: 'Salary Not Disclosed by Employer',
+            description: cleanDesc
+              ? `${cleanDesc}...`
+              : `Official ${board.company} opportunity in ${locMeta.location}.`,
+            responsibilities: [
+              `Drive high-impact execution as ${title} at ${board.company} (${locMeta.location}).`,
+              'Collaborate with regional product, engineering, and commercial teams across the GCC.',
+              'Deliver measurable customer and operational outcomes in a high-growth MENA market.',
+            ],
+            skills: extractSkillsFromText(title, cleanDesc),
+            postedAt: formatRelativeDate(item.updated_at),
+            postedTimestamp: parsedDate?.getTime(),
+            sourceUrl: url,
+            applicationUrl: url,
+            source: `Greenhouse (${board.company})`,
+            recruiterName: `${board.company} Talent Acquisition`,
+          };
+        })
+        .filter((j: NormalizedJobRecord) => !isJobExpiredOrMalformed(j));
     });
 
     const settled = await Promise.allSettled(boardPromises);
@@ -583,50 +783,57 @@ export async function fetchJobicyJobs(
 
     const data = await res.json();
     const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 8) : [];
-    const jobs: NormalizedJobRecord[] = rawList.map((item: Record<string, unknown>) => {
-      const title = stripHtml(String(item.jobTitle || 'Remote Specialist'));
-      const company = stripHtml(String(item.companyName || 'Global Partner'));
-      const location = String(item.jobGeo || 'Remote (Worldwide)');
-      const cleanDesc = stripHtml(String(item.jobExcerpt || item.jobDescription || '')).slice(0, 480);
-      const jobUrl = sanitizeExternalUrl(item.url, 'https://jobicy.com/jobs');
+    const jobs: NormalizedJobRecord[] = rawList
+      .map((item: Record<string, unknown>): NormalizedJobRecord => {
+        const title = stripHtml(String(item.jobTitle || '')).trim();
+        const company = stripHtml(String(item.companyName || '')).trim();
+        const rawLoc = String(item.jobGeo || 'Remote (Worldwide)');
+        const locMeta = normalizeLocationAndRegion(rawLoc, title, 'Remote');
+        const cleanDesc = stripHtml(String(item.jobExcerpt || item.jobDescription || '')).slice(0, 480);
+        const jobUrl = sanitizeExternalUrl(item.url);
+        const parsedDate = parseJobTimestamp(item.pubDate);
 
-      let salaryRange = 'Salary Not Disclosed by Employer';
-      if (item.annualSalaryMin && item.annualSalaryMax) {
-        const currency = String(item.salaryCurrency || 'USD');
-        salaryRange = `${currency} ${Number(item.annualSalaryMin).toLocaleString()} – ${Number(
-          item.annualSalaryMax
-        ).toLocaleString()}`;
-      }
+        let salaryRange = 'Salary Not Disclosed by Employer';
+        if (item.annualSalaryMin && item.annualSalaryMax) {
+          const currency = String(item.salaryCurrency || 'USD');
+          salaryRange = `${currency} ${Number(item.annualSalaryMin).toLocaleString()} – ${Number(
+            item.annualSalaryMax
+          ).toLocaleString()}`;
+        }
 
-      const industryTags = Array.isArray(item.jobIndustry)
-        ? (item.jobIndustry as string[]).map((t) => stripHtml(t))
-        : [];
+        const industryTags = Array.isArray(item.jobIndustry)
+          ? (item.jobIndustry as string[]).map((t) => stripHtml(t))
+          : [];
 
-      return {
-        id: `jobicy-${item.id}`,
-        title,
-        company,
-        companyLogo: typeof item.companyLogo === 'string' ? item.companyLogo : null,
-        location,
-        regionTag: classifyRegionTag(location, 'Remote'),
-        workMode: 'Remote',
-        employmentType: normalizeEmploymentType(
-          Array.isArray(item.jobType) ? item.jobType[0] : item.jobType
-        ),
-        salaryRange,
-        description: cleanDesc ? `${cleanDesc}...` : `Remote role at ${company} via Jobicy.`,
-        responsibilities: [
-          `Lead execution for ${title} at ${company}.`,
-          'Collaborate with distributed global teams across timezones.',
-        ],
-        skills: extractSkillsFromText(title, cleanDesc, industryTags),
-        postedAt: formatRelativeDate(item.pubDate),
-        sourceUrl: jobUrl,
-        applicationUrl: jobUrl,
-        source: 'Jobicy',
-        recruiterName: `${company} Hiring Team`,
-      };
-    });
+        return {
+          id: `jobicy-${item.id}`,
+          title,
+          company,
+          companyLogo: typeof item.companyLogo === 'string' ? item.companyLogo : null,
+          location: locMeta.location,
+          city: locMeta.city,
+          country: locMeta.country,
+          regionTag: locMeta.regionTag,
+          workMode: 'Remote',
+          employmentType: normalizeEmploymentType(
+            Array.isArray(item.jobType) ? item.jobType[0] : item.jobType
+          ),
+          salaryRange,
+          description: cleanDesc ? `${cleanDesc}...` : `Remote role at ${company} via Jobicy.`,
+          responsibilities: [
+            `Lead execution for ${title} at ${company}.`,
+            'Collaborate with distributed global teams across timezones.',
+          ],
+          skills: extractSkillsFromText(title, cleanDesc, industryTags),
+          postedAt: formatRelativeDate(item.pubDate),
+          postedTimestamp: parsedDate?.getTime(),
+          sourceUrl: jobUrl,
+          applicationUrl: jobUrl,
+          source: 'Jobicy',
+          recruiterName: `${company} Hiring Team`,
+        };
+      })
+      .filter((j: NormalizedJobRecord) => !isJobExpiredOrMalformed(j));
 
     return {
       jobs,
@@ -652,7 +859,7 @@ export async function fetchJobicyJobs(
 }
 
 /**
- * 5. Himalayas Public Remote Jobs API Adapter
+ * 5. Himalayas Public Remote Jobs API Adapter (Fixed Unix Timestamp Parsing)
  */
 export async function fetchHimalayasJobs(fetchImpl: typeof fetch = fetch): Promise<AdapterResult> {
   const start = Date.now();
@@ -691,52 +898,56 @@ export async function fetchHimalayasJobs(fetchImpl: typeof fetch = fetch): Promi
 
     const data = await res.json();
     const rawList = Array.isArray(data?.jobs) ? data.jobs.slice(0, 8) : [];
-    const jobs: NormalizedJobRecord[] = rawList.map((item: Record<string, unknown>, idx: number) => {
-      const title = String(item.title || 'Remote Engineer');
-      const company = String(item.companyName || 'Himalayas Partner');
-      const locRestr = Array.isArray(item.locationRestrictions)
-        ? (item.locationRestrictions as string[]).join(', ')
-        : '';
-      const location = locRestr || 'Remote (Global / EMEA)';
-      const cleanDesc = stripHtml(String(item.excerpt || item.description || '')).slice(0, 480);
-      const appUrl = sanitizeExternalUrl(
-        item.applicationLink || item.guid,
-        'https://himalayas.app/jobs'
-      );
+    const jobs: NormalizedJobRecord[] = rawList
+      .map((item: Record<string, unknown>, idx: number): NormalizedJobRecord => {
+        const title = String(item.title || '').trim();
+        const company = String(item.companyName || '').trim();
+        const locRestr = Array.isArray(item.locationRestrictions)
+          ? (item.locationRestrictions as string[]).join(', ')
+          : '';
+        const rawLoc = locRestr || 'Remote (Global / EMEA)';
+        const locMeta = normalizeLocationAndRegion(rawLoc, title, 'Remote');
+        const cleanDesc = stripHtml(String(item.excerpt || item.description || '')).slice(0, 480);
+        const appUrl = sanitizeExternalUrl(item.applicationLink || item.guid);
+        const parsedDate = parseJobTimestamp(item.pubDate);
 
-      let salaryRange = 'Salary Not Disclosed by Employer';
-      if (item.minSalary && item.maxSalary) {
-        const currency = String(item.currency || 'USD');
-        salaryRange = `${currency} ${Number(item.minSalary).toLocaleString()} – ${Number(
-          item.maxSalary
-        ).toLocaleString()}`;
-      }
+        let salaryRange = 'Salary Not Disclosed by Employer';
+        if (item.minSalary && item.maxSalary) {
+          const currency = String(item.currency || 'USD');
+          salaryRange = `${currency} ${Number(item.minSalary).toLocaleString()} – ${Number(
+            item.maxSalary
+          ).toLocaleString()}`;
+        }
 
-      const categories = Array.isArray(item.categories) ? (item.categories as string[]) : [];
+        const categories = Array.isArray(item.categories) ? (item.categories as string[]) : [];
 
-      return {
-        id: `himalayas-${item.guid ? String(item.guid).split('/').pop() : idx}`,
-        title,
-        company,
-        companyLogo: typeof item.companyLogo === 'string' ? item.companyLogo : null,
-        location,
-        regionTag: classifyRegionTag(location, 'Remote'),
-        workMode: 'Remote',
-        employmentType: normalizeEmploymentType(item.employmentType),
-        salaryRange,
-        description: cleanDesc ? `${cleanDesc}...` : `Remote role at ${company} via Himalayas.`,
-        responsibilities: [
-          `Deliver key milestones as ${title} at ${company}.`,
-          'Operate with high autonomy in a remote-first engineering culture.',
-        ],
-        skills: extractSkillsFromText(title, cleanDesc, categories),
-        postedAt: formatRelativeDate(item.pubDate ? Number(item.pubDate) * 1000 : null),
-        sourceUrl: appUrl,
-        applicationUrl: appUrl,
-        source: 'Himalayas',
-        recruiterName: `${company} Talent Team`,
-      };
-    });
+        return {
+          id: `himalayas-${item.guid ? String(item.guid).split('/').pop() : idx}`,
+          title,
+          company,
+          companyLogo: typeof item.companyLogo === 'string' ? item.companyLogo : null,
+          location: locMeta.location,
+          city: locMeta.city,
+          country: locMeta.country,
+          regionTag: locMeta.regionTag,
+          workMode: 'Remote',
+          employmentType: normalizeEmploymentType(item.employmentType),
+          salaryRange,
+          description: cleanDesc ? `${cleanDesc}...` : `Remote role at ${company} via Himalayas.`,
+          responsibilities: [
+            `Deliver key milestones as ${title} at ${company}.`,
+            'Operate with high autonomy in a remote-first engineering culture.',
+          ],
+          skills: extractSkillsFromText(title, cleanDesc, categories),
+          postedAt: formatRelativeDate(item.pubDate),
+          postedTimestamp: parsedDate?.getTime(),
+          sourceUrl: appUrl,
+          applicationUrl: appUrl,
+          source: 'Himalayas',
+          recruiterName: `${company} Talent Team`,
+        };
+      })
+      .filter((j: NormalizedJobRecord) => !isJobExpiredOrMalformed(j));
 
     return {
       jobs,
@@ -861,57 +1072,61 @@ export async function fetchJSearchJobs(
     const payload = await res.json();
     const rawList = Array.isArray(payload?.data) ? payload.data.slice(0, 10) : [];
 
-    const jobs: NormalizedJobRecord[] = rawList.map((item: Record<string, unknown>, idx: number) => {
-      const title = String(item.job_title || 'Specialist');
-      const company = String(item.employer_name || 'GCC Employer');
-      const city = String(item.job_city || '');
-      const country = String(item.job_country || 'AE');
-      const location = [city, country].filter(Boolean).join(', ') || 'Dubai, UAE';
-      const isRemote = Boolean(item.job_is_remote);
-      const workMode: 'Remote' | 'Hybrid' | 'On-site' = isRemote ? 'Remote' : 'On-site';
-      const cleanDesc = stripHtml(String(item.job_description || '')).slice(0, 480);
-      const applyUrl = sanitizeExternalUrl(
-        item.job_apply_link || item.job_google_link,
-        'https://www.google.com/search?q=jobs+in+dubai'
-      );
+    const jobs: NormalizedJobRecord[] = rawList
+      .map((item: Record<string, unknown>, idx: number): NormalizedJobRecord => {
+        const title = String(item.job_title || '').trim();
+        const company = String(item.employer_name || '').trim();
+        const city = String(item.job_city || '');
+        const country = String(item.job_country || 'AE');
+        const rawLoc = [city, country].filter(Boolean).join(', ') || 'Dubai, UAE';
+        const isRemote = Boolean(item.job_is_remote);
+        const workMode: 'Remote' | 'Hybrid' | 'On-site' = isRemote ? 'Remote' : 'On-site';
+        const locMeta = normalizeLocationAndRegion(rawLoc, title, workMode);
+        const cleanDesc = stripHtml(String(item.job_description || '')).slice(0, 480);
+        const applyUrl = sanitizeExternalUrl(item.job_apply_link || item.job_google_link);
+        const parsedDate = parseJobTimestamp(item.job_posted_at_datetime_utc);
 
-      let salaryRange = 'Salary Not Disclosed by Employer';
-      if (item.job_min_salary && item.job_max_salary) {
-        const currency = String(item.job_salary_currency || 'AED');
-        salaryRange = `${currency} ${Number(item.job_min_salary).toLocaleString()} – ${Number(
-          item.job_max_salary
-        ).toLocaleString()}`;
-      }
+        let salaryRange = 'Salary Not Disclosed by Employer';
+        if (item.job_min_salary && item.job_max_salary) {
+          const currency = String(item.job_salary_currency || 'AED');
+          salaryRange = `${currency} ${Number(item.job_min_salary).toLocaleString()} – ${Number(
+            item.job_max_salary
+          ).toLocaleString()}`;
+        }
 
-      const publisher = String(item.job_publisher || 'JSearch');
+        const publisher = String(item.job_publisher || 'JSearch');
 
-      return {
-        id: `jsearch-${item.job_id || idx}`,
-        title,
-        company,
-        companyLogo: typeof item.employer_logo === 'string' ? item.employer_logo : null,
-        location,
-        regionTag: classifyRegionTag(location, workMode),
-        workMode,
-        employmentType: normalizeEmploymentType(item.job_employment_type),
-        salaryRange,
-        description: cleanDesc ? `${cleanDesc}...` : `${title} at ${company} (${location}).`,
-        responsibilities: [
-          `Execute key deliverables for ${title} at ${company} in ${location}.`,
-          'Collaborate with regional stakeholders to deliver measurable business impact.',
-        ],
-        skills: extractSkillsFromText(
+        return {
+          id: `jsearch-${item.job_id || idx}`,
           title,
-          cleanDesc,
-          Array.isArray(item.job_required_skills) ? (item.job_required_skills as string[]) : []
-        ),
-        postedAt: formatRelativeDate(item.job_posted_at_datetime_utc),
-        sourceUrl: applyUrl,
-        applicationUrl: applyUrl,
-        source: `JSearch (${publisher})`,
-        recruiterName: `${company} Recruitment`,
-      };
-    });
+          company,
+          companyLogo: typeof item.employer_logo === 'string' ? item.employer_logo : null,
+          location: locMeta.location,
+          city: locMeta.city,
+          country: locMeta.country,
+          regionTag: locMeta.regionTag,
+          workMode,
+          employmentType: normalizeEmploymentType(item.job_employment_type),
+          salaryRange,
+          description: cleanDesc ? `${cleanDesc}...` : `${title} at ${company} (${locMeta.location}).`,
+          responsibilities: [
+            `Execute key deliverables for ${title} at ${company} in ${locMeta.location}.`,
+            'Collaborate with regional stakeholders to deliver measurable business impact.',
+          ],
+          skills: extractSkillsFromText(
+            title,
+            cleanDesc,
+            Array.isArray(item.job_required_skills) ? (item.job_required_skills as string[]) : []
+          ),
+          postedAt: formatRelativeDate(item.job_posted_at_datetime_utc),
+          postedTimestamp: parsedDate?.getTime(),
+          sourceUrl: applyUrl,
+          applicationUrl: applyUrl,
+          source: `JSearch (${publisher})`,
+          recruiterName: `${company} Recruitment`,
+        };
+      })
+      .filter((j: NormalizedJobRecord) => !isJobExpiredOrMalformed(j));
 
     return {
       jobs,
@@ -1018,48 +1233,56 @@ export async function fetchAdzunaJobs(
     const data = await res.json();
     const rawList = Array.isArray(data?.results) ? data.results.slice(0, 8) : [];
 
-    const jobs: NormalizedJobRecord[] = rawList.map((item: Record<string, unknown>, idx: number) => {
-      const title = stripHtml(String(item.title || 'Engineer'));
-      const compObj = item.company as { display_name?: string } | undefined;
-      const company = stripHtml(String(compObj?.display_name || 'Adzuna Employer'));
-      const locObj = item.location as { display_name?: string } | undefined;
-      const location = String(locObj?.display_name || normalizedCountry.toUpperCase());
-      const cleanDesc = stripHtml(String(item.description || '')).slice(0, 480);
-      const redirectUrl = sanitizeExternalUrl(item.redirect_url, 'https://www.adzuna.co.uk');
+    const jobs: NormalizedJobRecord[] = rawList
+      .map((item: Record<string, unknown>, idx: number): NormalizedJobRecord => {
+        const title = stripHtml(String(item.title || '')).trim();
+        const compObj = item.company as { display_name?: string } | undefined;
+        const company = stripHtml(String(compObj?.display_name || '')).trim();
+        const locObj = item.location as { display_name?: string } | undefined;
+        const rawLoc = String(locObj?.display_name || normalizedCountry.toUpperCase());
+        const cleanDesc = stripHtml(String(item.description || '')).slice(0, 480);
+        const workMode = cleanDesc.toLowerCase().includes('remote') ? 'Remote' : 'Hybrid';
+        const locMeta = normalizeLocationAndRegion(rawLoc, title, workMode);
+        const redirectUrl = sanitizeExternalUrl(item.redirect_url);
+        const parsedDate = parseJobTimestamp(item.created);
 
-      let salaryRange = 'Salary Not Disclosed by Employer';
-      if (item.salary_min && item.salary_max) {
-        salaryRange = `${Math.round(Number(item.salary_min)).toLocaleString()} – ${Math.round(
-          Number(item.salary_max)
-        ).toLocaleString()} (${normalizedCountry.toUpperCase()})`;
-      }
+        let salaryRange = 'Salary Not Disclosed by Employer';
+        if (item.salary_min && item.salary_max) {
+          salaryRange = `${Math.round(Number(item.salary_min)).toLocaleString()} – ${Math.round(
+            Number(item.salary_max)
+          ).toLocaleString()} (${normalizedCountry.toUpperCase()})`;
+        }
 
-      const catObj = item.category as { label?: string } | undefined;
-      const catTags = catObj?.label ? [catObj.label] : [];
+        const catObj = item.category as { label?: string } | undefined;
+        const catTags = catObj?.label ? [catObj.label] : [];
 
-      return {
-        id: `adzuna-${item.id || idx}`,
-        title,
-        company,
-        companyLogo: null,
-        location,
-        regionTag: classifyRegionTag(location, 'Hybrid'),
-        workMode: cleanDesc.toLowerCase().includes('remote') ? 'Remote' : 'Hybrid',
-        employmentType: normalizeEmploymentType(item.contract_time || item.contract_type),
-        salaryRange,
-        description: cleanDesc ? `${cleanDesc}...` : `${title} at ${company} via Adzuna.`,
-        responsibilities: [
-          `Deliver core milestones for ${title} at ${company}.`,
-          'Collaborate with engineering and product teams.',
-        ],
-        skills: extractSkillsFromText(title, cleanDesc, catTags),
-        postedAt: formatRelativeDate(item.created),
-        sourceUrl: redirectUrl,
-        applicationUrl: redirectUrl,
-        source: 'Adzuna',
-        recruiterName: `${company} Hiring Team`,
-      };
-    });
+        return {
+          id: `adzuna-${item.id || idx}`,
+          title,
+          company,
+          companyLogo: null,
+          location: locMeta.location,
+          city: locMeta.city,
+          country: locMeta.country,
+          regionTag: locMeta.regionTag,
+          workMode,
+          employmentType: normalizeEmploymentType(item.contract_time || item.contract_type),
+          salaryRange,
+          description: cleanDesc ? `${cleanDesc}...` : `${title} at ${company} via Adzuna.`,
+          responsibilities: [
+            `Deliver core milestones for ${title} at ${company}.`,
+            'Collaborate with engineering and product teams.',
+          ],
+          skills: extractSkillsFromText(title, cleanDesc, catTags),
+          postedAt: formatRelativeDate(item.created),
+          postedTimestamp: parsedDate?.getTime(),
+          sourceUrl: redirectUrl,
+          applicationUrl: redirectUrl,
+          source: 'Adzuna',
+          recruiterName: `${company} Hiring Team`,
+        };
+      })
+      .filter((j: NormalizedJobRecord) => !isJobExpiredOrMalformed(j));
 
     return {
       jobs,
@@ -1099,7 +1322,7 @@ export function getRestrictedPartnerStatus(): ProviderHealthDetail[] {
       requiresCredentials: true,
       configured: false,
       gccCoverage: 'Partner Restricted',
-      note: 'LinkedIn does not provide a public Job Search API (Job Posting API is outbound-only for approved ATS partners).',
+      note: 'Unavailable: LinkedIn does not provide a public Job Search API (Job Posting API is outbound-only for approved ATS partners).',
     },
     {
       id: 'indeed_partner',
@@ -1111,7 +1334,7 @@ export function getRestrictedPartnerStatus(): ProviderHealthDetail[] {
       requiresCredentials: true,
       configured: false,
       gccCoverage: 'Partner Restricted',
-      note: 'Indeed deprecated its public Job Search API; active Job Sync APIs require B2B partner approval.',
+      note: 'Unavailable: Indeed deprecated its public Job Search API; active Job Sync APIs require B2B partner approval.',
     },
     {
       id: 'glassdoor_partner',
@@ -1123,7 +1346,7 @@ export function getRestrictedPartnerStatus(): ProviderHealthDetail[] {
       requiresCredentials: true,
       configured: false,
       gccCoverage: 'Partner Restricted',
-      note: 'Public Glassdoor API is discontinued (HTTP 410); restricted to enterprise contracts.',
+      note: 'Unavailable: Public Glassdoor API is discontinued (HTTP 410); restricted to enterprise contracts.',
     },
     {
       id: 'bayt_partner',
@@ -1135,7 +1358,7 @@ export function getRestrictedPartnerStatus(): ProviderHealthDetail[] {
       requiresCredentials: true,
       configured: false,
       gccCoverage: 'Partner Restricted',
-      note: 'Requires Bayt enterprise recruitment / Talentera ATS partner agreement.',
+      note: 'Unavailable: Requires Bayt enterprise recruitment / Talentera ATS partner agreement.',
     },
     {
       id: 'naukrigulf_partner',
@@ -1147,7 +1370,7 @@ export function getRestrictedPartnerStatus(): ProviderHealthDetail[] {
       requiresCredentials: true,
       configured: false,
       gccCoverage: 'Partner Restricted',
-      note: 'No self-serve public job search API; requires commercial Info Edge recruiter licensing.',
+      note: 'Unavailable: No self-serve public job search API; requires commercial Info Edge recruiter licensing.',
     },
   ];
 }

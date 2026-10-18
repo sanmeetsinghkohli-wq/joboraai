@@ -198,8 +198,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       .then((r) => r.json())
       .then((data) => {
         if (data?.user) {
+          const serverProfile = data.profile || {};
+          if (Array.isArray(serverProfile.savedJobIds) && serverProfile.savedJobIds.length > 0) {
+            setSavedJobIds(serverProfile.savedJobIds);
+            try {
+              localStorage.setItem('jobora_saved_jobs', JSON.stringify(serverProfile.savedJobIds));
+            } catch {}
+          }
           setProfile((prev) => {
-            const serverProfile = data.profile || {};
             const updated: LiveUserProfile = {
               ...prev,
               ...serverProfile,
@@ -366,6 +372,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem('jobora_saved_jobs', JSON.stringify(next));
       } catch {}
+      fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ savedJobIds: next }),
+      }).catch(() => {});
       return next;
     });
   }, []);

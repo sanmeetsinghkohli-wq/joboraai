@@ -441,6 +441,42 @@ async function runApiAndAuthAudit() {
       Array.isArray(matchData?.match?.tailoringTips),
     `Engine=${matchData?.match?.engine}, matchScore=${matchData?.match?.matchScore}%`
   );
+
+  // 21. 100% Genuine Provider Origin Check (Zero Curated/Demo Jobs or .example.com Emails)
+  const nonLiveJobs = (fullJobsData.jobs || []).filter(
+    (j) =>
+      j.source === 'Curated' ||
+      (j.recruiterEmail && j.recruiterEmail.includes('example.com')) ||
+      /^\d{10,}$/.test(String(j.postedAt || ''))
+  );
+  record(
+    'Data Quality Audit: 100% of default listings originate from genuine live APIs with valid formatted dates',
+    nonLiveJobs.length === 0 && fullJobsData.fallbackActive === false,
+    `Total genuine jobs=${fullJobsData.jobs?.length}, synthetic/malformed=${nonLiveJobs.length}`
+  );
+
+  // 22. Multi-User Profile, Saved Jobs & Resume Isolation (User B cannot access User A resume or saved jobs)
+  const saveJobsA = await fetch(`${BASE_URL}/api/onboarding`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookieA },
+    body: JSON.stringify({ savedJobIds: [sampleJob?.id || 'gh-careem-1'] }),
+  });
+  const meBRes = await fetch(`${BASE_URL}/api/auth/me`, {
+    headers: { Cookie: cookieB },
+  });
+  const meBData = await meBRes.json();
+  const hijackResumeRes = await fetch(`${BASE_URL}/api/resumes/${resumeId}/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookieB },
+    body: JSON.stringify({ rawText: 'Hijack attempt' }),
+  });
+  record(
+    'Security & Isolation: User B cannot read User A savedJobIds or analyze User A resume (HTTP 403)',
+    saveJobsA.status === 200 &&
+      (!meBData?.profile?.savedJobIds || meBData.profile.savedJobIds.length === 0) &&
+      hijackResumeRes.status === 403,
+    `User B savedJobIds=${meBData?.profile?.savedJobIds?.length || 0}, Resume hijack status=${hijackResumeRes.status}`
+  );
 }
 
 function ksaResOk(status, data) {

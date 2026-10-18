@@ -79,8 +79,8 @@ async function runProviderTests() {
     `status=${adzuna?.status}, coverage=${adzuna?.gccCoverage}`
   );
 
-  // 3. UAE / GCC Location Prioritization Filters (Dubai, Abu Dhabi, Saudi Arabia, Remote)
-  for (const loc of ['UAE', 'Dubai', 'Saudi Arabia', 'Remote']) {
+  // 3. UAE / GCC Location Prioritization Filters (UAE, Dubai, Abu Dhabi, Saudi Arabia, Qatar, Remote)
+  for (const loc of ['UAE', 'Dubai', 'Abu Dhabi', 'Saudi Arabia', 'Qatar', 'Remote']) {
     const locRes = await fetch(`${BASE_URL}/api/jobs?location=${encodeURIComponent(loc)}`);
     const locData = await locRes.json();
     record(

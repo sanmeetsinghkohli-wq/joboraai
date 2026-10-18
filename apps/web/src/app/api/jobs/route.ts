@@ -12,6 +12,7 @@ import {
   fetchJSearchJobs,
   fetchRemotiveJobs,
   getRestrictedPartnerStatus,
+  normalizeLocationAndRegion,
   sanitizeExternalUrl,
 } from './_providers';
 
@@ -24,6 +25,7 @@ interface JobsCacheEntry {
   jobs: LiveJobRecord[];
   providerStatus: Record<string, 'ok' | 'degraded'>;
   providerDetails: ProviderHealthDetail[];
+  fallbackActive: boolean;
 }
 
 declare global {
@@ -41,103 +43,34 @@ const jobsCacheStore: Map<string, JobsCacheEntry> =
 
 const CACHE_TTL_MS = 3 * 60 * 1000; // 3-minute server-side cache per query/location filter
 
-const CURATED_JOBS: LiveJobRecord[] = [
+/**
+ * Emergency offline fallback records — ONLY returned if ALL live external providers fail or time out.
+ * Never mixed into normal live provider responses.
+ */
+const EMERGENCY_FALLBACK_JOBS: LiveJobRecord[] = [
   {
-    id: 'jobora-stripe-staff-product',
-    title: 'Staff Product Designer, Financial Infrastructure',
-    company: 'Stripe',
-    location: 'San Francisco, CA',
-    regionTag: 'Global',
+    id: 'fallback-careem-dubai',
+    title: 'Senior Product Designer (Design Systems)',
+    company: 'Careem',
+    location: 'Dubai, United Arab Emirates',
+    city: 'Dubai',
+    country: 'United Arab Emirates',
+    regionTag: 'UAE',
     workMode: 'Hybrid',
     employmentType: 'Full-Time',
-    salaryRange: '$210k – $265k',
+    salaryRange: 'Salary Not Disclosed by Employer',
     description:
-      'Architect the core financial interfaces that power global internet commerce. Partner with engineering and product leadership to build composable design systems, merchant onboarding workflows, and AI-assisted treasury dashboards.',
+      'Emergency offline fallback listing: Lead Careem’s regional design system across Super App mobility, fintech, and delivery experiences in Dubai.',
     responsibilities: [
-      'Lead end-to-end product design across Global Payouts and Treasury surfaces.',
-      'Define multi-platform design tokens and interactive system primitives in Figma and React.',
-      'Partner directly with Staff Engineers to ship high-craft, low-latency merchant experiences.',
-      'Run customer synthesis sessions with enterprise CFOs and developer teams.',
+      'Architect multi-platform design tokens and accessible UI primitives.',
+      'Partner with product and engineering teams in Dubai and across the MENA region.',
     ],
-    skills: ['Design Systems', 'Figma', 'Product Strategy', 'Fintech', 'Prototyping', 'React'],
-    postedAt: '2h ago',
-    sourceUrl: 'https://stripe.com/jobs',
-    applicationUrl: 'https://stripe.com/jobs',
-    source: 'Curated',
-    recruiterName: 'Elena Rostova',
-    recruiterEmail: 'elena.rostova@stripe-talent.example.com',
-  },
-  {
-    id: 'jobora-anthropic-ai-eng',
-    title: 'Full-Stack Software Engineer, Claude Product',
-    company: 'Anthropic',
-    location: 'San Francisco, CA',
-    regionTag: 'Global',
-    workMode: 'Hybrid',
-    employmentType: 'Full-Time',
-    salaryRange: '$230k – $310k',
-    description:
-      'Build next-generation human-AI collaboration interfaces for Claude. You will own real-time streaming workspaces, artifact rendering pipelines, and enterprise knowledge integrations.',
-    responsibilities: [
-      'Architect resilient Next.js, TypeScript, and Python backend services for high-throughput LLM streaming.',
-      'Design intuitive human-in-the-loop evaluation and prompt engineering workflows.',
-      'Optimize end-to-end latency and client state synchronization across millions of sessions.',
-    ],
-    skills: ['TypeScript', 'React', 'Next.js', 'Python', 'LLM Systems', 'Distributed Systems'],
-    postedAt: '4h ago',
-    sourceUrl: 'https://www.anthropic.com/careers',
-    applicationUrl: 'https://www.anthropic.com/careers',
-    source: 'Curated',
-    recruiterName: 'Marcus Vance',
-    recruiterEmail: 'm.vance@anthropic-careers.example.com',
-  },
-  {
-    id: 'jobora-linear-frontend',
-    title: 'Senior Frontend Engineer, Core Experience',
-    company: 'Linear',
-    location: 'Remote (Global)',
-    regionTag: 'Remote',
-    workMode: 'Remote',
-    employmentType: 'Full-Time',
-    salaryRange: '$185k – $235k',
-    description:
-      'Craft hyper-responsive, keyboard-first software planning tools with local-first sync engines. We care deeply about 60fps interactions, sub-50ms transitions, and editorial precision.',
-    responsibilities: [
-      'Extend Linear’s custom client-side sync engine and local GraphQL storage layer.',
-      'Build accessible, high-density UI components with zero layout shift.',
-      'Collaborate closely with designers to refine micro-interactions and command menus.',
-    ],
-    skills: ['TypeScript', 'React', 'GraphQL', 'Local-First Sync', 'CSS Architecture', 'Performance'],
-    postedAt: '6h ago',
-    sourceUrl: 'https://linear.app/careers',
-    applicationUrl: 'https://linear.app/careers',
-    source: 'Curated',
-    recruiterName: 'Clara Lindqvist',
-    recruiterEmail: 'clara@linear-talent.example.com',
-  },
-  {
-    id: 'jobora-vercel-dx',
-    title: 'Staff Solutions & AI SDK Engineer',
-    company: 'Vercel',
-    location: 'Remote (US & EU)',
-    regionTag: 'Remote',
-    workMode: 'Remote',
-    employmentType: 'Full-Time',
-    salaryRange: '$195k – $245k',
-    description:
-      'Empower developers building with Next.js App Router and the Vercel AI SDK. Lead reference architectures, streaming UI primitives, and enterprise cloud migrations.',
-    responsibilities: [
-      'Develop production-grade Next.js and AI SDK templates used by hundreds of thousands of engineers.',
-      'Debug edge-network caching, serverless cold-starts, and streaming RSC pipelines.',
-      'Work with product teams to shape the roadmap of AI cloud primitives.',
-    ],
-    skills: ['Next.js', 'TypeScript', 'Node.js', 'Vercel AI SDK', 'Edge Compute', 'React Server Components'],
-    postedAt: '1d ago',
-    sourceUrl: 'https://vercel.com/careers',
-    applicationUrl: 'https://vercel.com/careers',
-    source: 'Curated',
-    recruiterName: 'Devon Brooks',
-    recruiterEmail: 'dbrooks@vercel-talent.example.com',
+    skills: ['Design Systems', 'Figma', 'Product Design', 'Prototyping', 'Mobile UX'],
+    postedAt: 'Offline Fallback',
+    sourceUrl: 'https://boards.greenhouse.io/careem',
+    applicationUrl: 'https://boards.greenhouse.io/careem',
+    source: 'Offline Fallback (All Live Providers Unreachable)',
+    recruiterName: 'Careem Talent Acquisition',
   },
 ];
 
@@ -145,12 +78,15 @@ function matchesLocationFilter(job: LiveJobRecord, locationFilter: string): bool
   if (!locationFilter) return true;
   const f = locationFilter.toLowerCase().trim();
   const loc = (job.location || '').toLowerCase();
+  const city = (job.city || '').toLowerCase();
+  const country = (job.country || '').toLowerCase();
   const region = (job.regionTag || '').toLowerCase();
   const mode = (job.workMode || '').toLowerCase();
 
   if (f === 'uae' || f === 'united arab emirates') {
     return (
       region === 'uae' ||
+      country === 'united arab emirates' ||
       loc.includes('dubai') ||
       loc.includes('abu dhabi') ||
       loc.includes('sharjah') ||
@@ -167,16 +103,44 @@ function matchesLocationFilter(job: LiveJobRecord, locationFilter: string): bool
     );
   }
   if (f === 'saudi arabia' || f === 'saudi' || f === 'riyadh') {
-    return region === 'saudi arabia' || loc.includes('saudi') || loc.includes('riyadh') || loc.includes('jeddah');
+    return (
+      region === 'saudi arabia' ||
+      country === 'saudi arabia' ||
+      city === 'riyadh' ||
+      loc.includes('saudi') ||
+      loc.includes('riyadh') ||
+      loc.includes('jeddah')
+    );
   }
   if (f === 'qatar' || f === 'doha') {
-    return region === 'qatar' || loc.includes('qatar') || loc.includes('doha');
+    return (
+      region === 'qatar' ||
+      country === 'qatar' ||
+      city === 'doha' ||
+      loc.includes('qatar') ||
+      loc.includes('doha')
+    );
+  }
+  if (f === 'dubai') {
+    return city === 'dubai' || loc.includes('dubai');
+  }
+  if (f === 'abu dhabi') {
+    return city === 'abu dhabi' || loc.includes('abu dhabi');
+  }
+  if (f === 'sharjah') {
+    return city === 'sharjah' || loc.includes('sharjah');
   }
   if (f === 'remote') {
     return mode === 'remote' || region === 'remote' || loc.includes('remote');
   }
 
-  return loc.includes(f) || mode.includes(f) || region.includes(f);
+  return (
+    loc.includes(f) ||
+    city.includes(f) ||
+    country.includes(f) ||
+    mode.includes(f) ||
+    region.includes(f)
+  );
 }
 
 export async function GET(req: NextRequest) {
@@ -200,6 +164,7 @@ export async function GET(req: NextRequest) {
       total: mergedCached.length,
       syncedAt: new Date(cached.timestamp).toISOString(),
       cached: true,
+      fallbackActive: cached.fallbackActive,
       providerStatus: cached.providerStatus,
       providerDetails: cached.providerDetails,
       restrictedPlatforms: getRestrictedPartnerStatus(),
@@ -235,7 +200,7 @@ export async function GET(req: NextRequest) {
     adzunaRes.health,
   ];
 
-  // Backward-compatible providerStatus dictionary for existing 39-check suite + UI
+  // Backward-compatible providerStatus dictionary
   const providerStatus: Record<string, 'ok' | 'degraded'> = {
     remotive: remotiveRes.health.status === 'ok' ? 'ok' : 'degraded',
     arbeitnow: arbeitnowRes.health.status === 'ok' ? 'ok' : 'degraded',
@@ -246,17 +211,21 @@ export async function GET(req: NextRequest) {
     adzuna: adzunaRes.health.status === 'ok' ? 'ok' : 'degraded',
   };
 
-  // Order prioritizes UAE/GCC direct employer feeds & JSearch first, followed by Remotive, Arbeitnow, Jobicy, Himalayas, Adzuna, and Curated
-  const combined = deduplicateJobs([
-    ...customJobsStore,
+  // Combine ONLY genuine live provider listings (plus any user-submitted custom jobs)
+  const liveProviderJobs = [
     ...greenhouseRes.jobs,
     ...jsearchRes.jobs,
-    ...CURATED_JOBS,
     ...remotiveRes.jobs,
     ...arbeitnowRes.jobs,
     ...jobicyRes.jobs,
     ...himalayasRes.jobs,
     ...adzunaRes.jobs,
+  ];
+
+  const fallbackActive = liveProviderJobs.length === 0;
+  const combined = deduplicateJobs([
+    ...customJobsStore,
+    ...(fallbackActive ? EMERGENCY_FALLBACK_JOBS : liveProviderJobs),
   ]);
 
   const filtered = combined.filter((job) => {
@@ -277,6 +246,7 @@ export async function GET(req: NextRequest) {
     jobs: filtered,
     providerStatus,
     providerDetails,
+    fallbackActive,
   });
 
   return NextResponse.json({
@@ -284,6 +254,7 @@ export async function GET(req: NextRequest) {
     total: filtered.length,
     syncedAt: new Date().toISOString(),
     cached: false,
+    fallbackActive,
     providerStatus,
     providerDetails,
     restrictedPlatforms: getRestrictedPartnerStatus(),
@@ -303,16 +274,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const location = String(body.location || 'Dubai, United Arab Emirates').trim();
+    const rawLocation = String(body.location || 'Dubai, United Arab Emirates').trim();
     const workMode: 'Remote' | 'Hybrid' | 'On-site' = body.workMode || 'Hybrid';
-    const sourceUrl = sanitizeExternalUrl(body.sourceUrl, 'https://www.linkedin.com/jobs');
+    const locMeta = normalizeLocationAndRegion(rawLocation, title, workMode);
+    const sourceUrl = sanitizeExternalUrl(body.sourceUrl, 'https://boards.greenhouse.io/careem');
 
     const newJob: LiveJobRecord = {
       id: `custom-${Date.now()}`,
       title,
       company,
-      location,
-      regionTag: classifyRegionTag(location, workMode),
+      location: locMeta.location,
+      city: locMeta.city,
+      country: locMeta.country,
+      regionTag: classifyRegionTag(locMeta.location, workMode, title),
       workMode,
       employmentType: String(body.employmentType || 'Full-Time').trim(),
       salaryRange: String(body.salaryRange || 'Salary Not Disclosed by Employer').trim(),
@@ -328,13 +302,12 @@ export async function POST(req: NextRequest) {
           ? body.skills
           : ['Strategy', 'Execution', 'Cross-functional Leadership'],
       postedAt: 'Just added',
+      postedTimestamp: Date.now(),
       sourceUrl,
       applicationUrl: sourceUrl,
-      source: 'Custom',
+      source: 'User Custom Job',
       recruiterName: String(body.recruiterName || `${company} Hiring Team`).trim(),
-      recruiterEmail: String(
-        body.recruiterEmail || `careers@${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`
-      ).trim(),
+      recruiterEmail: body.recruiterEmail ? String(body.recruiterEmail).trim() : undefined,
     };
     customJobsStore.unshift(newJob);
     jobsCacheStore.clear();

@@ -56,13 +56,58 @@ export default function DashboardPage() {
   };
 
   const topJobs = jobs.slice(0, 4);
+  const topJob = jobs.length > 0 ? jobs[0] : null;
+  const hasUploadedResume = Boolean(profile.resumeFileName);
+
+  // Compute honest Next Best Action based on real user state
+  let nextActionTitle = '';
+  let nextActionDescription = '';
+  let nextActionCta = '';
+  let nextActionHref = '';
+  let nextActionIcon = '';
+
+  if (!hasUploadedResume) {
+    nextActionTitle = 'Upload your Master CV to calibrate ATS matching';
+    nextActionDescription = jobs.length > 0
+      ? `Our AI extracts your verified skills and benchmarks them against ${jobs.length} live UAE and global opportunities.`
+      : 'Our AI extracts your verified skills and benchmarks them against verified career opportunities.';
+    nextActionCta = 'Upload CV in Studio';
+    nextActionHref = '/cv-studio';
+    nextActionIcon = 'upload_file';
+  } else if (savedJobIds.length > 0 && activeApplicationsCount === 0) {
+    nextActionTitle = `Stage your application package for ${savedJobIds.length} saved role${savedJobIds.length > 1 ? 's' : ''}`;
+    nextActionDescription = 'You have bookmarked opportunities. Tailor your resume bullets and draft custom cover letters before submitting.';
+    nextActionCta = 'Review Saved Roles';
+    nextActionHref = '/saved-jobs';
+    nextActionIcon = 'bookmark';
+  } else if (upcomingInterview) {
+    nextActionTitle = `Prepare for your scheduled interview at ${upcomingInterview.company}`;
+    nextActionDescription = `Practice mock technical and STAR-method behavioral rounds for ${upcomingInterview.title}.`;
+    nextActionCta = 'Open Interview Studio';
+    nextActionHref = '/interview';
+    nextActionIcon = 'psychology_alt';
+  } else if (topJob) {
+    nextActionTitle = `Tailor your CV for ${topJob.title} at ${topJob.company}`;
+    nextActionDescription = `High fit alignment in ${topJob.location} (${topJob.source}). Review keyword recommendations before applying.`;
+    nextActionCta = 'Tailor CV & Review Fit';
+    nextActionHref = `/cv-studio?jobId=${encodeURIComponent(topJob.id)}`;
+    nextActionIcon = 'auto_fix_high';
+  } else {
+    nextActionTitle = 'Explore live opportunities matching your profile';
+    nextActionDescription = jobs.length > 0
+      ? `Browse ${jobs.length} verified roles across Dubai, Abu Dhabi, Saudi Arabia, and remote engineering hubs.`
+      : 'Browse verified live roles across Dubai, Abu Dhabi, Saudi Arabia, and remote engineering hubs.';
+    nextActionCta = 'Browse Live Jobs';
+    nextActionHref = '/jobs';
+    nextActionIcon = 'travel_explore';
+  }
 
   return (
     <StitchShell activeNav="home-dashboard">
       <div className="flex flex-col w-full">
         {/* Top Greeting & Key Stat Tiles (Editorial Asymmetry) */}
         <section className="mb-space-xl">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-caption-caps text-caption-caps uppercase tracking-wider text-secondary font-bold">
@@ -73,7 +118,7 @@ export default function DashboardPage() {
                   {profile.location || Intl.DateTimeFormat().resolvedOptions().timeZone}
                 </span>
               </div>
-              <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">
+              <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight font-serif font-bold">
                 Good {timeOfDay}
                 {displayFirstName ? `, ${displayFirstName}` : ''}{' '}
                 <span className="inline-block transform hover:rotate-12 transition-transform origin-bottom-right cursor-default">
@@ -81,11 +126,11 @@ export default function DashboardPage() {
                 </span>
               </h1>
               <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                Here is an overview of your active applications and curated live opportunities today.
+                Here is your actionable career pipeline, active applications, and curated live opportunities.
               </p>
             </div>
             {/* Live Pipeline Readiness Pill */}
-            <div className="flex items-center gap-3 bg-surface-container-low px-4 py-2.5 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-3 bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-2xl shadow-xs">
               <div className="relative flex items-center justify-center">
                 <span className="absolute inline-flex h-3 w-3 animate-ping rounded-full bg-secondary-container opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
@@ -94,10 +139,42 @@ export default function DashboardPage() {
                 <span className="font-label-sm text-label-sm text-primary font-bold">
                   Target Role: {profile.targetRole || 'Software & AI Engineering'}
                 </span>
-                <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                <span className="font-caption-caps text-caption-caps text-on-surface-variant font-mono">
                   {jobs.length} Live Postings Synced
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Personalized Next-Action Hero Banner */}
+          <div className="mb-6 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#351B32] via-[#41223E] to-[#351B32] text-white shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="absolute -right-12 -top-12 w-48 h-48 bg-[#E76F72]/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="relative z-10 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-[#E76F72] shrink-0">
+                <span className="material-symbols-outlined text-[26px]">{nextActionIcon}</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-caption-caps text-[10px] uppercase tracking-widest text-[#E76F72] bg-white/10 px-2 py-0.5 rounded-full font-bold">
+                    Recommended Next Action
+                  </span>
+                </div>
+                <h2 className="font-headline-sm text-lg sm:text-xl font-bold leading-snug">
+                  {nextActionTitle}
+                </h2>
+                <p className="font-body-sm text-white/80 text-sm mt-1 max-w-2xl">
+                  {nextActionDescription}
+                </p>
+              </div>
+            </div>
+            <div className="relative z-10 flex items-center gap-3 shrink-0 self-start md:self-center">
+              <Link
+                href={nextActionHref}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E76F72] text-white font-bold text-sm hover:bg-[#d85f62] shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+              >
+                <span>{nextActionCta}</span>
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </Link>
             </div>
           </div>
 
@@ -106,62 +183,62 @@ export default function DashboardPage() {
             {/* Applications Metric */}
             <Link
               href="/applications"
-              className="md:col-span-4 bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all duration-200"
+              className="md:col-span-4 bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all duration-200 border border-[#EDE5E1]"
             >
               <div className="flex items-start justify-between">
                 <div className="w-11 h-11 rounded-xl bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
                   <span className="material-symbols-outlined text-[22px]">send</span>
                 </div>
-                <span className="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-tertiary-container bg-tertiary-fixed px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-tertiary-container bg-tertiary-fixed px-2.5 py-1 rounded-full font-bold">
                   <span className="material-symbols-outlined text-[14px]">trending_up</span>Live Pipeline
                 </span>
               </div>
               <div className="mt-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="font-display-hero text-headline-lg font-headline-lg text-primary leading-none">
+                  <span className="font-display-hero text-headline-lg font-headline-lg text-primary leading-none font-bold">
                     {activeApplicationsCount}
                   </span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">Active Submissions</span>
+                  <span className="font-body-sm text-body-sm text-on-surface-variant font-medium">Active Submissions</span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">
                   {activeApplicationsCount === 0
-                    ? 'Click any job below to tailor your CV & apply'
-                    : `${applications.filter((a) => a.status === 'applied').length} awaiting review`}
+                    ? 'No applications sent yet — click any job below to tailor and apply'
+                    : `${applications.filter((a) => a.status === 'applied').length} awaiting review, ${applications.filter((a) => a.status === 'interview').length} in interview`}
                 </p>
               </div>
             </Link>
 
-            {/* Interviews Metric */}
+            {/* Interviews Metric (Honest State) */}
             <Link
               href="/interview"
-              className="md:col-span-4 bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all duration-200"
+              className="md:col-span-4 bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all duration-200 border border-[#EDE5E1]"
             >
               <div className="flex items-start justify-between">
                 <div className="w-11 h-11 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
                   <span className="material-symbols-outlined text-[22px]">calendar_month</span>
                 </div>
-                <span className="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-secondary-container bg-secondary-fixed-dim/40 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-secondary-container bg-secondary-fixed-dim/40 px-2.5 py-1 rounded-full font-bold">
                   <span className="material-symbols-outlined text-[14px]">event</span>
-                  {interviewCount > 0 ? 'Active stage' : 'Prep Studio'}
+                  {interviewCount > 0 ? 'Active Rounds' : 'On-Demand Prep'}
                 </span>
               </div>
               <div className="mt-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="font-display-hero text-headline-lg font-headline-lg text-primary leading-none">
+                  <span className="font-display-hero text-headline-lg font-headline-lg text-primary leading-none font-bold">
                     {interviewCount}
                   </span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">Scheduled Calls</span>
+                  <span className="font-body-sm text-body-sm text-on-surface-variant font-medium">Scheduled Calls</span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">
                   {upcomingInterview
                     ? `${upcomingInterview.company} (${upcomingInterview.title})`
-                    : 'Practice AI mock technical & behavioral rounds'}
+                    : '0 scheduled calls — Practice mock technical & STAR rounds anytime'}
                 </p>
               </div>
             </Link>
 
             {/* Profile Completion Ring Card */}
-            <div className="md:col-span-4 bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex items-center justify-between gap-4 group hover:shadow-md transition-all duration-200">
+            <div className="md:col-span-4 bg-surface-container-lowest rounded-2xl p-6 shadow-sm flex items-center justify-between gap-4 group hover:shadow-md transition-all duration-200 border border-[#EDE5E1]">
               <div className="flex flex-col justify-between h-full">
                 <div>
                   <span className="font-caption-caps text-caption-caps uppercase tracking-wider text-on-surface-variant font-bold">
@@ -478,43 +555,44 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Upcoming Interview Card Highlight */}
+            {/* Interview Readiness / Scheduled Call Card */}
             <div className="bg-gradient-to-br from-primary-container to-primary text-on-primary rounded-2xl p-6 shadow-md relative overflow-hidden">
               <div className="absolute -right-8 -top-8 w-32 h-32 bg-secondary-container/20 rounded-full blur-2xl pointer-events-none"></div>
               <div className="flex items-center justify-between mb-4">
                 <span className="font-caption-caps text-caption-caps uppercase tracking-wider text-secondary-fixed bg-secondary-fixed-dim/20 px-2.5 py-0.5 rounded-full">
-                  Interview Readiness
+                  {upcomingInterview ? 'Scheduled Interview' : 'Interview Simulator'}
                 </span>
                 <span className="flex items-center gap-1 font-label-sm text-label-sm text-on-primary/80">
-                  <span className="material-symbols-outlined text-[16px]">videocam</span>Online
+                  <span className="material-symbols-outlined text-[16px]">videocam</span>
+                  {upcomingInterview ? 'Confirmed' : 'On-Demand'}
                 </span>
               </div>
               <h4 className="font-headline-sm text-headline-sm text-on-primary font-bold">
                 {upcomingInterview
-                  ? upcomingInterview.title
-                  : topJobs[0]?.title || profile.targetRole || 'Technical Interview Simulation'}
+                  ? `${upcomingInterview.title} • ${upcomingInterview.company}`
+                  : `Prep for ${profile.targetRole || 'Target Role'}`}
               </h4>
               <p className="font-body-sm text-body-sm text-on-primary/80 mt-0.5">
                 {upcomingInterview
-                  ? `${upcomingInterview.company} • Scheduled Round`
-                  : `${topJobs[0]?.company || 'Live Role'} • Round 1: Coding & Systems`}
+                  ? (upcomingInterview.nextAction || 'Interview round scheduled')
+                  : '0 scheduled calls. Practice technical questions & STAR responses anytime.'}
               </p>
               <div className="my-5 p-3.5 rounded-xl bg-surface/10 backdrop-blur-md flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-on-primary/10 flex items-center justify-center text-on-primary">
-                    <span className="material-symbols-outlined text-[18px]">schedule</span>
+                    <span className="material-symbols-outlined text-[18px]">psychology</span>
                   </div>
                   <div>
                     <span className="font-label-md text-label-md text-on-primary block leading-tight font-bold">
-                      {upcomingInterview ? upcomingInterview.nextAction : 'Ready On-Demand'}
+                      {upcomingInterview ? 'Next Round Preparation' : 'STAR Method Rubric'}
                     </span>
                     <span className="font-caption-caps text-caption-caps text-on-primary/70">
-                      STAR &amp; System Design Rubric
+                      Real-time audio &amp; text simulation
                     </span>
                   </div>
                 </div>
                 <span className="font-caption-caps text-caption-caps bg-secondary px-2 py-0.5 rounded text-on-secondary font-bold">
-                  Live AI
+                  AI Practice
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -523,7 +601,7 @@ export default function DashboardPage() {
                   href="/interview"
                 >
                   <span className="material-symbols-outlined text-[18px]">video_call</span>
-                  <span>Start Practice Session</span>
+                  <span>{upcomingInterview ? 'Open Interview Room' : 'Start Mock Session'}</span>
                 </Link>
                 <button
                   onClick={() => router.push('/interview')}

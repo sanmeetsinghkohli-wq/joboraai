@@ -171,81 +171,144 @@ export default function AICopilotPage() {
             </div>
 
             {/* Messages Container */}
-            <div className="flex flex-col gap-4 max-h-[540px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-5 max-h-[560px] overflow-y-auto pr-1">
               {messages.map((m) => (
                 <div
                   key={m.id}
-                  className={`p-4 rounded-2xl flex flex-col gap-3 ${
+                  className={`p-4 sm:p-5 rounded-2xl flex flex-col gap-3 transition-all ${
                     m.role === 'user'
-                      ? 'bg-primary-container text-on-primary self-end max-w-xl'
-                      : 'bg-surface-container-low text-on-surface w-full'
+                      ? 'bg-primary text-on-primary self-end max-w-2xl shadow-sm border border-primary/20'
+                      : 'bg-surface-container-lowest text-on-surface border border-outline-variant/30 w-full shadow-xs'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="font-label-sm text-label-sm font-bold flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[16px]">
-                        {m.role === 'user' ? 'person' : 'auto_awesome'}
+                  {/* Message Header */}
+                  <div className="flex items-center justify-between gap-4 pb-2 border-b border-current/10">
+                    <span className="font-label-sm text-label-sm font-bold flex items-center gap-2">
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[14px] ${
+                          m.role === 'user'
+                            ? 'bg-on-primary/15 text-on-primary'
+                            : 'bg-secondary-container text-on-secondary'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[14px]">
+                          {m.role === 'user' ? 'person' : 'auto_awesome'}
+                        </span>
                       </span>
-                      {m.role === 'user' ? profile.firstName || 'You' : 'Jobora AI Copilot'}
+                      <span>{m.role === 'user' ? profile.firstName || 'You' : 'Jobora AI Copilot'}</span>
                     </span>
-                    <span className="font-caption-caps text-caption-caps opacity-75">{m.timestamp}</span>
+                    <span className="font-caption-caps text-caption-caps opacity-70 font-mono">{m.timestamp}</span>
                   </div>
 
+                  {/* Message Body */}
                   <div className="font-body-md text-body-md whitespace-pre-line leading-relaxed">
                     {m.content}
                   </div>
 
+                  {/* Collapsible Tool Execution Logs */}
                   {m.toolLogs && m.toolLogs.length > 0 && (
-                    <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 flex flex-col gap-1.5">
-                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase font-bold">
-                        Authorized Agent Tool Activity
-                      </span>
-                      {m.toolLogs.map((log, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs text-on-surface">
-                          <span className="material-symbols-outlined text-[15px] text-emerald-600 mt-0.5">
-                            {log.status === 'requires_approval' ? 'gpp_maybe' : 'check_circle'}
+                    <details className="group rounded-xl border border-outline-variant/30 bg-surface-container-low/50 overflow-hidden text-on-surface">
+                      <summary className="flex items-center justify-between px-3.5 py-2.5 cursor-pointer select-none hover:bg-surface-container transition-colors list-none font-label-sm text-label-sm font-semibold">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[16px] text-tertiary">bolt</span>
+                          <span>
+                            {m.toolLogs.length} Agent Step{m.toolLogs.length > 1 ? 's' : ''} Executed
                           </span>
-                          <div>
-                            <code className="font-mono font-bold text-primary">{log.tool}</code>:{' '}
-                            <span className="text-on-surface-variant">{log.summary}</span>
-                          </div>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex items-center gap-1.5 text-on-surface-variant font-caption-caps text-caption-caps">
+                          <span className="group-open:hidden">Show telemetry</span>
+                          <span className="hidden group-open:inline">Hide telemetry</span>
+                          <span className="material-symbols-outlined text-[16px] transition-transform group-open:rotate-180">
+                            expand_more
+                          </span>
+                        </div>
+                      </summary>
+                      <div className="p-3 pt-1 border-t border-outline-variant/20 flex flex-col gap-2 bg-surface-container-lowest/60">
+                        {m.toolLogs.map((log, i) => (
+                          <div
+                            key={i}
+                            className="flex items-start gap-2 text-xs p-2 rounded-lg bg-surface-container-low/40"
+                          >
+                            <span
+                              className={`material-symbols-outlined text-[15px] mt-0.5 ${
+                                log.status === 'requires_approval'
+                                  ? 'text-amber-600'
+                                  : 'text-tertiary'
+                              }`}
+                            >
+                              {log.status === 'requires_approval' ? 'gpp_maybe' : 'check_circle'}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <code className="font-mono font-bold text-primary">{log.tool}</code>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
+                                    log.status === 'requires_approval'
+                                      ? 'bg-amber-100 text-amber-900'
+                                      : 'bg-tertiary-fixed/40 text-on-tertiary-fixed'
+                                  }`}
+                                >
+                                  {log.status === 'requires_approval' ? 'Awaiting Approval' : 'Completed'}
+                                </span>
+                              </div>
+                              <p className="text-on-surface-variant mt-0.5 text-[12px]">{log.summary}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
                   )}
 
+                  {/* High-Visibility Human-in-the-Loop Approval Checkpoint */}
                   {m.approvalRequired && (
-                    <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <div className="font-label-md text-label-md font-bold flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                          Explicit Approval Required: {m.approvalRequired.targetLabel}
+                    <div className="p-4 rounded-xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-900 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[20px]">gpp_maybe</span>
                         </div>
-                        <p className="font-body-sm text-body-sm mt-0.5">
-                          {m.approvalRequired.description}
-                        </p>
+                        <div>
+                          <div className="font-label-md text-label-md font-bold text-amber-950 flex items-center gap-1.5">
+                            <span>Human Approval Gate:</span>
+                            <span className="underline decoration-amber-400">
+                              {m.approvalRequired.targetLabel}
+                            </span>
+                          </div>
+                          <p className="font-body-sm text-body-sm text-amber-900/90 mt-0.5">
+                            {m.approvalRequired.description}
+                          </p>
+                          <span className="font-caption-caps text-caption-caps text-amber-800 font-bold uppercase tracking-wider block mt-1">
+                            Jobora Policy: No external submissions without explicit human authorization
+                          </span>
+                        </div>
                       </div>
                       <Link
                         href={m.approvalRequired.targetHref}
-                        className="px-4 py-2 rounded-xl bg-primary text-on-primary font-label-sm text-label-sm font-bold whitespace-nowrap"
+                        className="px-4 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary/90 font-label-sm text-label-sm font-bold whitespace-nowrap shadow-sm flex items-center gap-1.5 self-end sm:self-center"
                       >
-                        Review &amp; Approve →
+                        <span>Review &amp; Authorize</span>
+                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                       </Link>
                     </div>
                   )}
 
+                  {/* Suggested Next Actions */}
                   {m.suggestedActions && m.suggestedActions.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {m.suggestedActions.map((act) => (
-                        <Link
-                          key={act.href + act.label}
-                          href={act.href}
-                          className="px-3.5 py-1.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold shadow-2xs transition-colors flex items-center gap-1"
-                        >
-                          <span>{act.label}</span>
-                          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                        </Link>
-                      ))}
+                    <div className="flex flex-col gap-2 pt-1">
+                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase tracking-wider font-bold">
+                        Suggested Actions
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {m.suggestedActions.map((act) => (
+                          <Link
+                            key={act.href + act.label}
+                            href={act.href}
+                            className="px-3.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold border border-outline-variant/30 transition-all flex items-center gap-1.5"
+                          >
+                            <span>{act.label}</span>
+                            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

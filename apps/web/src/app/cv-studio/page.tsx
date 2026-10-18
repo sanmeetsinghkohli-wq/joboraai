@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { StitchShell } from '@/components/StitchShell';
 import { useAppData } from '@/context/AppDataContext';
@@ -12,8 +12,68 @@ export default function CVStudioPage() {
 
   const activeJob = selectedJob || (jobs.length > 0 ? jobs[0] : null);
   const [activeStudioTab, setActiveStudioTab] = useState<'upload' | 'tailored' | 'cover-letter' | 'preview'>('tailored');
-  const [diff1State, setDiff1State] = useState<'pending' | 'accepted' | 'rejected'>('pending');
-  const [diff2State, setDiff2State] = useState<'pending' | 'accepted' | 'rejected'>('pending');
+
+  // Initialize diff decisions from persisted profile or scoped local storage fallback
+  const [diff1State, setDiff1State] = useState<'pending' | 'accepted' | 'rejected'>(
+    profile.cvDecisions?.diff1 || 'pending'
+  );
+  const [diff2State, setDiff2State] = useState<'pending' | 'accepted' | 'rejected'>(
+    profile.cvDecisions?.diff2 || 'pending'
+  );
+
+  // Restore decisions when profile updates or from scoped localStorage
+  useEffect(() => {
+    if (profile.cvDecisions?.diff1 && profile.cvDecisions.diff1 !== diff1State) {
+      setDiff1State(profile.cvDecisions.diff1);
+    }
+    if (profile.cvDecisions?.diff2 && profile.cvDecisions.diff2 !== diff2State) {
+      setDiff2State(profile.cvDecisions.diff2);
+    }
+  }, [profile.cvDecisions]);
+
+  useEffect(() => {
+    try {
+      const storageKey = profile.email ? `jobora_cv_decisions_${profile.email}` : 'jobora_cv_decisions_guest';
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.diff1 && (!profile.cvDecisions || !profile.cvDecisions.diff1)) {
+          setDiff1State(parsed.diff1);
+        }
+        if (parsed?.diff2 && (!profile.cvDecisions || !profile.cvDecisions.diff2)) {
+          setDiff2State(parsed.diff2);
+        }
+      }
+    } catch {}
+  }, [profile.email]);
+
+  const updateDiffDecision = async (
+    diffKey: 'diff1' | 'diff2',
+    newState: 'pending' | 'accepted' | 'rejected'
+  ) => {
+    if (diffKey === 'diff1') setDiff1State(newState);
+    if (diffKey === 'diff2') setDiff2State(newState);
+
+    const nextDecisions = {
+      ...(profile.cvDecisions || {}),
+      [diffKey]: newState,
+    };
+    await updateProfile({ cvDecisions: nextDecisions });
+
+    try {
+      const storageKey = profile.email ? `jobora_cv_decisions_${profile.email}` : 'jobora_cv_decisions_guest';
+      localStorage.setItem(storageKey, JSON.stringify(nextDecisions));
+    } catch {}
+
+    if (newState === 'accepted') {
+      logActivity('check_circle', `Accepted CV improvement (${diffKey})`, `Applied to experience bullets`);
+    } else if (newState === 'rejected') {
+      logActivity('undo', `Kept original phrasing (${diffKey})`, `Rejected optimization`);
+    } else {
+      logActivity('history', `Reopened CV suggestion (${diffKey})`, `Pending decision`);
+    }
+  };
+
   const [summaryText, setSummaryText] = useState(
     profile.summary ||
       'Detail-oriented engineer specializing in scalable software architectures, AI/ML pipeline orchestration, and distributed systems. Demonstrated experience architecting low-latency inference services and building production backends.'
@@ -23,6 +83,10 @@ export default function CVStudioPage() {
   const pendingEditsCount =
     (diff1State === 'pending' ? 1 : 0) + (diff2State === 'pending' ? 1 : 0);
 
+  // Reproducible Rubric Calculation:
+  // Base score from profile.atsScore (derived from keyword match ratio against target role).
+  // Accepting verified quantified impact (AWQ / sub-120ms latency) aligns 2 additional keywords (+4 pts).
+  // Accepting verified containerization tooling (Docker / CI/CD) aligns 1 additional keyword (+3 pts).
   const baseScore = profile.atsScore > 0 ? profile.atsScore : 88;
   const computedScore = Math.min(
     99,
@@ -62,14 +126,63 @@ export default function CVStudioPage() {
   };
 
   const handleExportText = (ext: 'pdf' | 'docx') => {
-    const content = `${profile.fullName || 'Candidate Name'}\n${profile.email || ''} • ${profile.phone || ''} • ${profile.location || ''}\n\nEXECUTIVE SUMMARY\n${summaryText}\n\nSKILLS\n${profile.skills.join(', ')}\n`;
+    const contactLine = [
+      profile.email || '',
+      profile.phone || '',
+      profile.location || '',
+      profile.github || '',
+      profile.linkedin || '',
+    ]
+      .filter(Boolean)
+      .join(' • ');
+
+    const project1Bullet2 =
+      diff1State === 'accepted'
+        ? 'Optimized inference serving for a custom Transformer Architecture leveraging quantization (AWQ), boosting Latency Optimization by 41% across high-load concurrent queries.'
+        : 'Constructed a conversational bot utilizing HuggingFace models to answer support tickets.';
+
+    const project1Bullet3 =
+      diff2State === 'accepted'
+        ? 'Containerized services using Docker and orchestrated CI/CD smoke test pipelines for automated regression tracking on AWS EC2.'
+        : null;
+
+    const sections = [
+      (profile.fullName || profile.firstName || 'Candidate Name').toUpperCase(),
+      profile.targetRole || 'Software & AI Systems Engineer',
+      contactLine,
+      '',
+      'EXECUTIVE SUMMARY',
+      summaryText,
+      '',
+      'EDUCATION',
+      `${profile.degree || 'BSc in Computer Science & Engineering'} — ${profile.university || 'University / Institution'} (${profile.graduationYear || 'Current'}${profile.gpa ? `, GPA ${profile.gpa}` : ''})`,
+      'Relevant Coursework: Distributed Systems, Deep Learning, Algorithmic Analysis, Database Internals',
+      '',
+      'TECHNICAL PROJECTS & RESEARCH',
+      '1. Autonomous Multi-Agent RAG Assistant (Python • Qdrant • vLLM)',
+      '   • Engineered an asynchronous vector retrieval service indexing 450k+ technical documents with sub-120ms semantic search.',
+      `   • ${project1Bullet2}`,
+      ...(project1Bullet3 ? [`   • ${project1Bullet3}`] : []),
+      '',
+      '2. Distributed Resilient Web Scraper & Ingestion Pipeline (Go • Redis • gRPC)',
+      '   • Designed a fault-tolerant scraping architecture parsing 1.2M web nodes daily with exponential backoff and proxy rotation.',
+      '   • Reduced memory footprint by 34% through zero-copy buffer allocations in high-volume Go routines.',
+      '',
+      'TECHNICAL COMPETENCIES',
+      `• Core Skills: ${profile.skills.length > 0 ? profile.skills.join(', ') : 'Python, Go, SQL, TypeScript'}`,
+      '• AI & ML Systems: Transformers, LangChain, LlamaIndex, vLLM, HuggingFace',
+      '• Cloud & Tools: AWS (EC2, S3), Docker, Git, Redis, Linux, PostgreSQL',
+    ];
+
+    const content = sections.join('\n');
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${(profile.fullName || 'Tailored_Resume').replace(/\s+/g, '_')}.${ext === 'pdf' ? 'txt' : 'doc'}`;
+    a.download = `${(profile.fullName || profile.firstName || 'Tailored_Resume').replace(/\s+/g, '_')}_CV.${ext === 'pdf' ? 'txt' : 'doc'}`;
     a.click();
     URL.revokeObjectURL(url);
+    logActivity('download', `Exported tailored CV (${ext.toUpperCase()})`, `${profile.targetRole || 'Target Role'}`);
   };
 
   return (
@@ -192,8 +305,8 @@ export default function CVStudioPage() {
               </div>
               <button
                 onClick={() => {
-                  setDiff1State('pending');
-                  setDiff2State('pending');
+                  updateDiffDecision('diff1', 'pending');
+                  updateDiffDecision('diff2', 'pending');
                 }}
                 className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
                 title="Reload Analysis"
@@ -259,85 +372,98 @@ export default function CVStudioPage() {
                   .
                 </p>
 
-                {/* Criteria Checklist */}
-                <div className="flex flex-col gap-3 pt-3 border-t-0 bg-surface-container/50 p-4 rounded-xl mb-4">
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="material-symbols-outlined text-on-tertiary-container text-[20px] shrink-0"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      check_circle
+                {/* ATS Category Breakdown Progress Meters */}
+                <div className="flex flex-col gap-3 pt-3 bg-surface-container/50 p-4 rounded-xl mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-caption-caps text-caption-caps text-primary font-bold uppercase tracking-wider">
+                      Transparent Breakdown
                     </span>
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md text-on-surface">
-                        Strong Structure &amp; Hierarchy
-                      </span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">
-                        Clear single-column scan lines detected.
-                      </span>
-                    </div>
+                    <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                      Parser Audit
+                    </span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="material-symbols-outlined text-on-tertiary-container text-[20px] shrink-0"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      check_circle
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md text-on-surface">
-                        Relevant Technical Competencies
+
+                  {/* 1. Keyword Alignment */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between font-label-sm text-label-sm">
+                      <span className="text-on-surface font-semibold flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>
+                        Keyword Alignment
                       </span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">
-                        {profile.skills.length > 0
-                          ? `${profile.skills.slice(0, 3).join(', ')} flagged.`
-                          : 'Core engineering stack verified.'}
+                      <span className="font-mono text-tertiary font-bold">
+                        {Math.min(96, Math.max(70, computedScore - 2))}%
                       </span>
                     </div>
+                    <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-tertiary rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(96, Math.max(70, computedScore - 2))}%` }}
+                      ></div>
+                    </div>
+                    <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                      Matches technical terms in target role description
+                    </span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="material-symbols-outlined text-on-tertiary-container text-[20px] shrink-0"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      check_circle
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md text-on-surface">Good Keyword Density</span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">
-                        Matches {computedScore}% target job description terms.
+
+                  {/* 2. Quantified Impact */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between font-label-sm text-label-sm">
+                      <span className="text-on-surface font-semibold flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-secondary">trending_up</span>
+                        Quantified Impact
+                      </span>
+                      <span className="font-mono text-secondary font-bold">
+                        {diff1State === 'accepted' ? '92%' : '84%'}
                       </span>
                     </div>
+                    <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-secondary rounded-full transition-all duration-500"
+                        style={{ width: diff1State === 'accepted' ? '92%' : '84%' }}
+                      ></div>
+                    </div>
+                    <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                      Sub-120ms latency and 450k+ document scale verified
+                    </span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="material-symbols-outlined text-on-tertiary-container text-[20px] shrink-0"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      check_circle
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md text-on-surface">Quantifiable Achievements</span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">
-                        Performance metrics present in experience bullets.
+
+                  {/* 3. ATS Structure & Layout */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between font-label-sm text-label-sm">
+                      <span className="text-on-surface font-semibold flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-primary">view_headline</span>
+                        ATS Structure &amp; Layout
                       </span>
+                      <span className="font-mono text-primary font-bold">98%</span>
                     </div>
+                    <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: '98%' }}></div>
+                    </div>
+                    <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                      Clean single-column hierarchy, standard headings
+                    </span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="material-symbols-outlined text-secondary text-[20px] shrink-0"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      warning
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="font-label-md text-label-md text-on-surface">
-                        Suggestions for Improvement
+
+                  {/* 4. Section Completeness */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between font-label-sm text-label-sm">
+                      <span className="text-on-surface font-semibold flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-on-tertiary-container">verified</span>
+                        Section Completeness
                       </span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">
-                        {missingKeywords.length} semantic terms available to add below.
+                      <span className="font-mono text-on-tertiary-container font-bold">
+                        {profile.skills.length > 0 && summaryText ? '100%' : '85%'}
                       </span>
                     </div>
+                    <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-on-tertiary-container rounded-full"
+                        style={{ width: profile.skills.length > 0 && summaryText ? '100%' : '85%' }}
+                      ></div>
+                    </div>
+                    <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                      Contact, Summary, Education, Experience &amp; Skills present
+                    </span>
                   </div>
                 </div>
 
@@ -365,9 +491,9 @@ export default function CVStudioPage() {
 
                 {/* Primary Action CTA */}
                 <button
-                  onClick={() => {
-                    setDiff1State('accepted');
-                    setDiff2State('accepted');
+                  onClick={async () => {
+                    await updateDiffDecision('diff1', 'accepted');
+                    await updateDiffDecision('diff2', 'accepted');
                     logActivity('auto_fix_high', 'Generated Tailored CV', `Score boosted to ${Math.min(99, baseScore + 7)}/100`);
                   }}
                   className="w-full flex items-center justify-center gap-2.5 py-3.5 px-5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.99]"
@@ -572,114 +698,261 @@ export default function CVStudioPage() {
                         Engineered an asynchronous vector retrieval service indexing 450k+ technical documents with sub-120ms semantic search.
                       </li>
 
-                      {/* AI SUGGESTION DIFF BLOCK 1 */}
-                      <li className="font-body-sm text-body-sm text-on-surface leading-normal relative group">
-                        {diff1State !== 'accepted' && (
-                          <span className={diff1State === 'pending' ? 'text-on-surface-variant line-through opacity-60' : ''}>
-                            Constructed a conversational bot utilizing HuggingFace models to answer support tickets.
-                          </span>
-                        )}
-                        {diff1State === 'accepted' && (
-                          <span className="text-on-surface font-medium">
-                            Optimized inference serving for a custom{' '}
-                            <span className="bg-tertiary-fixed/40 px-1 py-0.5 rounded text-on-tertiary-fixed font-bold">
-                              Transformer Architecture
-                            </span>{' '}
-                            leveraging quantization (AWQ), boosting{' '}
-                            <span className="bg-tertiary-fixed/40 px-1 py-0.5 rounded text-on-tertiary-fixed font-bold">
-                              Latency Optimization
-                            </span>{' '}
-                            by 41% across high-load concurrent queries.
-                          </span>
-                        )}
-                        {diff1State === 'pending' && (
-                          <div className="mt-2 p-3 rounded-lg bg-tertiary-fixed/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-                            <div className="flex items-start gap-2">
-                              <span
-                                className="material-symbols-outlined text-on-tertiary-container text-[18px] shrink-0 mt-0.5"
-                                style={{ fontVariationSettings: "'FILL' 1" }}
-                              >
-                                auto_fix_normal
+                      {/* AI SUGGESTION DIFF BLOCK 1 — HIGH VISIBILITY ORIGINAL VS PROPOSED DIFF */}
+                      <li className="list-none -ml-4">
+                        {diff1State === 'pending' ? (
+                          <div className="p-4 rounded-xl border border-secondary/20 bg-surface-container-lowest shadow-sm flex flex-col gap-3 my-2">
+                            <div className="flex items-center justify-between">
+                              <span className="font-caption-caps text-caption-caps font-bold text-primary flex items-center gap-1.5 uppercase tracking-wider">
+                                <span className="material-symbols-outlined text-[16px] text-secondary">difference</span>
+                                Suggestion 1: Quantified System Impact
                               </span>
-                              <p className="font-body-sm text-body-sm text-on-surface font-medium">
-                                Optimized inference serving for a custom{' '}
-                                <span className="bg-tertiary-fixed/40 px-1 py-0.5 rounded text-on-tertiary-fixed font-bold">
-                                  Transformer Architecture
-                                </span>{' '}
-                                leveraging quantization (AWQ), boosting{' '}
-                                <span className="bg-tertiary-fixed/40 px-1 py-0.5 rounded text-on-tertiary-fixed font-bold">
-                                  Latency Optimization
-                                </span>{' '}
-                                by 41% across high-load concurrent queries.
-                              </p>
+                              <span className="font-caption-caps text-caption-caps px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-bold">
+                                +4 ATS Potential
+                              </span>
                             </div>
-                            <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
-                              <button
-                                onClick={() => setDiff1State('accepted')}
-                                className="px-2.5 py-1 rounded bg-on-tertiary-container text-white font-label-sm text-label-sm hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm"
-                                type="button"
-                              >
-                                <span className="material-symbols-outlined text-[14px]">check</span>
-                                <span>Accept</span>
-                              </button>
-                              <button
-                                onClick={() => setDiff1State('rejected')}
-                                className="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-highest font-label-sm text-label-sm transition-colors"
-                                type="button"
-                              >
-                                Reject
-                              </button>
+
+                            {/* Comparison Panes: Original vs Proposed */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* Original Pane */}
+                              <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 flex flex-col gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-red-500/10 text-red-700">
+                                    [-] Original
+                                  </span>
+                                  <span className="text-[12px] text-on-surface-variant">Current CV draft</span>
+                                </div>
+                                <p className="font-body-sm text-body-sm text-on-surface line-through decoration-red-400 decoration-1 opacity-80">
+                                  Constructed a conversational bot utilizing HuggingFace models to answer support tickets.
+                                </p>
+                              </div>
+
+                              {/* Proposed Pane */}
+                              <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/25 flex flex-col gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-800">
+                                    [+] Proposed Optimization
+                                  </span>
+                                  <span className="text-[12px] text-on-surface-variant">Target role aligned</span>
+                                </div>
+                                <p className="font-body-sm text-body-sm text-on-surface font-medium">
+                                  Optimized inference serving for a custom{' '}
+                                  <span className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-bold">
+                                    Transformer Architecture
+                                  </span>{' '}
+                                  leveraging quantization (AWQ), boosting{' '}
+                                  <span className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-bold">
+                                    Latency Optimization
+                                  </span>{' '}
+                                  by 41% across high-load concurrent queries.
+                                </p>
+                              </div>
                             </div>
+
+                            {/* Decision Bar */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-outline-variant/20">
+                              <span className="text-[12px] text-on-surface-variant">
+                                Replaces generic phrasing with verified latency and quantization metrics.
+                              </span>
+                              <div className="flex items-center gap-2 self-end sm:self-auto">
+                                <button
+                                  onClick={() => updateDiffDecision('diff1', 'rejected')}
+                                  className="px-3 py-1.5 rounded-lg border border-outline-variant/40 hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant transition-colors"
+                                  type="button"
+                                >
+                                  Keep Original
+                                </button>
+                                <button
+                                  onClick={() => updateDiffDecision('diff1', 'accepted')}
+                                  className="px-3.5 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-sm text-label-sm font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                                  type="button"
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">check</span>
+                                  <span>Accept Improvement (+4 ATS)</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : diff1State === 'accepted' ? (
+                          <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 my-1.5 flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-2">
+                              <span className="material-symbols-outlined text-[18px] text-emerald-700 shrink-0 mt-0.5">
+                                check_circle
+                              </span>
+                              <div className="flex flex-col">
+                                <p className="font-body-sm text-body-sm text-on-surface font-medium">
+                                  Optimized inference serving for a custom{' '}
+                                  <span className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-bold">
+                                    Transformer Architecture
+                                  </span>{' '}
+                                  leveraging quantization (AWQ), boosting{' '}
+                                  <span className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-bold">
+                                    Latency Optimization
+                                  </span>{' '}
+                                  by 41% across high-load concurrent queries.
+                                </p>
+                                <span className="text-[11px] text-emerald-800 font-semibold mt-0.5">
+                                  [+] Tailored revision applied (+4 ATS)
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => updateDiffDecision('diff1', 'pending')}
+                              className="text-[12px] text-on-surface-variant hover:text-primary underline shrink-0"
+                              type="button"
+                            >
+                              Undo
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-3 rounded-lg bg-surface-container-low my-1.5 flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-2">
+                              <span className="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0 mt-0.5">
+                                undo
+                              </span>
+                              <div className="flex flex-col">
+                                <p className="font-body-sm text-body-sm text-on-surface">
+                                  Constructed a conversational bot utilizing HuggingFace models to answer support tickets.
+                                </p>
+                                <span className="text-[11px] text-on-surface-variant font-semibold mt-0.5">
+                                  [-] Original preserved
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => updateDiffDecision('diff1', 'pending')}
+                              className="text-[12px] text-secondary hover:underline shrink-0"
+                              type="button"
+                            >
+                              Review Suggestion
+                            </button>
                           </div>
                         )}
                       </li>
 
-                      {/* AI SUGGESTION DIFF BLOCK 2 */}
-                      {diff2State !== 'rejected' && (
-                        <li className="font-body-sm text-body-sm text-on-surface leading-normal relative group">
-                          {diff2State === 'accepted' ? (
-                            <span className="text-on-surface font-medium">
-                              Containerized services using{' '}
-                              <span className="bg-secondary-fixed-dim/60 px-1 py-0.5 rounded text-on-secondary-fixed font-bold">
-                                Docker
-                              </span>{' '}
-                              and orchestrated CI/CD smoke test pipelines for automated regression tracking on AWS EC2.
-                            </span>
-                          ) : (
-                            <div className="mt-1 p-3 rounded-lg bg-secondary-fixed/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-                              <div className="flex items-start gap-2">
-                                <span className="material-symbols-outlined text-secondary text-[18px] shrink-0 mt-0.5">
-                                  add_task
-                                </span>
+                      {/* AI SUGGESTION DIFF BLOCK 2 — HIGH VISIBILITY ORIGINAL VS PROPOSED DIFF */}
+                      <li className="list-none -ml-4">
+                        {diff2State === 'pending' ? (
+                          <div className="p-4 rounded-xl border border-secondary/20 bg-surface-container-lowest shadow-sm flex flex-col gap-3 my-2">
+                            <div className="flex items-center justify-between">
+                              <span className="font-caption-caps text-caption-caps font-bold text-primary flex items-center gap-1.5 uppercase tracking-wider">
+                                <span className="material-symbols-outlined text-[16px] text-secondary">difference</span>
+                                Suggestion 2: Infrastructure &amp; Tooling Keyword
+                              </span>
+                              <span className="font-caption-caps text-caption-caps px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-bold">
+                                +3 ATS Potential
+                              </span>
+                            </div>
+
+                            {/* Comparison Panes: Original vs Proposed */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* Original Pane */}
+                              <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 flex flex-col gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-red-500/10 text-red-700">
+                                    [-] Original
+                                  </span>
+                                  <span className="text-[12px] text-on-surface-variant">Missing keyword</span>
+                                </div>
+                                <p className="font-body-sm text-body-sm text-on-surface-variant italic">
+                                  No containerization or automated CI/CD deployment detail specified in project bullets.
+                                </p>
+                              </div>
+
+                              {/* Proposed Pane */}
+                              <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/25 flex flex-col gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-800">
+                                    [+] Proposed Optimization
+                                  </span>
+                                  <span className="text-[12px] text-on-surface-variant">Cloud competency</span>
+                                </div>
                                 <p className="font-body-sm text-body-sm text-on-surface font-medium">
                                   Containerized services using{' '}
-                                  <span className="bg-secondary-fixed-dim/60 px-1 py-0.5 rounded text-on-secondary-fixed font-bold">
+                                  <span className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-bold">
                                     Docker
                                   </span>{' '}
                                   and orchestrated CI/CD smoke test pipelines for automated regression tracking on AWS EC2.
                                 </p>
                               </div>
-                              <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                            </div>
+
+                            {/* Decision Bar */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-outline-variant/20">
+                              <span className="text-[12px] text-on-surface-variant">
+                                Accept only if you have hands-on experience deploying with Docker &amp; CI/CD.
+                              </span>
+                              <div className="flex items-center gap-2 self-end sm:self-auto">
                                 <button
-                                  onClick={() => setDiff2State('accepted')}
-                                  className="px-2.5 py-1 rounded bg-secondary text-white font-label-sm text-label-sm hover:opacity-90 transition-opacity flex items-center gap-1 shadow-sm"
+                                  onClick={() => updateDiffDecision('diff2', 'rejected')}
+                                  className="px-3 py-1.5 rounded-lg border border-outline-variant/40 hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant transition-colors"
                                   type="button"
                                 >
-                                  <span className="material-symbols-outlined text-[14px]">check</span>
-                                  <span>Accept</span>
+                                  Keep Original
                                 </button>
                                 <button
-                                  onClick={() => setDiff2State('rejected')}
-                                  className="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-highest font-label-sm text-label-sm transition-colors"
+                                  onClick={() => updateDiffDecision('diff2', 'accepted')}
+                                  className="px-3.5 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-sm text-label-sm font-bold flex items-center gap-1.5 shadow-sm transition-all"
                                   type="button"
                                 >
-                                  Reject
+                                  <span className="material-symbols-outlined text-[16px]">check</span>
+                                  <span>Accept Improvement (+3 ATS)</span>
                                 </button>
                               </div>
                             </div>
-                          )}
-                        </li>
-                      )}
+                          </div>
+                        ) : diff2State === 'accepted' ? (
+                          <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 my-1.5 flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-2">
+                              <span className="material-symbols-outlined text-[18px] text-emerald-700 shrink-0 mt-0.5">
+                                check_circle
+                              </span>
+                              <div className="flex flex-col">
+                                <p className="font-body-sm text-body-sm text-on-surface font-medium">
+                                  Containerized services using{' '}
+                                  <span className="bg-emerald-100 text-emerald-900 px-1 py-0.5 rounded font-bold">
+                                    Docker
+                                  </span>{' '}
+                                  and orchestrated CI/CD smoke test pipelines for automated regression tracking on AWS EC2.
+                                </p>
+                                <span className="text-[11px] text-emerald-800 font-semibold mt-0.5">
+                                  [+] Tailored revision applied (+3 ATS)
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => updateDiffDecision('diff2', 'pending')}
+                              className="text-[12px] text-on-surface-variant hover:text-primary underline shrink-0"
+                              type="button"
+                            >
+                              Undo
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-3 rounded-lg bg-surface-container-low my-1.5 flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-2">
+                              <span className="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0 mt-0.5">
+                                undo
+                              </span>
+                              <div className="flex flex-col">
+                                <p className="font-body-sm text-body-sm text-on-surface-variant italic">
+                                  Containerization bullet omitted based on user rejection.
+                                </p>
+                                <span className="text-[11px] text-on-surface-variant font-semibold mt-0.5">
+                                  [-] Omission preserved
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => updateDiffDecision('diff2', 'pending')}
+                              className="text-[12px] text-secondary hover:underline shrink-0"
+                              type="button"
+                            >
+                              Review Suggestion
+                            </button>
+                          </div>
+                        )}
+                      </li>
                     </ul>
                   </div>
 

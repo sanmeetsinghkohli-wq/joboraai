@@ -76,6 +76,7 @@ export interface LiveUserProfile {
   atsScore: number;
   connectedEmail: string;
   emailProvider: 'gmail' | 'outlook' | 'none';
+  cvDecisions?: Record<string, 'pending' | 'accepted' | 'rejected'>;
 }
 
 interface AppDataContextType {
@@ -125,6 +126,7 @@ const DEFAULT_EMPTY_PROFILE: LiveUserProfile = {
   atsScore: 0,
   connectedEmail: '',
   emailProvider: 'none',
+  cvDecisions: {},
 };
 
 const AppDataContext = createContext<AppDataContextType | null>(null);

@@ -22,6 +22,7 @@ export default function ApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
@@ -84,35 +85,35 @@ export default function ApplicationsPage() {
     const st = status.toLowerCase();
     if (st === 'interview') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-amber-50 text-amber-800">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Interview
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-[#FDECEC] text-[#D84F48] font-bold border border-[#E76F72]/30">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#E76F72]"></span> Interview
         </span>
       );
     }
     if (st === 'screen') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-emerald-50 text-emerald-700">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Passed Screen
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-emerald-50 text-emerald-800 font-medium border border-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Passed Screen
         </span>
       );
     }
     if (st === 'offer') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-emerald-600 text-white font-bold">
-          <span className="material-symbols-outlined text-[14px]">star</span> Offer
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-[#351B32] text-white font-bold shadow-xs">
+          <span className="material-symbols-outlined text-[14px] text-[#E76F72]">star</span> Offer
         </span>
       );
     }
     if (st === 'rejected') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-rose-50 text-rose-700">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Rejected
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-[#F3EBE3] text-on-surface-variant font-medium border border-[#EDE5E1]">
+          <span className="w-1.5 h-1.5 rounded-full bg-neutral-400"></span> Rejected
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-blue-50 text-blue-700">
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Applied
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-[#F8F5F0] text-primary font-medium border border-[#EDE5E1]">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#351B32]"></span> Applied
       </span>
     );
   };
@@ -303,27 +304,31 @@ export default function ApplicationsPage() {
           {/* Main Workspace Split: Table + Detail Inspector */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
             {/* Table Master Canvas (8 cols on XL) */}
-            <div className="xl:col-span-8 bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden transition-all duration-300">
+            <div
+              className={`xl:col-span-8 bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden transition-all duration-300 ${
+                mobileInspectorOpen ? 'hidden xl:block' : 'block'
+              }`}
+            >
               {filteredApps.length === 0 ? (
                 <div className="p-12 text-center flex flex-col items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-secondary">
                     <span className="material-symbols-outlined text-[26px]">send</span>
                   </div>
-                  <h3 className="font-headline-sm text-headline-sm text-primary">No applications logged yet</h3>
+                  <h3 className="font-headline-sm text-headline-sm text-primary font-bold">No applications logged yet</h3>
                   <p className="font-body-sm text-body-sm text-on-surface-variant max-w-md">
                     Apply to a live job in Job Search or click &ldquo;+ Add Application&rdquo; above to track your real pipeline here.
                   </p>
                   <div className="flex items-center gap-3 mt-2">
                     <button
                       onClick={() => router.push('/jobs')}
-                      className="px-4 py-2 rounded-xl bg-primary-container text-on-primary font-label-md"
+                      className="px-4 py-2 rounded-xl bg-primary-container text-on-primary font-label-md font-bold"
                       type="button"
                     >
                       Browse Live Jobs
                     </button>
                     <button
                       onClick={() => setShowAddModal(true)}
-                      className="px-4 py-2 rounded-xl bg-surface-container text-primary font-label-md"
+                      className="px-4 py-2 rounded-xl bg-surface-container text-primary font-label-md font-bold"
                       type="button"
                     >
                       + Add Application
@@ -350,10 +355,13 @@ export default function ApplicationsPage() {
                         return (
                           <tr
                             key={app.id}
-                            onClick={() => setSelectedAppId(app.id)}
+                            onClick={() => {
+                              setSelectedAppId(app.id);
+                              setMobileInspectorOpen(true);
+                            }}
                             className={`cursor-pointer transition-colors ${
                               isSelected
-                                ? 'bg-primary-fixed/30 hover:bg-primary-fixed/40'
+                                ? 'bg-[#FAF6F2] font-medium'
                                 : 'hover:bg-surface-container-low'
                             }`}
                           >
@@ -363,7 +371,7 @@ export default function ApplicationsPage() {
                                   {app.company.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                  <span className="font-label-md text-label-md text-primary truncate">
+                                  <span className="font-label-md text-label-md text-primary truncate font-bold">
                                     {app.title}
                                   </span>
                                   <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
@@ -377,7 +385,7 @@ export default function ApplicationsPage() {
                             </td>
                             <td className="py-3.5 px-3 whitespace-nowrap">{getStatusBadge(app.status)}</td>
                             <td className="py-3.5 px-3 whitespace-nowrap">
-                              <span className="inline-flex items-center font-label-sm text-label-sm text-on-tertiary-container bg-tertiary-fixed/40 px-2 py-0.5 rounded-full">
+                              <span className="inline-flex items-center font-label-sm text-label-sm text-on-tertiary-container bg-tertiary-fixed/40 px-2 py-0.5 rounded-full font-bold">
                                 {app.matchScore}% match
                               </span>
                             </td>
@@ -390,7 +398,7 @@ export default function ApplicationsPage() {
                               </span>
                             </td>
                             <td className="py-3.5 px-3">
-                              <div className="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm">
+                              <div className="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm font-semibold">
                                 <span className="material-symbols-outlined text-[16px]">schedule</span>
                                 <span className="truncate">{app.nextAction}</span>
                               </div>
@@ -399,7 +407,7 @@ export default function ApplicationsPage() {
                               <select
                                 value={app.status}
                                 onChange={(e) => updateApplicationStatus(app.id, e.target.value)}
-                                className="bg-surface-container rounded-lg px-2 py-1 font-label-sm text-label-sm text-primary"
+                                className="bg-surface-container rounded-lg px-2 py-1 font-label-sm text-label-sm text-primary font-medium"
                               >
                                 <option value="applied">Applied</option>
                                 <option value="screen">Passed Screen</option>
@@ -426,7 +434,10 @@ export default function ApplicationsPage() {
                         .map((item) => (
                           <div
                             key={item.id}
-                            onClick={() => setSelectedAppId(item.id)}
+                            onClick={() => {
+                              setSelectedAppId(item.id);
+                              setMobileInspectorOpen(true);
+                            }}
                             className="p-3 rounded-xl bg-surface-container-lowest shadow-xs cursor-pointer hover:shadow-md"
                           >
                             <div className="font-label-md text-label-md text-primary font-bold">{item.title}</div>
@@ -451,7 +462,23 @@ export default function ApplicationsPage() {
             </div>
 
             {/* Detail Peek Slide-over / Inspector Panel (4 cols on XL) */}
-            <div className="xl:col-span-4 bg-surface-container-lowest rounded-xl shadow-md p-5 flex flex-col gap-5 sticky top-20">
+            <div
+              className={`xl:col-span-4 bg-surface-container-lowest rounded-xl shadow-md p-5 flex-col gap-5 sticky top-20 ${
+                mobileInspectorOpen ? 'flex' : 'hidden xl:flex'
+              }`}
+            >
+              {/* Mobile Back Button */}
+              <div className="xl:hidden flex items-center justify-between pb-3 mb-1 border-b border-[#EDE5E1]">
+                <button
+                  type="button"
+                  onClick={() => setMobileInspectorOpen(false)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#EDE5E1] text-primary font-bold text-sm shadow-xs hover:bg-[#F3EBE3] transition-all"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                  <span>Back to applications table</span>
+                </button>
+              </div>
+
               {activeApp ? (
                 <>
                   <div className="flex items-start justify-between">
@@ -461,7 +488,7 @@ export default function ApplicationsPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-headline-sm text-headline-sm text-primary leading-tight">
+                          <h3 className="font-headline-sm text-headline-sm text-primary leading-tight font-bold">
                             {activeApp.company}
                           </h3>
                           <span className="material-symbols-outlined text-[16px] text-blue-600">verified</span>

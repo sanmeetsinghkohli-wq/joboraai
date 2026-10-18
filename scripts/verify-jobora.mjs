@@ -483,6 +483,79 @@ function ksaResOk(status, data) {
   return status === 200 && Array.isArray(data?.jobs) && data.jobs.length > 0;
 }
 
+async function runPhase2Audit() {
+  console.log('--- Phase 2 & 2.1 UI/UX Audit ---');
+  // 1. Dashboard Next-Action Cockpit & Dynamic Copy (DEF-03)
+  const dashboardSrc = fs.readFileSync(path.join(process.cwd(), 'apps', 'web', 'src', 'app', 'dashboard', 'page.tsx'), 'utf8');
+  const hasNextActionHero = dashboardSrc.includes('Next Best Action') && dashboardSrc.includes('nextAction');
+  const hasNoFakeInterview = !dashboardSrc.includes('Round 1: Coding & Systems');
+  const hasHonestSimulator = dashboardSrc.includes('Interview Simulator') && dashboardSrc.includes('0 scheduled calls');
+  const hasNoHardcoded152Dashboard = !dashboardSrc.includes('152');
+  record(
+    'Phase 2: Dashboard Next-Action Cockpit & honest interview state',
+    hasNextActionHero && hasNoFakeInterview && hasHonestSimulator,
+    `NextAction=${hasNextActionHero}, NoFakeInterview=${hasNoFakeInterview}, HonestSimulator=${hasHonestSimulator}`
+  );
+  record(
+    'Phase 2.1 (DEF-03): Dashboard zero hardcoded job-count strings',
+    hasNoHardcoded152Dashboard,
+    `Dashboard free of static 152 count: ${hasNoHardcoded152Dashboard}`
+  );
+
+  // 2. StitchShell Dynamic Search Placeholder & Jobs Zero-Results State (DEF-03)
+  const shellSrc = fs.readFileSync(path.join(process.cwd(), 'apps', 'web', 'src', 'components', 'StitchShell.tsx'), 'utf8');
+  const hasNoHardcoded152Shell = !shellSrc.includes('Search 152 live jobs');
+  const jobsSrc = fs.readFileSync(path.join(process.cwd(), 'apps', 'web', 'src', 'app', 'jobs', 'page.tsx'), 'utf8');
+  const hasZeroResultsCard = jobsSrc.includes('No jobs match your search') && jobsSrc.includes('Clear Filters');
+  record(
+    'Phase 2.1 (DEF-03): Search placeholder dynamic & honest zero-results card present',
+    hasNoHardcoded152Shell && hasZeroResultsCard,
+    `DynamicPlaceholder=${hasNoHardcoded152Shell}, ZeroResultsCard=${hasZeroResultsCard}`
+  );
+
+  // 3. CV Studio Visual Diff & ATS Diagnostics
+  const cvStudioSrc = fs.readFileSync(path.join(process.cwd(), 'apps', 'web', 'src', 'app', 'cv-studio', 'page.tsx'), 'utf8');
+  const hasOriginalDiff = cvStudioSrc.includes('[-] Original');
+  const hasProposedDiff = cvStudioSrc.includes('[+] Proposed Optimization');
+  const hasTransparentBreakdown = cvStudioSrc.includes('Transparent Breakdown') && cvStudioSrc.includes('Keyword Alignment');
+  const hasAcceptButtons = cvStudioSrc.includes('Accept Improvement (+4 ATS)') && cvStudioSrc.includes('Keep Original');
+  record(
+    'Phase 2: CV Studio visual original-vs-proposed diff & transparent ATS breakdown',
+    hasOriginalDiff && hasProposedDiff && hasTransparentBreakdown && hasAcceptButtons,
+    `DiffPanes=${hasOriginalDiff && hasProposedDiff}, Breakdown=${hasTransparentBreakdown}, Controls=${hasAcceptButtons}`
+  );
+
+  // 4. CV Studio Decisions Persistence & Undo (DEF-01)
+  const hasDecisionsPersistence = cvStudioSrc.includes('updateDiffDecision') && cvStudioSrc.includes('cvDecisions');
+  const hasUndoSupport = cvStudioSrc.includes("updateDiffDecision('diff1', 'pending')") && cvStudioSrc.includes("updateDiffDecision('diff2', 'pending')");
+  record(
+    'Phase 2.1 (DEF-01): CV Studio decisions persist via profile store & Undo restores original state',
+    hasDecisionsPersistence && hasUndoSupport,
+    `DecisionsPersistence=${hasDecisionsPersistence}, UndoSupport=${hasUndoSupport}`
+  );
+
+  // 5. CV Studio Complete Text Export (DEF-02)
+  const hasCompleteExport = cvStudioSrc.includes('TECHNICAL PROJECTS & RESEARCH') &&
+    cvStudioSrc.includes('project1Bullet2') &&
+    cvStudioSrc.includes('project1Bullet3') &&
+    cvStudioSrc.includes('TECHNICAL COMPETENCIES');
+  record(
+    'Phase 2.1 (DEF-02): CV text export includes actual projects, skills, education, and accepted/original bullets',
+    hasCompleteExport,
+    `CompleteExportAssembly=${hasCompleteExport}`
+  );
+
+  // 6. AI Copilot Message & Guardrails Refinement
+  const copilotSrc = fs.readFileSync(path.join(process.cwd(), 'apps', 'web', 'src', 'app', 'ai-copilot', 'page.tsx'), 'utf8');
+  const hasCollapsibleLogs = copilotSrc.includes('<details') && copilotSrc.includes('Agent Step');
+  const hasApprovalGate = copilotSrc.includes('Human Approval Gate:') && copilotSrc.includes('Jobora Policy: No external submissions without explicit human authorization');
+  record(
+    'Phase 2: AI Copilot collapsible agent telemetry & human approval gate',
+    hasCollapsibleLogs && hasApprovalGate,
+    `CollapsibleLogs=${hasCollapsibleLogs}, ApprovalGate=${hasApprovalGate}`
+  );
+}
+
 async function main() {
   console.log('====================================================');
   console.log('JOBORA AI — AUTOMATED QA & VERIFICATION SUITE');
@@ -490,6 +563,7 @@ async function main() {
   await runStaticAudit();
   await runRouteAudit();
   await runApiAndAuthAudit();
+  await runPhase2Audit();
 
   const passed = results.filter((r) => r.passed).length;
   const failed = results.filter((r) => !r.passed).length;

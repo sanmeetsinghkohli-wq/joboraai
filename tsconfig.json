@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "preserve",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@jobora/types": ["packages/types/src/index.ts"],
+      "@jobora/types/*": ["packages/types/src/*"],
+      "@jobora/mocks": ["packages/mocks/src/index.ts"],
+      "@jobora/mocks/*": ["packages/mocks/src/*"],
+      "@jobora/backend": ["packages/backend/src/index.ts"],
+      "@jobora/backend/*": ["packages/backend/src/*"],
+      "@jobora/ui": ["packages/ui/src/index.ts"],
+      "@jobora/ui/*": ["packages/ui/src/*"],
+      "@/*": ["./apps/web/src/*"]
+    }
+  },
+  "include": [
+    "apps/web/src/**/*.ts",
+    "apps/web/src/**/*.tsx",
+    "packages/types/src/**/*.ts",
+    "packages/types/src/**/*.tsx",
+    "packages/mocks/src/**/*.ts",
+    "packages/mocks/src/**/*.tsx",
+    "packages/backend/src/**/*.ts",
+    "packages/backend/src/**/*.tsx",
+    "packages/ui/src/**/*.ts",
+    "packages/ui/src/**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

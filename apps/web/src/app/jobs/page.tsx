@@ -1,0 +1,620 @@
+'use client';
+
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { StitchShell } from '@/components/StitchShell';
+import { useAppData, type LiveJob } from '@/context/AppDataContext';
+
+function JobSearchContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const {
+    profile,
+    jobs,
+    loadingJobs,
+    refreshJobs,
+    addCustomJob,
+    savedJobIds,
+    toggleSavedJob,
+    selectedJob,
+    setSelectedJob,
+    addApplication,
+  } = useAppData();
+
+  const [queryInput, setQueryInput] = useState(searchParams?.get('q') || '');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'requirements' | 'match' | 'company'>('overview');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [showAddJobModal, setShowAddJobModal] = useState(false);
+  const [newJobTitle, setNewJobTitle] = useState('');
+  const [newJobCompany, setNewJobCompany] = useState('');
+  const [newJobLocation, setNewJobLocation] = useState('');
+  const [newJobDesc, setNewJobDesc] = useState('');
+  const [newJobSkills, setNewJobSkills] = useState('');
+  const [newJobRecruiterEmail, setNewJobRecruiterEmail] = useState('');
+
+  useEffect(() => {
+    const q = searchParams?.get('q');
+    if (q) {
+      setQueryInput(q);
+      refreshJobs(q, locationFilter);
+    }
+    const sel = searchParams?.get('selected');
+    if (sel && jobs.length > 0) {
+      const found = jobs.find((j) => j.id === sel);
+      if (found) setSelectedJob(found);
+    }
+  }, [searchParams]);
+
+  const currentJob: LiveJob | null = selectedJob || (jobs.length > 0 ? jobs[0] : null);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    refreshJobs(queryInput, locationFilter);
+  };
+
+  const handleTailorAndApply = () => {
+    if (!currentJob) return;
+    setSelectedJob(currentJob);
+    setToastMsg(`Aligning your CV for ${currentJob.title} at ${currentJob.company}...`);
+    setTimeout(() => {
+      router.push(`/cv-studio?jobId=${encodeURIComponent(currentJob.id)}`);
+    }, 800);
+  };
+
+  const handleQuickApply = async () => {
+    if (!currentJob) return;
+    await addApplication({
+      jobId: currentJob.id,
+      title: currentJob.title,
+      company: currentJob.company,
+      location: currentJob.location,
+      status: 'applied',
+      matchScore: currentJob.matchScore || 92,
+      syncChannel: profile.emailProvider !== 'none' ? profile.emailProvider : 'Direct',
+      recruiterName: currentJob.recruiterName || 'Hiring Team',
+      recruiterEmail: currentJob.recruiterEmail || '',
+    });
+    setToastMsg(`Application logged for ${currentJob.title} at ${currentJob.company}!`);
+    setTimeout(() => setToastMsg(null), 4000);
+  };
+
+  const handleCreateCustomJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJobTitle || !newJobCompany) return;
+    await addCustomJob({
+      title: newJobTitle,
+      company: newJobCompany,
+      location: newJobLocation || 'Remote / Hybrid',
+      description: newJobDesc,
+      skills: newJobSkills
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      recruiterEmail: newJobRecruiterEmail,
+    });
+    setShowAddJobModal(false);
+    setNewJobTitle('');
+    setNewJobCompany('');
+    setNewJobLocation('');
+    setNewJobDesc('');
+    setNewJobSkills('');
+    setNewJobRecruiterEmail('');
+  };
+
+  return (
+    <StitchShell activeNav="job-search">
+      <div className="flex flex-col w-full">
+        {/* Top Command & Filter Bar */}
+        <header className="w-full bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-4 shadow-[0_4px_20px_-4px_rgba(53,27,50,0.05)] mb-6 flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
+              <span className="material-symbols-outlined text-on-surface-variant absolute left-3.5 text-[22px]">
+                search
+              </span>
+              <input
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
+                className="w-full pl-11 pr-28 py-2.5 bg-surface-container-low rounded-xl font-body-md text-body-md text-on-surface placeholder-on-surface-variant focus:outline-none focus:bg-surface-container-lowest transition-all"
+                placeholder="Search live jobs, roles, companies, or keywords..."
+                type="text"
+              />
+              <span className="absolute right-3.5 px-2 py-0.5 rounded bg-surface-container-highest font-caption-caps text-caption-caps text-on-surface-variant">
+                {jobs.length} ROLES
+              </span>
+            </form>
+            <div className="flex items-center gap-2.5 overflow-x-auto pb-1 lg:pb-0">
+              <button
+                onClick={() => {
+                  const nextLoc = locationFilter === 'Remote' ? '' : 'Remote';
+                  setLocationFilter(nextLoc);
+                  refreshJobs(queryInput, nextLoc);
+                }}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors text-on-surface font-label-md text-label-md whitespace-nowrap"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px] text-secondary">location_on</span>
+                <span>{locationFilter || profile.location || 'All Locations'}</span>
+                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+              </button>
+              <button
+                onClick={() => refreshJobs('Intern', locationFilter)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors text-on-surface font-label-md text-label-md whitespace-nowrap"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">work_outline</span>
+                <span>Intern &amp; Full-Time</span>
+              </button>
+              <button
+                onClick={() => setShowAddJobModal(true)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary-container text-on-primary hover:bg-primary transition-colors font-label-md text-label-md whitespace-nowrap shadow-sm"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                <span>Paste Job Description</span>
+              </button>
+            </div>
+          </div>
+          {/* Active Filter Chips Bar */}
+          <div className="flex items-center flex-wrap gap-2 pt-2 border-t-0">
+            <span className="font-caption-caps text-caption-caps uppercase text-on-surface-variant tracking-wider">
+              Live Feed Sources:
+            </span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+              <span>Remotive Live API</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm">
+              <span>Arbeitnow Tech API</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">
+              <span className="material-symbols-outlined text-[14px] text-on-tertiary-fixed">auto_awesome</span>
+              <span>AI Match Scored</span>
+            </div>
+            <button
+              onClick={() => {
+                setQueryInput('');
+                setLocationFilter('');
+                refreshJobs('', '');
+              }}
+              className="font-label-sm text-label-sm text-secondary hover:underline ml-auto"
+              type="button"
+            >
+              Reset &amp; Refresh Live Feed
+            </button>
+          </div>
+        </header>
+
+        {/* Master-Detail Content Canvas */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* LEFT COLUMN: Job Feed Master List (5 cols on lg) */}
+          <section aria-label="Available Job Listings" className="lg:col-span-5 flex flex-col gap-3.5">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="font-headline-sm text-headline-sm text-primary">Live Matches</span>
+                <span className="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-label-sm text-label-sm">
+                  {jobs.length} roles
+                </span>
+              </div>
+              <button
+                onClick={() => router.push('/onboarding')}
+                className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 font-label-sm text-label-sm"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[16px]">tune</span>
+                <span>Preferences</span>
+              </button>
+            </div>
+
+            {loadingJobs && jobs.length === 0 ? (
+              <div className="bg-surface-container-lowest rounded-2xl p-8 text-center shadow-sm">
+                <span className="material-symbols-outlined text-secondary text-[28px] animate-spin">refresh</span>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">
+                  Loading live job postings...
+                </p>
+              </div>
+            ) : (
+              jobs.map((job) => {
+                const isSelected = currentJob?.id === job.id;
+                return (
+                  <article
+                    key={job.id}
+                    onClick={() => setSelectedJob(job)}
+                    className={`group relative bg-surface-container-lowest rounded-2xl p-5 cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? 'shadow-[0_2px_12px_rgba(53,27,50,0.06)] ring-2 ring-primary/90'
+                        : 'shadow-[0_2px_8px_-2px_rgba(53,27,50,0.04)] hover:ring-1 hover:ring-secondary/40 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center p-2 text-primary font-bold text-headline-sm">
+                          {job.company.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h2 className="font-label-md text-label-md text-primary font-bold group-hover:text-secondary transition-colors leading-tight">
+                            {job.title}
+                          </h2>
+                          <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+                            <span>{job.company}</span>
+                            <span className="text-surface-tint">•</span>
+                            <span>{job.location}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm flex items-center gap-1 font-bold whitespace-nowrap">
+                        <span className="material-symbols-outlined text-[14px]">verified</span>
+                        {job.matchScore || 88}% match
+                      </span>
+                    </div>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-3">
+                      {job.description}
+                    </p>
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface font-caption-caps text-caption-caps uppercase">
+                          {job.workMode}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface font-caption-caps text-caption-caps uppercase">
+                          {job.employmentType}
+                        </span>
+                      </div>
+                      <span className="font-body-sm text-body-sm text-on-surface-variant">{job.postedAt}</span>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </section>
+
+          {/* RIGHT COLUMN: Inspector / Detailed Job Preview (7 cols on lg) */}
+          <div aria-label="Selected Role Details" className="lg:col-span-7 flex flex-col gap-5 sticky top-20">
+            {currentJob ? (
+              <div className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-[0_4px_24px_-4px_rgba(53,27,50,0.06)] relative overflow-hidden">
+                <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none"></div>
+                {/* Detail Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b-0">
+                  <div className="flex items-start sm:items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-surface-container-high flex items-center justify-center p-3 text-primary font-bold text-headline-lg shadow-sm">
+                      {currentJob.company.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h1 className="font-headline-md text-headline-md text-primary leading-tight">
+                          {currentJob.title}
+                        </h1>
+                        <span className="px-3 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm flex items-center gap-1 font-bold">
+                          <span className="material-symbols-outlined text-[15px]">verified</span>
+                          {currentJob.matchScore || 88}% match
+                        </span>
+                      </div>
+                      <p className="font-body-md text-body-md text-on-surface-variant mt-1 flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-on-surface">{currentJob.company}</span>
+                        <span>•</span>
+                        <span>{currentJob.location}</span>
+                        <span>•</span>
+                        <span className="text-secondary font-medium">{currentJob.workMode}</span>
+                      </p>
+                    </div>
+                  </div>
+                  {/* Quick Action Buttons */}
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <button
+                      onClick={() => toggleSavedJob(currentJob.id)}
+                      className="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-on-surface transition-colors flex items-center justify-center"
+                      title="Save Job"
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        {savedJobIds.includes(currentJob.id) ? 'bookmark' : 'bookmark_border'}
+                      </span>
+                    </button>
+                    {currentJob.sourceUrl && (
+                      <a
+                        href={currentJob.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-on-surface transition-colors flex items-center justify-center"
+                        title="Open Original Listing"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">open_in_new</span>
+                      </a>
+                    )}
+                    <button
+                      onClick={handleTailorAndApply}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-all shadow-md hover:shadow-lg"
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-tertiary-fixed">magic_button</span>
+                      <span>Tailor CV &amp; Apply</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Detail Tabs Bar */}
+                <nav aria-label="Role Sections" className="flex items-center gap-2 pt-2 pb-4 overflow-x-auto">
+                  {(['overview', 'requirements', 'match', 'company'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={
+                        activeTab === tab
+                          ? 'px-4 py-2 rounded-xl bg-surface-container-high text-primary font-label-md text-label-md font-bold capitalize'
+                          : 'px-4 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors capitalize'
+                      }
+                      type="button"
+                    >
+                      {tab === 'match' ? 'AI Match Breakdown' : tab === 'company' ? 'Company & Source' : tab}
+                    </button>
+                  ))}
+                </nav>
+
+                {/* AI Match Insight Callout Card */}
+                <div className="my-4 p-4 sm:p-5 rounded-2xl bg-surface-container-low flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-primary font-label-md text-label-md font-bold">
+                      <span className="material-symbols-outlined text-secondary text-[20px]">psychology</span>
+                      <span>Why you&apos;re a {currentJob.matchScore || 88}% match for this role</span>
+                    </div>
+                    <span className="font-caption-caps text-caption-caps uppercase text-on-surface-variant">
+                      {profile.resumeFileName ? 'CV Synced' : 'Live Analysis'}
+                    </span>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface">
+                    {profile.skills.length > 0 ? (
+                      <>
+                        Your profile skills (<strong className="font-semibold text-primary">{profile.skills.slice(0, 4).join(', ')}</strong>) align with{' '}
+                        <strong className="font-semibold text-primary">{currentJob.company}</strong>&apos;s technical stack for{' '}
+                        <strong className="font-semibold text-primary">{currentJob.title}</strong>.
+                      </>
+                    ) : (
+                      <>
+                        Upload your resume in <strong className="font-semibold text-primary">CV Studio</strong> or{' '}
+                        <strong className="font-semibold text-primary">Onboarding</strong> to calculate exact skill overlap against{' '}
+                        <strong className="font-semibold text-primary">{currentJob.company}</strong>.
+                      </>
+                    )}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <div className="flex items-center gap-2 bg-surface-container-lowest p-2.5 rounded-xl">
+                      <span className="material-symbols-outlined text-[18px] text-on-tertiary-container">
+                        check_circle
+                      </span>
+                      <span className="font-body-sm text-body-sm text-on-surface leading-tight">
+                        Core stack: {(currentJob.skills || []).slice(0, 3).join(', ') || 'Software Engineering'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-surface-container-lowest p-2.5 rounded-xl">
+                      <span className="material-symbols-outlined text-[18px] text-secondary">info</span>
+                      <span className="font-body-sm text-body-sm text-on-surface leading-tight">
+                        Source: {currentJob.source}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role Overview Section */}
+                <div className="flex flex-col gap-4 mt-6">
+                  <div>
+                    <h3 className="font-label-md text-label-md text-primary font-bold uppercase tracking-wider mb-2">
+                      About The Role
+                    </h3>
+                    <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                      {currentJob.description}
+                    </p>
+                  </div>
+                  {currentJob.responsibilities && currentJob.responsibilities.length > 0 && (
+                    <div>
+                      <h3 className="font-label-md text-label-md text-primary font-bold uppercase tracking-wider mb-2">
+                        Key Highlights
+                      </h3>
+                      <ul className="flex flex-col gap-2.5 font-body-md text-body-md text-on-surface-variant">
+                        {currentJob.responsibilities.map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2.5">
+                            <span className="material-symbols-outlined text-secondary text-[18px] mt-0.5">
+                              check_small
+                            </span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Required Competencies / Tags */}
+                  <div>
+                    <h3 className="font-label-md text-label-md text-primary font-bold uppercase tracking-wider mb-2.5">
+                      Required Competencies &amp; Tech Stack
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {(currentJob.skills || []).map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-3 py-1.5 rounded-xl bg-surface-container text-primary font-label-sm text-label-sm flex items-center gap-1.5"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span> {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Metadata Quick Summary Bento */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
+                    <div className="p-3 rounded-xl bg-surface-container-low flex flex-col">
+                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                        Type
+                      </span>
+                      <span className="font-label-md text-label-md text-primary font-bold mt-1">
+                        {currentJob.employmentType}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-surface-container-low flex flex-col">
+                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                        Compensation
+                      </span>
+                      <span className="font-label-md text-label-md text-primary font-bold mt-1 truncate">
+                        {currentJob.salaryRange}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-surface-container-low flex flex-col">
+                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                        Work Mode
+                      </span>
+                      <span className="font-label-md text-label-md text-primary font-bold mt-1">
+                        {currentJob.workMode}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-surface-container-low flex flex-col">
+                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                        Posted
+                      </span>
+                      <span className="font-label-md text-label-md text-primary font-bold mt-1">
+                        {currentJob.postedAt}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Sticky Action Bar inside Inspector */}
+                  <div className="pt-6 mt-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-md font-bold">
+                        {(currentJob.recruiterName || currentJob.company).charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-label-sm text-label-sm text-primary font-bold leading-tight">
+                          {currentJob.recruiterName || `${currentJob.company} Talent Team`}
+                        </span>
+                        <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                          {currentJob.source}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleQuickApply}
+                        className="px-5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md transition-colors"
+                        type="button"
+                      >
+                        1-Click Quick Apply
+                      </button>
+                      <button
+                        onClick={handleTailorAndApply}
+                        className="px-6 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-all shadow-md flex items-center gap-2"
+                        type="button"
+                      >
+                        <span>Tailor CV with Jobora AI</span>
+                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Paste Custom Job Modal */}
+        {showAddJobModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/60 backdrop-blur-sm">
+            <div className="bg-surface-container-lowest max-w-lg w-full rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-headline-sm text-headline-sm text-primary font-bold">
+                  Add Real Job Description
+                </h3>
+                <button
+                  onClick={() => setShowAddJobModal(false)}
+                  className="text-on-surface-variant hover:text-primary"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <form onSubmit={handleCreateCustomJob} className="flex flex-col gap-3">
+                <input
+                  required
+                  value={newJobTitle}
+                  onChange={(e) => setNewJobTitle(e.target.value)}
+                  placeholder="Job Title (e.g. AI Engineer)"
+                  className="px-3.5 py-2.5 rounded-xl bg-surface-container-low font-body-sm text-on-surface"
+                />
+                <input
+                  required
+                  value={newJobCompany}
+                  onChange={(e) => setNewJobCompany(e.target.value)}
+                  placeholder="Company Name"
+                  className="px-3.5 py-2.5 rounded-xl bg-surface-container-low font-body-sm text-on-surface"
+                />
+                <input
+                  value={newJobLocation}
+                  onChange={(e) => setNewJobLocation(e.target.value)}
+                  placeholder="Location (e.g. Dubai, UAE or Remote)"
+                  className="px-3.5 py-2.5 rounded-xl bg-surface-container-low font-body-sm text-on-surface"
+                />
+                <input
+                  value={newJobRecruiterEmail}
+                  onChange={(e) => setNewJobRecruiterEmail(e.target.value)}
+                  placeholder="Recruiter / Application Email (optional)"
+                  className="px-3.5 py-2.5 rounded-xl bg-surface-container-low font-body-sm text-on-surface"
+                />
+                <input
+                  value={newJobSkills}
+                  onChange={(e) => setNewJobSkills(e.target.value)}
+                  placeholder="Skills comma-separated (e.g. Python, PyTorch, Docker)"
+                  className="px-3.5 py-2.5 rounded-xl bg-surface-container-low font-body-sm text-on-surface"
+                />
+                <textarea
+                  required
+                  rows={4}
+                  value={newJobDesc}
+                  onChange={(e) => setNewJobDesc(e.target.value)}
+                  placeholder="Paste the full job description here..."
+                  className="px-3.5 py-2.5 rounded-xl bg-surface-container-low font-body-sm text-on-surface"
+                />
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddJobModal(false)}
+                    className="px-4 py-2 rounded-xl bg-surface-container text-on-surface font-label-md"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-primary-container text-on-primary font-label-md font-bold"
+                  >
+                    Parse &amp; Add Role
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Interactive Toast Alert */}
+        {toastMsg && (
+          <div className="fixed bottom-6 right-6 max-w-md bg-inverse-surface text-inverse-on-surface p-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50">
+            <span className="material-symbols-outlined text-tertiary-fixed text-[24px]">auto_awesome</span>
+            <div className="flex flex-col flex-1">
+              <span className="font-label-md text-label-md font-bold">Jobora Copilot</span>
+              <span className="font-body-sm text-body-sm opacity-80">{toastMsg}</span>
+            </div>
+            <button
+              className="text-inverse-on-surface/60 hover:text-inverse-on-surface"
+              onClick={() => setToastMsg(null)}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </StitchShell>
+  );
+}
+
+export default function JobSearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
+      <JobSearchContent />
+    </Suspense>
+  );
+}

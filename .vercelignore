@@ -1,0 +1,8 @@
+node_modules
+.next
+apps/web/.next
+*.mp4
+*.zip
+*.tar.gz
+.git
+.env*.local

@@ -34,3 +34,5 @@ yarn-error.log*
 *.mp4
 *.py
 thumbnail_screenshot.png
+
+.vercel

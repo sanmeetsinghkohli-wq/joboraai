@@ -234,7 +234,7 @@ function AuthPortalContent() {
                         <input
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
-                          className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all placeholder:text-outline"
+                          className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 rounded-lg border border-[#EDE5E1] shadow-sm focus-ring transition-all placeholder:text-outline"
                           id="full-name"
                           placeholder="Enter your full name"
                           required
@@ -254,7 +254,7 @@ function AuthPortalContent() {
                         <input
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all placeholder:text-outline"
+                          className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 rounded-lg border border-[#EDE5E1] shadow-sm focus-ring transition-all placeholder:text-outline"
                           id="email-address"
                           placeholder="you@organization.com"
                           required
@@ -275,7 +275,7 @@ function AuthPortalContent() {
                           <input
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 pr-11 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                            className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 pr-11 rounded-lg border border-[#EDE5E1] shadow-sm focus-ring transition-all"
                             id="password"
                             placeholder="Create password"
                             required
@@ -283,7 +283,7 @@ function AuthPortalContent() {
                           />
                           <button
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3.5 top-3 text-on-surface-variant hover:text-primary transition-colors"
+                            className="absolute right-3.5 top-3 text-on-surface-variant hover:text-primary transition-colors focus-ring rounded"
                             type="button"
                           >
                             <span className="material-symbols-outlined text-[20px]">
@@ -300,7 +300,7 @@ function AuthPortalContent() {
                           <input
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 pr-11 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                            className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 pr-11 rounded-lg border border-[#EDE5E1] shadow-sm focus-ring transition-all"
                             id="confirm-password"
                             placeholder="Confirm password"
                             required
@@ -308,7 +308,7 @@ function AuthPortalContent() {
                           />
                           <button
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3.5 top-3 text-on-surface-variant hover:text-primary transition-colors"
+                            className="absolute right-3.5 top-3 text-on-surface-variant hover:text-primary transition-colors focus-ring rounded"
                             type="button"
                           >
                             <span className="material-symbols-outlined text-[20px]">
@@ -449,7 +449,7 @@ function AuthPortalContent() {
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
                           placeholder="you@organization.com"
-                          className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all placeholder:text-outline"
+                          className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 rounded-lg border border-[#EDE5E1] shadow-sm focus-ring transition-all placeholder:text-outline"
                           id="login-email"
                           required
                           type="email"
@@ -467,7 +467,7 @@ function AuthPortalContent() {
                         <button
                           type="button"
                           onClick={() => setActiveTab('verify')}
-                          className="font-label-sm text-label-sm text-secondary hover:underline"
+                          className="font-label-sm text-label-sm text-secondary hover:underline focus-ring rounded"
                         >
                           Forgot password?
                         </button>
@@ -477,7 +477,7 @@ function AuthPortalContent() {
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
                           placeholder="Enter your password"
-                          className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 pr-11 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                          className="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md px-4 py-3 pr-11 rounded-lg border border-[#EDE5E1] shadow-sm focus-ring transition-all"
                           id="login-password"
                           required
                           type="password"

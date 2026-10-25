@@ -28,9 +28,8 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const content =
-      String(body?.rawText || resume?.rawText || '').trim() ||
-      `Candidate Resume (${resume?.fileName || 'Uploaded_CV.pdf'})\nSkills: TypeScript, React, Python, Next.js, AWS`;
+    const rawContent = String(body?.rawText || resume?.rawText || '').trim();
+    const content = rawContent || `Candidate Resume (${resume?.fileName || 'Uploaded_CV.pdf'})`;
 
     const extractionInput: CVExtractionInput = {
       fileName: resume?.fileName || 'Candidate_CV.pdf',
@@ -39,8 +38,8 @@ export async function POST(
     };
 
     const result = extractCandidateProfile(extractionInput);
-    const skillCount = result?.profile?.skills?.length || 4;
-    const atsScore = Math.min(98, Math.max(70, 74 + skillCount * 3));
+    const skillCount = result?.profile?.skills?.length || 0;
+    const atsScore = skillCount > 0 ? Math.min(98, Math.max(70, 74 + skillCount * 3)) : 50;
 
     return NextResponse.json({
       ...result,
@@ -48,6 +47,10 @@ export async function POST(
         atsScore,
         methodology: 'Heuristic keyword & structure check (not a hiring guarantee)',
         extractedSkillsCount: skillCount,
+        note:
+          skillCount === 0
+            ? 'No technical skills could be extracted automatically from this document. Please ensure your PDF contains selectable text or add verified skills manually in Profile Settings.'
+            : undefined,
       },
       success: true,
     });

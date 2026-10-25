@@ -87,10 +87,15 @@ export function stripHtml(html: string): string {
 export function sanitizeExternalUrl(url: unknown, fallback = ''): string {
   if (typeof url !== 'string') return fallback;
   const trimmed = url.trim();
-  if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
-    return trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return parsed.href;
+    }
+    return fallback;
+  } catch {
+    return fallback;
   }
-  return fallback;
 }
 
 /**

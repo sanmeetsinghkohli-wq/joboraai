@@ -155,7 +155,7 @@ export default function AICopilotPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Chat Stream (8 cols) */}
-          <div className="lg:col-span-8 bg-surface-container-lowest rounded-2xl shadow-sm p-5 sm:p-6 flex flex-col gap-5">
+          <div className="lg:col-span-8 editorial-card p-5 sm:p-6 flex flex-col gap-5 border border-[#EDE5E1]">
             {/* Quick Prompt Pills */}
             <div className="flex flex-wrap gap-2 pb-3 border-b border-outline-variant/20">
               {QUICK_PROMPTS.map((q) => (
@@ -328,12 +328,12 @@ export default function AICopilotPage() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Jobora AI to find jobs, explain matches, analyze your CV, or stage an application..."
                 aria-label="Prompt Jobora AI Copilot"
-                className="flex-1 bg-surface-container-low px-4 py-3 rounded-xl font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="flex-1 bg-surface-container-low px-4 py-3 rounded-xl font-body-md text-body-md text-on-surface border border-[#EDE5E1] focus-ring focus:border-[#351B32] transition-colors"
               />
               <button
                 type="submit"
                 disabled={sending || !input.trim()}
-                className="px-6 py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-bold hover:bg-primary transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-bold hover:bg-primary transition-all disabled:opacity-50 flex items-center gap-2 focus-ring"
               >
                 <span>{sending ? 'Running...' : 'Send'}</span>
                 <span className="material-symbols-outlined text-[18px]">send</span>
@@ -343,7 +343,7 @@ export default function AICopilotPage() {
 
           {/* Right Agent Permissions & Telemetry Sidebar (4 cols) */}
           <aside className="lg:col-span-4 flex flex-col gap-4">
-            <div className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm flex flex-col gap-3">
+            <div className="editorial-card p-5 border border-[#EDE5E1] flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-headline-sm text-headline-sm text-primary">Agent Guardrails</h2>
                 <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-caption-caps text-caption-caps font-bold">
@@ -366,22 +366,22 @@ export default function AICopilotPage() {
               </ul>
             </div>
 
-            <div className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm flex flex-col gap-3">
+            <div className="editorial-card p-5 border border-[#EDE5E1] flex flex-col gap-3">
               <h2 className="font-headline-sm text-headline-sm text-primary">Workspace Telemetry</h2>
               <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-3 rounded-xl bg-surface-container-low">
+                <div className="p-3.5 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1]/70">
                   <div className="font-caption-caps text-caption-caps text-on-surface-variant">Live Jobs</div>
                   <div className="font-headline-sm text-headline-sm text-primary font-bold">{jobs.length}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-surface-container-low">
+                <div className="p-3.5 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1]/70">
                   <div className="font-caption-caps text-caption-caps text-on-surface-variant">Saved Roles</div>
                   <div className="font-headline-sm text-headline-sm text-primary font-bold">{savedJobIds.length}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-surface-container-low">
+                <div className="p-3.5 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1]/70">
                   <div className="font-caption-caps text-caption-caps text-on-surface-variant">Tracked Apps</div>
                   <div className="font-headline-sm text-headline-sm text-primary font-bold">{applications.length}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-surface-container-low">
+                <div className="p-3.5 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1]/70">
                   <div className="font-caption-caps text-caption-caps text-on-surface-variant">Verified Skills</div>
                   <div className="font-headline-sm text-headline-sm text-primary font-bold">{profile.skills.length}</div>
                 </div>

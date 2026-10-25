@@ -31,7 +31,6 @@ function JobSearchContent() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   const [showProviderHealthModal, setShowProviderHealthModal] = useState(false);
-  const [showProviderStrip, setShowProviderStrip] = useState(false);
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
   const [geminiMatch, setGeminiMatch] = useState<{
     engine: string;
@@ -173,7 +172,7 @@ function JobSearchContent() {
     <StitchShell activeNav="job-search">
       <div className="flex flex-col w-full">
         {/* Top Command & Filter Bar */}
-        <header className="w-full bg-surface-container-lowest/90 backdrop-blur-md rounded-2xl p-4 shadow-[0_4px_20px_-4px_rgba(53,27,50,0.05)] mb-6 flex flex-col gap-3.5">
+        <header className="w-full editorial-card border border-[#EDE5E1] p-4 mb-6 flex flex-col gap-3.5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
               <span className="material-symbols-outlined text-on-surface-variant absolute left-3.5 text-[22px]">
@@ -182,7 +181,7 @@ function JobSearchContent() {
               <input
                 value={queryInput}
                 onChange={(e) => setQueryInput(e.target.value)}
-                className="w-full pl-11 pr-28 py-2.5 bg-surface-container-low rounded-xl font-body-md text-body-md text-on-surface placeholder-on-surface-variant focus:outline-none focus:bg-surface-container-lowest transition-all"
+                className="w-full pl-11 pr-28 py-2.5 bg-surface-container-low rounded-xl font-body-md text-body-md text-on-surface placeholder-on-surface-variant border border-[#EDE5E1] focus-ring focus:border-[#351B32] transition-colors"
                 placeholder="Search UAE, GCC & global roles, companies, or skills..."
                 type="text"
               />
@@ -193,15 +192,16 @@ function JobSearchContent() {
             <div className="flex items-center gap-2.5 overflow-x-auto pb-1 lg:pb-0">
               <button
                 onClick={() => setShowProviderHealthModal(true)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors text-on-surface font-label-md text-label-md whitespace-nowrap"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-colors text-on-surface font-label-md text-label-md whitespace-nowrap border border-[#EDE5E1] focus-ring"
                 type="button"
+                aria-label="View source health and provider status"
               >
-                <span className="material-symbols-outlined text-[18px] text-emerald-600">monitoring</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Source Health &amp; APIs</span>
               </button>
               <button
                 onClick={() => setShowAddJobModal(true)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary-container text-on-primary hover:bg-primary transition-colors font-label-md text-label-md whitespace-nowrap shadow-sm"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary-container text-on-primary hover:bg-primary transition-colors font-label-md text-label-md whitespace-nowrap shadow-xs focus-ring"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
@@ -210,7 +210,7 @@ function JobSearchContent() {
             </div>
           </div>
 
-          {/* UAE & GCC Priority Location Filter Bar with Compact Provider Telemetry */}
+          {/* UAE & GCC Priority Location Filter Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[#EDE5E1]/60">
             <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none flex-1">
               <span className="font-caption-caps text-caption-caps uppercase text-on-surface-variant tracking-wider flex items-center gap-1 whitespace-nowrap mr-1">
@@ -224,7 +224,7 @@ function JobSearchContent() {
                     key={chip.label}
                     type="button"
                     onClick={() => handleLocationChipClick(chip.value)}
-                    className={`px-3 py-1 rounded-full font-label-sm text-label-sm whitespace-nowrap transition-all ${
+                    className={`px-3 py-1 rounded-full font-label-sm text-label-sm whitespace-nowrap transition-all focus-ring ${
                       isActive
                         ? 'bg-primary text-on-primary font-bold shadow-xs'
                         : 'bg-white border border-[#EDE5E1] text-[#1D1A21] hover:bg-[#F3EBE3]'
@@ -236,101 +236,19 @@ function JobSearchContent() {
               })}
             </div>
 
-            {/* Compact Expandable Provider Indicator */}
-            <div className="relative flex items-center gap-2 shrink-0 self-start sm:self-auto">
+            {(queryInput || locationFilter) && (
               <button
+                onClick={() => {
+                  setQueryInput('');
+                  setLocationFilter('');
+                  refreshJobs('', '');
+                }}
+                className="font-label-sm text-label-sm text-secondary hover:underline px-2 py-1 whitespace-nowrap focus-ring rounded"
                 type="button"
-                onClick={() => setShowProviderStrip(!showProviderStrip)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#EDE5E1] font-label-sm text-label-sm text-primary hover:bg-[#F3EBE3] shadow-2xs transition-all"
-                aria-expanded={showProviderStrip}
-                aria-label="Toggle provider health and live telemetry"
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-bold">5 Feeds Live</span>
-                <span className="font-mono text-on-surface-variant text-[11px]">({jobs.length} roles)</span>
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
-                  {showProviderStrip ? 'expand_less' : 'expand_more'}
-                </span>
+                Reset filters
               </button>
-              {(queryInput || locationFilter) && (
-                <button
-                  onClick={() => {
-                    setQueryInput('');
-                    setLocationFilter('');
-                    refreshJobs('', '');
-                  }}
-                  className="font-label-sm text-label-sm text-secondary hover:underline px-1 whitespace-nowrap"
-                  type="button"
-                >
-                  Reset
-                </button>
-              )}
-
-              {/* Expandable Live Feed Telemetry Popover */}
-              {showProviderStrip && (
-                <div className="absolute right-0 top-9 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-[#EDE5E1] p-3.5 z-40 space-y-2 text-left">
-                  <div className="flex items-center justify-between pb-1.5 border-b border-[#EDE5E1]">
-                    <span className="font-label-sm text-label-sm text-primary font-bold">Active Ingestion Feeds</span>
-                    {jobsSyncedAt && (
-                      <span className="font-caption-caps text-[10px] text-on-surface-variant">
-                        Synced {new Date(jobsSyncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#FAF6F2]">
-                      <span className="font-medium text-primary flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> UAE &amp; GCC Employer ATS
-                      </span>
-                      <span className="text-on-surface-variant font-mono">Careem, Tamara, Deliveroo, Binance</span>
-                    </div>
-                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#FAF6F2]">
-                      <span className="font-medium text-primary flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Remotive API
-                      </span>
-                      <span className="text-emerald-700 font-semibold font-mono">Verified Live</span>
-                    </div>
-                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#FAF6F2]">
-                      <span className="font-medium text-primary flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Arbeitnow API
-                      </span>
-                      <span className="text-emerald-700 font-semibold font-mono">Verified Live</span>
-                    </div>
-                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#FAF6F2]">
-                      <span className="font-medium text-primary flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Jobicy API
-                      </span>
-                      <span className="text-emerald-700 font-semibold font-mono">Verified Live</span>
-                    </div>
-                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#FAF6F2]">
-                      <span className="font-medium text-primary flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Himalayas API
-                      </span>
-                      <span className="text-emerald-700 font-semibold font-mono">Verified Live</span>
-                    </div>
-                  </div>
-                  <div className="pt-1.5 border-t border-[#EDE5E1] flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowProviderStrip(false);
-                        setShowProviderHealthModal(true);
-                      }}
-                      className="text-[11px] text-secondary font-bold hover:underline"
-                    >
-                      View Comprehensive Telemetry →
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowProviderStrip(false)}
-                      className="text-[11px] text-on-surface-variant hover:text-primary"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </header>
 

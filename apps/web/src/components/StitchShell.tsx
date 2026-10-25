@@ -41,30 +41,46 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
       ? 20
       : 0;
 
-  const navCore = [
-    { id: 'home-dashboard', label: 'Home / Dashboard', icon: 'space_dashboard', href: '/dashboard' },
-    { id: 'ai-copilot', label: 'AI Copilot & Agent', icon: 'auto_awesome', href: '/ai-copilot' },
-    { id: 'job-search', label: 'Job Search', icon: 'travel_explore', href: '/jobs' },
-    { id: 'saved-jobs', label: 'Saved Jobs', icon: 'bookmark_border', href: '/saved-jobs' },
+  const navHome = [
+    { id: 'dashboard', legacyId: 'home-dashboard', label: 'Dashboard', icon: 'dashboard', href: '/dashboard' },
   ];
 
-  const navApps = [
-    { id: 'applications', label: 'Applications', icon: 'send', href: '/applications' },
-    { id: 'applications-prepare', label: 'Application Prep', icon: 'checklist_rtl', href: '/applications/prepare' },
-    { id: 'cv-studio', label: 'CV Studio', icon: 'description', href: '/cv-studio' },
-    { id: 'cover-letters', label: 'Cover Letters', icon: 'history_edu', href: '/cover-letters' },
-    { id: 'interview-prep', label: 'Interview Prep', icon: 'psychology_alt', href: '/interview' },
+  const navFindJobs = [
+    { id: 'jobs', legacyId: 'job-search', label: 'Find Jobs', icon: 'travel_explore', href: '/jobs' },
+    { id: 'saved-jobs', legacyId: 'saved-jobs', label: 'Saved Jobs', icon: 'bookmark_border', href: '/saved-jobs' },
+    { id: 'applications', legacyId: 'applications', label: 'Applications', icon: 'send', href: '/applications' },
   ];
 
-  const navTools = [
-    { id: 'career-insights', label: 'Career Insights', icon: 'insights', href: '/career-insights' },
-    { id: 'documents', label: 'Documents', icon: 'folder_shared', href: '/documents' },
-    { id: 'email-integrations', label: 'Email Integrations', icon: 'mark_email_unread', href: '/settings/integrations' },
-    { id: 'settings', label: 'Settings', icon: 'settings', href: '/settings' },
+  const navStudio = [
+    { id: 'cv-studio', legacyId: 'cv-studio', label: 'CV Studio', icon: 'description', href: '/cv-studio' },
+    { id: 'cover-letters', legacyId: 'cover-letters', label: 'Cover Letters', icon: 'history_edu', href: '/cover-letters' },
+    { id: 'interview', legacyId: 'interview-prep', label: 'Interview Prep', icon: 'psychology_alt', href: '/interview' },
+    { id: 'career-insights', legacyId: 'career-insights', label: 'Career Insights', icon: 'insights', href: '/career-insights' },
   ];
 
-  const isActive = (item: { id: string; href: string }) => {
-    if (activeNav) return activeNav === item.id;
+  const navCopilot = [
+    { id: 'ai-copilot', legacyId: 'ai-copilot', label: 'AI Copilot', icon: 'auto_awesome', href: '/ai-copilot' },
+  ];
+
+  const navWorkspace = [
+    { id: 'documents', legacyId: 'documents', label: 'Documents', icon: 'folder_open', href: '/documents' },
+    { id: 'notifications', legacyId: 'notifications', label: 'Notifications', icon: 'notifications_none', href: '/notifications' },
+    { id: 'integrations', legacyId: 'email-integrations', label: 'Integrations', icon: 'mark_email_unread', href: '/settings/integrations' },
+    { id: 'settings', legacyId: 'settings', label: 'Settings', icon: 'tune', href: '/settings' },
+  ];
+
+  const navSections = [
+    { title: 'Home', items: navHome },
+    { title: 'Find Jobs', items: navFindJobs },
+    { title: 'Career Studio', items: navStudio },
+    { title: 'AI Copilot', items: navCopilot },
+    { title: 'Workspace', items: navWorkspace },
+  ];
+
+  const isActive = (item: { id: string; legacyId?: string; href: string }) => {
+    if (activeNav) {
+      if (activeNav === item.id || activeNav === item.legacyId) return true;
+    }
     if (pathname === item.href) return true;
     if (
       item.href !== '/dashboard' &&
@@ -112,8 +128,8 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
         }`}
         aria-label="Sidebar Navigation"
       >
-        <div className="flex flex-col flex-1 overflow-y-auto px-4 py-5 space-y-5">
-          <div className="flex items-center justify-between px-2 mb-2">
+        <div className="flex flex-col flex-1 overflow-y-auto px-4 py-5 space-y-4">
+          <div className="flex items-center justify-between px-2 mb-1">
             <Link href="/" className="flex items-center gap-3 group">
               <img
                 alt="Jobora AI Logo"
@@ -121,8 +137,8 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
                 src="https://lh3.googleusercontent.com/aida/AEtjO1UD0RQDL23COD4vvkGvPgLL6-sKCmE1485hqPsHnMByfJU_YPd5JVBuq57MN8vjXkzWM6OFUNV_3WdbRTnaM1HOMTHwFPN3hJwxRwUO_TKEOVc7VgH4u-1Pjby7L2fUY6iZdfWKut8N34Zo2Yw4qCZkL1GR58Rc8JI6Z4E4mvvmI8eozNUZ6iTwct8Gn7RrZCi2a6p1NR7ZPYgZSR-xXQ5FrJpJdOslDRrneh1HrFFC80iyRE253aFPAg"
               />
               <div className="flex flex-col">
-                <span className="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">Jobora AI</span>
-                <span className="font-caption-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Career Copilot</span>
+                <span className="font-headline-sm text-headline-sm text-[#351B32] font-bold tracking-tight">Jobora AI</span>
+                <span className="font-caption-caps text-[10px] text-[#7D747D] uppercase tracking-wider">Career Copilot</span>
               </div>
             </Link>
             <button
@@ -135,97 +151,41 @@ export function StitchShell({ children, activeNav }: StitchShellProps) {
             </button>
           </div>
 
-          {/* Group 1: Core Copilot */}
-          <div>
-            <div className="px-3 pb-1.5 flex items-center justify-between">
-              <span className="font-caption-caps text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold">
-                Core Copilot
-              </span>
-            </div>
-            <nav className="flex flex-col gap-0.5">
-              {navCore.map((item) => {
-                const active = isActive(item);
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    aria-current={active ? 'page' : undefined}
-                    className={
-                      active
-                        ? 'flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 bg-primary-container text-on-primary font-bold shadow-xs relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-secondary before:rounded-r'
-                        : 'flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant font-label-md text-label-md hover:bg-[#F3EBE3] hover:text-[#1D1A21] transition-all duration-150'
-                    }
-                    data-path={item.id}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                    <span className="text-[13.5px]">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Group 2: Application Suite */}
-          <div>
-            <div className="px-3 pb-1.5 flex items-center justify-between">
-              <span className="font-caption-caps text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold">
-                Application Suite
-              </span>
-            </div>
-            <nav className="flex flex-col gap-0.5">
-              {navApps.map((item) => {
-                const active = isActive(item);
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    aria-current={active ? 'page' : undefined}
-                    className={
-                      active
-                        ? 'flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 bg-primary-container text-on-primary font-bold shadow-xs relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-secondary before:rounded-r'
-                        : 'flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant font-label-md text-label-md hover:bg-[#F3EBE3] hover:text-[#1D1A21] transition-all duration-150'
-                    }
-                    data-path={item.id}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                    <span className="text-[13.5px]">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Group 3: Workspace & Tools */}
-          <div>
-            <div className="px-3 pb-1.5 flex items-center justify-between">
-              <span className="font-caption-caps text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold">
-                Workspace &amp; Tools
-              </span>
-            </div>
-            <nav className="flex flex-col gap-0.5">
-              {navTools.map((item) => {
-                const active = isActive(item);
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    aria-current={active ? 'page' : undefined}
-                    className={
-                      active
-                        ? 'flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 bg-primary-container text-on-primary font-bold shadow-xs relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-secondary before:rounded-r'
-                        : 'flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant font-label-md text-label-md hover:bg-[#F3EBE3] hover:text-[#1D1A21] transition-all duration-150'
-                    }
-                    data-path={item.id}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                    <span className="text-[13.5px]">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+          {/* 5-Pillar Goal-Oriented Navigation Hierarchy */}
+          <div className="space-y-4">
+            {navSections.map((section) => (
+              <div key={section.title}>
+                <div className="px-3 pb-1 flex items-center justify-between">
+                  <span className="font-caption-caps text-[10.5px] text-[#8A7F88] uppercase tracking-wider font-bold">
+                    {section.title}
+                  </span>
+                </div>
+                <nav className="flex flex-col gap-0.5">
+                  {section.items.map((item) => {
+                    const active = isActive(item);
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        aria-current={active ? 'page' : undefined}
+                        className={
+                          active
+                            ? 'flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all duration-150 bg-[#351B32] text-white font-bold shadow-xs relative'
+                            : 'flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[#574B53] font-medium text-[13.5px] hover:bg-[#F3EBE3] hover:text-[#1D1A21] transition-all duration-150'
+                        }
+                        data-path={item.id}
+                      >
+                        <span className={`material-symbols-outlined text-[19px] ${active ? 'text-[#E76F72]' : 'text-[#7D747D]'}`}>
+                          {item.icon}
+                        </span>
+                        <span className="text-[13px]">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+            ))}
           </div>
         </div>
 

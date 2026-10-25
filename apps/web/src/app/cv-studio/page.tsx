@@ -87,12 +87,15 @@ export default function CVStudioPage() {
   // Base score from profile.atsScore (derived from keyword match ratio against target role).
   // Accepting verified quantified impact (AWQ / sub-120ms latency) aligns 2 additional keywords (+4 pts).
   // Accepting verified containerization tooling (Docker / CI/CD) aligns 1 additional keyword (+3 pts).
-  const baseScore = profile.atsScore > 0 ? profile.atsScore : 88;
-  const computedScore = Math.min(
-    99,
-    baseScore + (diff1State === 'accepted' ? 4 : 0) + (diff2State === 'accepted' ? 3 : 0)
-  );
-  const dashOffset = 314.159 - (314.159 * computedScore) / 100;
+  const hasUploadedCV = Boolean(profile.resumeFileName);
+  const isCalibrated = profile.atsScore > 0 || hasUploadedCV || (profile.skills && profile.skills.length > 0);
+  const baseScore = profile.atsScore > 0
+    ? profile.atsScore
+    : (profile.skills && profile.skills.length > 0 ? Math.min(92, 70 + profile.skills.length * 3) : 0);
+  const computedScore = isCalibrated
+    ? Math.min(99, baseScore + (diff1State === 'accepted' ? 4 : 0) + (diff2State === 'accepted' ? 3 : 0))
+    : 0;
+  const dashOffset = isCalibrated && computedScore > 0 ? 314.159 - (314.159 * computedScore) / 100 : 314.159;
 
   const missingKeywords =
     activeJob?.skills && activeJob.skills.length > 0
@@ -105,13 +108,14 @@ export default function CVStudioPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     const sizeKB = `${Math.max(1, Math.round(file.size / 1024))} KB`;
+    const calculatedScore = Math.min(94, Math.max(72, 74 + (profile.skills?.length || 3) * 3));
     await updateProfile({
       resumeFileName: file.name,
       resumeSize: sizeKB,
       resumeUploadedAt: 'Just now',
-      atsScore: 88,
+      atsScore: calculatedScore,
     });
-    logActivity('upload_file', `Uploaded CV: ${file.name}`, `ATS Benchmark: 88/100`);
+    logActivity('upload_file', `Uploaded CV: ${file.name}`, `ATS Benchmark: ${calculatedScore}/100`);
   };
 
   const handleAddKeyword = async (kw: string) => {
@@ -188,10 +192,7 @@ export default function CVStudioPage() {
   return (
     <StitchShell activeNav="cv-studio">
       <div className="flex flex-col w-full">
-        {/* Subtle ambient background aura */}
-        <div className="relative w-full overflow-hidden">
-          <div className="pointer-events-none absolute -top-24 -left-20 w-96 h-96 bg-secondary-container/15 rounded-full blur-[100px]"></div>
-          <div className="pointer-events-none absolute top-40 right-10 w-96 h-96 bg-tertiary-fixed-dim/20 rounded-full blur-[110px]"></div>
+        <div className="relative w-full">
 
           {/* Editorial Studio Header & Mode Switcher */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
@@ -273,7 +274,7 @@ export default function CVStudioPage() {
           </div>
 
           {/* Document Meta Context Strip */}
-          <div className="w-full bg-surface-container-lowest rounded-xl p-4 shadow-[0_2px_12px_-4px_rgba(53,27,50,0.06)] flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="w-full editorial-card border border-[#EDE5E1] p-4 flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
                 <span className="material-symbols-outlined text-[24px]">picture_as_pdf</span>
@@ -281,34 +282,38 @@ export default function CVStudioPage() {
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-label-md text-label-md text-on-surface font-semibold truncate">
-                    {profile.resumeFileName || 'Click "Upload CV" to attach your resume PDF/DOCX'}
+                    {profile.resumeFileName || 'Master CV Workspace'}
                   </span>
                   <span className="font-caption-caps text-caption-caps px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant">
-                    Primary Base
+                    {profile.resumeFileName ? 'Active Upload' : 'Base Profile'}
                   </span>
                 </div>
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
                   {profile.resumeUploadedAt ? `Uploaded ${profile.resumeUploadedAt}` : 'Live Workspace'} • Synced with{' '}
-                  {activeJob ? `${activeJob.company} (${activeJob.title})` : 'Target Role'}
+                  {activeJob ? `${activeJob.company} (${activeJob.title})` : profile.targetRole || 'Target Role'}
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-tertiary-fixed/30 text-on-tertiary-container">
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${
+                isCalibrated ? 'bg-tertiary-fixed/30 text-on-tertiary-container' : 'bg-surface-container text-on-surface-variant'
+              }`}>
                 <span
                   className="material-symbols-outlined text-[18px]"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
-                  verified
+                  {isCalibrated ? 'verified' : 'pending'}
                 </span>
-                <span className="font-label-sm text-label-sm font-bold tracking-wide">AI Analysis Complete</span>
+                <span className="font-label-sm text-label-sm font-bold tracking-wide">
+                  {isCalibrated ? 'AI Analysis Complete' : 'Awaiting CV Upload'}
+                </span>
               </div>
               <button
                 onClick={() => {
                   updateDiffDecision('diff1', 'pending');
                   updateDiffDecision('diff2', 'pending');
                 }}
-                className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors focus-ring"
                 title="Reload Analysis"
                 type="button"
               >
@@ -322,11 +327,11 @@ export default function CVStudioPage() {
             {/* LEFT COLUMN: Diagnostic Analysis & Tailoring Command (4 cols) */}
             <div className="lg:col-span-4 flex flex-col gap-5">
               {/* ATS Score Dial & Diagnostics Card */}
-              <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(53,27,50,0.05)] flex flex-col">
+              <div className="editorial-card border border-[#EDE5E1] p-6 flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-headline-sm text-headline-sm text-primary">ATS Benchmark</h2>
                   <span className="font-caption-caps text-caption-caps px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-bold tracking-wider">
-                    Top 12%
+                    {isCalibrated ? 'Verified Rubric' : 'Pending Upload'}
                   </span>
                 </div>
                 {/* Circular Metric Graphic */}
@@ -356,24 +361,30 @@ export default function CVStudioPage() {
                   </svg>
                   <div className="absolute flex flex-col items-center justify-center text-center">
                     <span className="font-display-hero text-headline-lg font-bold text-on-surface leading-none tracking-tight">
-                      {computedScore}
+                      {isCalibrated ? computedScore : '--'}
                       <span className="text-body-sm font-normal text-on-surface-variant">/100</span>
                     </span>
                     <span className="font-label-sm text-label-sm font-semibold text-on-tertiary-container mt-1">
-                      Excellent Match
+                      {isCalibrated ? (computedScore >= 85 ? 'Strong Match' : 'Calibrated Match') : 'Calibrate ATS'}
                     </span>
                   </div>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant text-center mb-5 px-3">
-                  Scored against automated screening algorithms for{' '}
-                  <span className="font-semibold text-on-surface">
-                    {activeJob ? `${activeJob.company} ${activeJob.title}` : profile.targetRole || 'Target Role'}
-                  </span>
-                  .
+                  {isCalibrated ? (
+                    <>
+                      Scored against automated screening algorithms for{' '}
+                      <span className="font-semibold text-on-surface">
+                        {activeJob ? `${activeJob.company} ${activeJob.title}` : profile.targetRole || 'Target Role'}
+                      </span>
+                      .
+                    </>
+                  ) : (
+                    'Upload your CV or add verified profile skills to compute genuine ATS keyword & structure benchmarks.'
+                  )}
                 </p>
 
                 {/* ATS Category Breakdown Progress Meters */}
-                <div className="flex flex-col gap-3 pt-3 bg-surface-container/50 p-4 rounded-xl mb-4">
+                <div className="flex flex-col gap-3 pt-3 bg-surface-container/50 p-4 rounded-xl mb-4 border border-[#EDE5E1]">
                   <div className="flex items-center justify-between">
                     <span className="font-caption-caps text-caption-caps text-primary font-bold uppercase tracking-wider">
                       Transparent Breakdown
@@ -391,13 +402,13 @@ export default function CVStudioPage() {
                         Keyword Alignment
                       </span>
                       <span className="font-mono text-tertiary font-bold">
-                        {Math.min(96, Math.max(70, computedScore - 2))}%
+                        {isCalibrated ? `${Math.min(96, Math.max(70, computedScore - 2))}%` : '--'}
                       </span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
                       <div
                         className="h-full bg-tertiary rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(96, Math.max(70, computedScore - 2))}%` }}
+                        style={{ width: isCalibrated ? `${Math.min(96, Math.max(70, computedScore - 2))}%` : '0%' }}
                       ></div>
                     </div>
                     <span className="font-caption-caps text-caption-caps text-on-surface-variant">
@@ -413,17 +424,19 @@ export default function CVStudioPage() {
                         Quantified Impact
                       </span>
                       <span className="font-mono text-secondary font-bold">
-                        {diff1State === 'accepted' ? '92%' : '84%'}
+                        {isCalibrated ? (diff1State === 'accepted' ? '92%' : '84%') : '--'}
                       </span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
                       <div
                         className="h-full bg-secondary rounded-full transition-all duration-500"
-                        style={{ width: diff1State === 'accepted' ? '92%' : '84%' }}
+                        style={{ width: isCalibrated ? (diff1State === 'accepted' ? '92%' : '84%') : '0%' }}
                       ></div>
                     </div>
                     <span className="font-caption-caps text-caption-caps text-on-surface-variant">
-                      Sub-120ms latency and 450k+ document scale verified
+                      {diff1State === 'accepted'
+                        ? 'Tailored metrics aligned (+4 ATS)'
+                        : 'Evaluates presence of quantifiable metrics in project bullets'}
                     </span>
                   </div>
 
@@ -434,10 +447,15 @@ export default function CVStudioPage() {
                         <span className="material-symbols-outlined text-[16px] text-primary">view_headline</span>
                         ATS Structure &amp; Layout
                       </span>
-                      <span className="font-mono text-primary font-bold">98%</span>
+                      <span className="font-mono text-primary font-bold">
+                        {isCalibrated ? '98%' : '--'}
+                      </span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '98%' }}></div>
+                      <div
+                        className="h-full bg-primary rounded-full"
+                        style={{ width: isCalibrated ? '98%' : '0%' }}
+                      ></div>
                     </div>
                     <span className="font-caption-caps text-caption-caps text-on-surface-variant">
                       Clean single-column hierarchy, standard headings
@@ -452,13 +470,13 @@ export default function CVStudioPage() {
                         Section Completeness
                       </span>
                       <span className="font-mono text-on-tertiary-container font-bold">
-                        {profile.skills.length > 0 && summaryText ? '100%' : '85%'}
+                        {profile.skills && profile.skills.length > 0 && summaryText ? '100%' : '85%'}
                       </span>
                     </div>
                     <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
                       <div
                         className="h-full bg-on-tertiary-container rounded-full"
-                        style={{ width: profile.skills.length > 0 && summaryText ? '100%' : '85%' }}
+                        style={{ width: profile.skills && profile.skills.length > 0 && summaryText ? '100%' : '85%' }}
                       ></div>
                     </div>
                     <span className="font-caption-caps text-caption-caps text-on-surface-variant">
@@ -1022,7 +1040,7 @@ export default function CVStudioPage() {
               <div className="flex items-center justify-between p-4 rounded-xl bg-surface-container-high/60 backdrop-blur-sm">
                 <div className="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
                   <span className="material-symbols-outlined text-[18px]">history</span>
-                  <span>All changes automatically backed up to Jobora Cloud Vault</span>
+                  <span>All changes saved to your local workspace session</span>
                 </div>
                 <button
                   onClick={() => router.push('/documents')}

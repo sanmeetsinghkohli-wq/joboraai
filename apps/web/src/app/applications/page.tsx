@@ -121,11 +121,7 @@ export default function ApplicationsPage() {
   return (
     <StitchShell activeNav="applications">
       <div className="flex flex-col w-full">
-        {/* Atmospheric Warm Ambient Glows */}
-        <div className="relative w-full overflow-hidden">
-          <div className="pointer-events-none absolute -top-24 right-12 w-96 h-96 bg-secondary-container/15 rounded-full blur-3xl -z-10"></div>
-          <div className="pointer-events-none absolute top-40 left-1/3 w-80 h-80 bg-tertiary-fixed/20 rounded-full blur-3xl -z-10"></div>
-
+        <div className="relative w-full">
           {/* Header & Quick Metrics Banner */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
@@ -146,7 +142,7 @@ export default function ApplicationsPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm hover:bg-surface-container transition-all"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md border border-[#EDE5E1] shadow-xs hover:bg-[#F8F5F0] transition-all focus-ring"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">file_download</span>
@@ -154,7 +150,7 @@ export default function ApplicationsPage() {
               </button>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md shadow-md hover:bg-primary-container transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md shadow-sm hover:bg-[#2A1528] transition-all focus-ring"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
@@ -165,7 +161,7 @@ export default function ApplicationsPage() {
 
           {/* Metrics Cards Strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
-            <div className="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
+            <div className="p-4 rounded-xl editorial-card border border-[#EDE5E1] flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
                   Active Pipelines
@@ -181,7 +177,7 @@ export default function ApplicationsPage() {
                 <span className="material-symbols-outlined text-[22px]">send</span>
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
+            <div className="p-4 rounded-xl editorial-card border border-[#EDE5E1] flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
                   Interviews Secured
@@ -197,7 +193,7 @@ export default function ApplicationsPage() {
                 <span className="material-symbols-outlined text-[22px]">psychology</span>
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
+            <div className="p-4 rounded-xl editorial-card border border-[#EDE5E1] flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
                   Passed Screen
@@ -213,7 +209,7 @@ export default function ApplicationsPage() {
                 <span className="material-symbols-outlined text-[22px]">insights</span>
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex items-center justify-between">
+            <div className="p-4 rounded-xl editorial-card border border-[#EDE5E1] flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
                   Offers Received
@@ -232,7 +228,7 @@ export default function ApplicationsPage() {
           </div>
 
           {/* Filter & View Controls Card */}
-          <div className="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm mb-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          <div className="editorial-card border border-[#EDE5E1] p-3.5 mb-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
               {(
                 [
@@ -249,7 +245,7 @@ export default function ApplicationsPage() {
                   onClick={() => setStatusFilter(tab.id)}
                   className={
                     statusFilter === tab.id
-                      ? 'px-3 py-1.5 rounded-lg font-label-md text-label-md bg-primary text-on-primary transition-all whitespace-nowrap shadow-sm'
+                      ? 'px-3 py-1.5 rounded-lg font-label-md text-label-md bg-primary text-on-primary transition-all whitespace-nowrap shadow-xs'
                       : 'px-3 py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container transition-all whitespace-nowrap'
                   }
                   type="button"
@@ -260,7 +256,7 @@ export default function ApplicationsPage() {
             </div>
 
             <div className="flex items-center gap-2.5">
-              <div className="relative flex items-center bg-surface-container rounded-lg px-2.5 py-1.5 w-full sm:w-64">
+              <div className="relative flex items-center bg-[#F8F5F0] border border-[#EDE5E1] rounded-lg px-2.5 py-1.5 w-full sm:w-64 focus-within:border-[#351B32]">
                 <span className="material-symbols-outlined text-[18px] text-on-surface-variant mr-1.5">
                   filter_list
                 </span>
@@ -272,7 +268,7 @@ export default function ApplicationsPage() {
                   type="text"
                 />
               </div>
-              <div className="flex items-center bg-surface-container p-0.5 rounded-lg">
+              <div className="flex items-center bg-surface-container p-0.5 rounded-lg border border-[#EDE5E1]">
                 <button
                   onClick={() => setViewMode('table')}
                   className={`p-1.5 rounded-md ${

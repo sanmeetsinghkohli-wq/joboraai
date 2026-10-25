@@ -38,14 +38,26 @@ function getUserApplications(userId: string): StoredApplication[] {
 }
 
 export async function GET(req: NextRequest) {
-  const userId = getAuthenticatedUserId(req) || 'local_workspace';
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) {
+    return NextResponse.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Authentication required to view applications.' } },
+      { status: 401 }
+    );
+  }
   const apps = getUserApplications(userId);
   return NextResponse.json({ applications: apps });
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = getAuthenticatedUserId(req) || 'local_workspace';
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Authentication required to create applications.' } },
+        { status: 401 }
+      );
+    }
     const body = await req.json();
 
     const title = String(body?.title || '').trim();
@@ -124,7 +136,13 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const userId = getAuthenticatedUserId(req) || 'local_workspace';
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Authentication required.' } },
+        { status: 401 }
+      );
+    }
     const body = await req.json();
     const { id, status, nextAction, recruiterName, recruiterEmail, title, company, location } = body;
 
@@ -167,7 +185,13 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const userId = getAuthenticatedUserId(req) || 'local_workspace';
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Authentication required.' } },
+        { status: 401 }
+      );
+    }
     const { searchParams } = new URL(req.url);
     let id = searchParams.get('id');
     if (!id) {

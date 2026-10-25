@@ -102,20 +102,20 @@ export default function SettingsPage() {
       <div className="flex flex-col w-full py-6 gap-6 max-w-4xl">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <span className="font-caption-caps text-caption-caps uppercase tracking-wider text-secondary font-bold">
+            <span className="badge-coral uppercase tracking-wider text-[11px] font-bold">
               Identity, AI Governance &amp; Privacy
             </span>
-            <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight mt-1">
+            <h1 className="font-serif text-3xl md:text-4xl font-semibold text-[#351B32] tracking-tight mt-1">
               Copilot Profile &amp; Privacy Settings
             </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+            <p className="text-sm text-[#7D747D] mt-1 font-sans">
               Changes here sync in real time across your CV Studio, Email Composer, AI Copilot, and Match Scoring engine.
             </p>
           </div>
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
             <Link
               href="/settings/integrations"
-              className="px-4 py-2.5 rounded-xl bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors flex items-center gap-2"
+              className="btn-editorial-secondary text-xs flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">mail</span>
               <span>Mailbox Integrations</span>
@@ -123,7 +123,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="px-4 py-2.5 rounded-xl bg-surface-container-high text-primary font-label-md text-label-md hover:bg-surface-variant transition-colors flex items-center gap-1.5"
+              className="btn-editorial-secondary text-xs flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[18px]">logout</span>
               <span>Sign Out</span>
@@ -133,108 +133,108 @@ export default function SettingsPage() {
 
         <form
           onSubmit={handleSave}
-          className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col gap-5"
+          className="editorial-card border border-[#EDE5E1] bg-white rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col gap-6"
         >
-          <h2 className="font-headline-sm text-headline-sm text-primary">Candidate Profile &amp; Career Preferences</h2>
+          <h2 className="font-serif text-xl font-bold text-[#351B32]">Candidate Profile &amp; Career Preferences</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-md text-label-md text-primary">Full Name</label>
+              <label className="text-xs font-semibold text-[#5A525A]">Full Name</label>
               <input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter your full name"
-                className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-md text-label-md text-primary">Account Email</label>
+              <label className="text-xs font-semibold text-[#5A525A]">Account Email</label>
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@domain.com"
                 type="email"
-                className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-md text-label-md text-primary">Phone Number</label>
+              <label className="text-xs font-semibold text-[#5A525A]">Phone Number</label>
               <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+971 50 000 0000"
-                className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-md text-label-md text-primary">Current Location</label>
+              <label className="text-xs font-semibold text-[#5A525A]">Current Location</label>
               <input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Dubai, United Arab Emirates"
-                className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-md text-label-md text-primary">Target Role</label>
+              <label className="text-xs font-semibold text-[#5A525A]">Target Role</label>
               <input
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
                 placeholder="AI Engineering Intern / ML Engineer"
-                className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-md text-label-md text-primary">Degree / Education</label>
+              <label className="text-xs font-semibold text-[#5A525A]">Degree / Education</label>
               <input
                 value={degree}
                 onChange={(e) => setDegree(e.target.value)}
                 placeholder="B.S. Computer Science & AI"
-                className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-md text-label-md text-primary">GitHub Profile</label>
+              <label className="text-xs font-semibold text-[#5A525A]">GitHub Profile</label>
               <input
                 value={github}
                 onChange={(e) => setGithub(e.target.value)}
                 placeholder="github.com/username"
-                className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="font-label-md text-label-md text-primary">LinkedIn Profile</label>
+              <label className="text-xs font-semibold text-[#5A525A]">LinkedIn Profile</label>
               <input
                 value={linkedin}
                 onChange={(e) => setLinkedin(e.target.value)}
                 placeholder="linkedin.com/in/username"
-                className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="font-label-md text-label-md text-primary">
+            <label className="text-xs font-semibold text-[#5A525A]">
               Skills &amp; Technologies (Comma Separated)
             </label>
             <input
               value={skillsText}
               onChange={(e) => setSkillsText(e.target.value)}
               placeholder="PyTorch, RAG, FastAPI, Docker, AWS, TypeScript"
-              className="bg-surface-container-low px-4 py-2.5 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+              className="bg-white border border-[#EDE5E1] px-4 py-2.5 rounded-xl text-sm text-[#1D1A21] focus-ring placeholder:text-[#7D747D]/60"
             />
           </div>
 
           {/* Notification & Automation Permissions */}
-          <div className="pt-4 border-t border-outline-variant/20 flex flex-col gap-3">
-            <h3 className="font-headline-sm text-headline-sm text-primary">
+          <div className="pt-4 border-t border-[#EDE5E1] flex flex-col gap-3">
+            <h3 className="font-serif text-lg font-bold text-[#351B32]">
               AI Automation Permissions &amp; Notification Preferences
             </h3>
-            <label className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low cursor-pointer">
+            <label className="flex items-center justify-between p-4 rounded-xl bg-[#F8F5F0]/60 border border-[#EDE5E1] cursor-pointer hover:bg-[#F8F5F0] transition-colors">
               <div>
-                <div className="font-label-md text-label-md text-primary font-bold">
+                <div className="text-xs font-bold text-[#351B32]">
                   Require Explicit Approval Before External Actions
                 </div>
-                <div className="font-body-sm text-body-sm text-on-surface-variant">
+                <div className="text-xs text-[#7D747D] mt-0.5">
                   Never submit external applications or send emails without manual confirmation.
                 </div>
               </div>
@@ -242,15 +242,15 @@ export default function SettingsPage() {
                 type="checkbox"
                 checked={requireExplicitApproval}
                 onChange={(e) => setRequireExplicitApproval(e.target.checked)}
-                className="h-4 w-4 accent-primary"
+                className="h-4 w-4 accent-[#351B32] rounded cursor-pointer"
               />
             </label>
-            <label className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low cursor-pointer">
+            <label className="flex items-center justify-between p-4 rounded-xl bg-[#F8F5F0]/60 border border-[#EDE5E1] cursor-pointer hover:bg-[#F8F5F0] transition-colors">
               <div>
-                <div className="font-label-md text-label-md text-primary font-bold">
+                <div className="text-xs font-bold text-[#351B32]">
                   High-Match Role Alerts
                 </div>
-                <div className="font-body-sm text-body-sm text-on-surface-variant">
+                <div className="text-xs text-[#7D747D] mt-0.5">
                   Surface notifications when live Remotive or Arbeitnow roles match your profile.
                 </div>
               </div>
@@ -258,15 +258,15 @@ export default function SettingsPage() {
                 type="checkbox"
                 checked={notifyJobMatches}
                 onChange={(e) => setNotifyJobMatches(e.target.checked)}
-                className="h-4 w-4 accent-primary"
+                className="h-4 w-4 accent-[#351B32] rounded cursor-pointer"
               />
             </label>
-            <label className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low cursor-pointer">
+            <label className="flex items-center justify-between p-4 rounded-xl bg-[#F8F5F0]/60 border border-[#EDE5E1] cursor-pointer hover:bg-[#F8F5F0] transition-colors">
               <div>
-                <div className="font-label-md text-label-md text-primary font-bold">
+                <div className="text-xs font-bold text-[#351B32]">
                   Application Follow-up Reminders
                 </div>
-                <div className="font-body-sm text-body-sm text-on-surface-variant">
+                <div className="text-xs text-[#7D747D] mt-0.5">
                   Remind me to follow up 5 days after logging an application.
                 </div>
               </div>
@@ -274,23 +274,23 @@ export default function SettingsPage() {
                 type="checkbox"
                 checked={notifyFollowUps}
                 onChange={(e) => setNotifyFollowUps(e.target.checked)}
-                className="h-4 w-4 accent-primary"
+                className="h-4 w-4 accent-[#351B32] rounded cursor-pointer"
               />
             </label>
           </div>
 
-          <div className="flex items-center justify-between pt-3">
+          <div className="flex items-center justify-between pt-3 border-t border-[#EDE5E1]">
             {savedNotice ? (
-              <span className="font-label-md text-label-md text-on-tertiary-fixed-variant flex items-center gap-1.5">
+              <span className="badge-emerald text-xs font-bold flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                {savedNotice}
+                <span>{savedNotice}</span>
               </span>
             ) : (
               <span />
             )}
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md shadow-sm hover:opacity-95 transition-all"
+              className="btn-editorial-primary text-xs"
             >
               Save Profile Changes
             </button>
@@ -298,39 +298,39 @@ export default function SettingsPage() {
         </form>
 
         {/* Privacy Controls, Data Export & Account Deletion */}
-        <div className="bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col gap-4">
-          <h2 className="font-headline-sm text-headline-sm text-primary">
+        <div className="editorial-card border border-[#EDE5E1] bg-white rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col gap-4">
+          <h2 className="font-serif text-xl font-bold text-[#351B32]">
             Privacy Controls, Data Export &amp; Account Deletion
           </h2>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+          <p className="text-sm text-[#7D747D] leading-relaxed">
             Download a portable JSON archive of your profile, saved jobs, and tracked applications, or permanently wipe your workspace data.
           </p>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="button"
               onClick={handleExportAllData}
-              className="px-4 py-2.5 rounded-xl bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors flex items-center gap-2"
+              className="btn-editorial-secondary text-xs flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">download</span>
               <span>Export My Data (.JSON)</span>
             </button>
 
             {confirmDeleteAccount ? (
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-rose-50 border border-rose-200">
-                <span className="font-label-sm text-label-sm text-rose-900">
+              <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-rose-50 border border-rose-200 animate-fade-in">
+                <span className="text-xs text-rose-900 font-semibold">
                   Permanently wipe all profile &amp; application data?
                 </span>
                 <button
                   type="button"
                   onClick={handleDeleteAccountData}
-                  className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-label-sm text-label-sm font-bold"
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-colors"
                 >
                   Confirm Delete
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteAccount(false)}
-                  className="px-3 py-1.5 rounded-lg bg-white text-on-surface font-label-sm text-label-sm"
+                  className="px-3 py-1.5 rounded-lg bg-white border border-[#EDE5E1] text-[#351B32] text-xs font-medium hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -339,7 +339,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setConfirmDeleteAccount(true)}
-                className="px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 font-label-md text-label-md transition-colors flex items-center gap-2"
+                className="btn-editorial-coral text-xs flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-[18px]">delete_forever</span>
                 <span>Delete Account &amp; Data</span>

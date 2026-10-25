@@ -8,9 +8,9 @@ const INITIAL_PROMPTS = [
   {
     id: 'p-0',
     badge: 'Technical • High Priority',
-    badgeStyle: 'bg-secondary-fixed text-on-secondary-fixed',
+    badgeStyle: 'badge-coral',
     statusBadge: '92/100',
-    statusStyle: 'text-on-tertiary-container bg-tertiary-fixed/30',
+    statusStyle: 'badge-emerald',
     statusIcon: 'check_circle',
     title: 'Explain how you optimized latency in your Multi-Agent RAG pipeline.',
     subtitle: 'Focus on vector retrieval caching, parallelized rerankers, and async LLM stream orchestration.',
@@ -21,9 +21,9 @@ const INITIAL_PROMPTS = [
   {
     id: 'p-1',
     badge: 'Behavioral • STAR Method',
-    badgeStyle: 'bg-surface-container-high text-on-surface-variant',
+    badgeStyle: 'badge-neutral',
     statusBadge: 'Pending',
-    statusStyle: 'text-on-surface-variant bg-surface-container',
+    statusStyle: 'badge-neutral',
     statusIcon: '',
     title: 'Tell me about a time you resolved conflicting requirements between latency and accuracy.',
     subtitle: 'Amazon LP: Customer Obsession & Bias for Action. Emphasize stakeholder trade-off matrix.',
@@ -34,9 +34,9 @@ const INITIAL_PROMPTS = [
   {
     id: 'p-2',
     badge: 'System Design • Cloud',
-    badgeStyle: 'bg-surface-container-high text-on-surface-variant',
+    badgeStyle: 'badge-neutral',
     statusBadge: 'Drafting',
-    statusStyle: 'text-secondary bg-secondary-fixed/50',
+    statusStyle: 'badge-coral',
     statusIcon: '',
     title: 'How would you scale inference for LLM embeddings on AWS SageMaker with cost constraints?',
     subtitle: 'Serverless endpoints vs. spot instance fleets, model quantization (AWQ/GPTQ), and batch queueing.',
@@ -207,21 +207,22 @@ export default function InterviewPrepPage() {
           <div className="pointer-events-none absolute top-96 left-4 w-80 h-80 bg-gradient-to-tr from-tertiary-fixed/20 to-transparent rounded-full blur-2xl -z-10"></div>
 
           {/* Workspace Header Block */}
+          {/* Workspace Header Block */}
           <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-2">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container font-caption-caps text-caption-caps text-secondary font-bold uppercase tracking-widest shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+                <span className="badge-coral">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E76F72] animate-pulse"></span>
                   Simulated Assessment v2.4
                 </span>
-                <span className="text-on-surface-variant font-label-sm text-label-sm">
+                <span className="text-[#63555F] font-label-sm text-label-sm">
                   · {prompts.length} of 8 Modules Prepared
                 </span>
               </div>
-              <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">
+              <h1 className="font-serif text-3xl sm:text-4xl text-[#351B32] tracking-tight font-bold">
                 Practice for Your Interview
               </h1>
-              <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+              <p className="font-body-md text-body-md text-[#63555F] max-w-2xl">
                 Calibrate your executive presence, system architecture vocabulary, and structured responses using
                 Jobora’s adaptive interviewer.
               </p>
@@ -229,13 +230,13 @@ export default function InterviewPrepPage() {
 
             {/* Target Selection Dropdown Card */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="relative group bg-surface-container-lowest p-2 pl-4 pr-3 rounded-xl shadow-[0_2px_12px_-2px_rgba(53,27,50,0.06)] flex items-center justify-between gap-4 cursor-pointer hover:shadow-md transition-all">
+              <div className="relative group bg-white border border-[#EDE5E1] p-2.5 pl-4 pr-3 rounded-2xl shadow-xs flex items-center justify-between gap-4 cursor-pointer hover:border-[#E76F72]/50 transition-all">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary-container shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-center text-[#351B32] shrink-0">
                     <span className="material-symbols-outlined text-[20px]">corporate_fare</span>
                   </div>
                   <div className="flex flex-col min-w-0 text-left">
-                    <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase tracking-wider">
+                    <span className="font-caption-caps text-caption-caps text-[#63555F] uppercase tracking-wider">
                       Target Track
                     </span>
                     {jobs.length > 0 ? (
@@ -245,7 +246,7 @@ export default function InterviewPrepPage() {
                           const found = jobs.find((j) => j.id === e.target.value);
                           if (found) setSelectedJob(found);
                         }}
-                        className="font-label-md text-label-md text-primary font-bold bg-transparent focus:outline-none cursor-pointer truncate max-w-[240px]"
+                        className="font-label-md text-label-md text-[#351B32] font-bold bg-transparent focus:outline-none cursor-pointer truncate max-w-[240px]"
                       >
                         {jobs.map((j) => (
                           <option key={j.id} value={j.id}>
@@ -254,16 +255,16 @@ export default function InterviewPrepPage() {
                         ))}
                       </select>
                     ) : (
-                      <span className="font-label-md text-label-md text-primary font-bold truncate">
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold truncate">
                         {activeJob.company} — {activeJob.title}
                       </span>
                     )}
-                    <span className="font-label-sm text-label-sm text-secondary truncate">
+                    <span className="font-label-sm text-label-sm text-[#E76F72] font-semibold truncate">
                       Round 1: Coding &amp; Systems Architecture
                     </span>
                   </div>
                 </div>
-                <span className="material-symbols-outlined text-on-surface-variant text-[20px] group-hover:translate-y-0.5 transition-transform">
+                <span className="material-symbols-outlined text-[#63555F] text-[20px] group-hover:translate-y-0.5 transition-transform">
                   unfold_more
                 </span>
               </div>
@@ -272,7 +273,7 @@ export default function InterviewPrepPage() {
                   setIsRecording(true);
                   setActiveTab('practice');
                 }}
-                className="px-4 py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md shadow-sm hover:bg-primary transition-all flex items-center justify-center gap-2 shrink-0"
+                className="btn-editorial-coral shrink-0 focus-ring"
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">play_arrow</span>
@@ -283,13 +284,13 @@ export default function InterviewPrepPage() {
 
           {/* Navigation Segmented Tabs */}
           <div className="flex items-center justify-between border-b-0 pb-1 overflow-x-auto scrollbar-none">
-            <div className="flex items-center p-1.5 rounded-xl bg-surface-container gap-1">
+            <div className="flex items-center p-1 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] gap-1">
               <button
                 onClick={() => setActiveTab('questions')}
-                className={`px-4 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all focus-ring ${
                   activeTab === 'questions'
-                    ? 'bg-surface-container-lowest text-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-primary'
+                    ? 'bg-white text-[#351B32] shadow-xs font-bold border border-[#EDE5E1]'
+                    : 'text-[#63555F] hover:text-[#351B32]'
                 }`}
                 type="button"
               >
@@ -297,25 +298,25 @@ export default function InterviewPrepPage() {
               </button>
               <button
                 onClick={() => setActiveTab('practice')}
-                className={`px-4 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-4 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all flex items-center gap-1.5 focus-ring ${
                   activeTab === 'practice'
-                    ? 'bg-surface-container-lowest text-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-primary'
+                    ? 'bg-white text-[#351B32] shadow-xs font-bold border border-[#EDE5E1]'
+                    : 'text-[#63555F] hover:text-[#351B32]'
                 }`}
                 type="button"
               >
                 <span>Practice Mode</span>
-                <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                <span className="w-2 h-2 rounded-full bg-[#E76F72]"></span>
               </button>
               <button
                 onClick={() => {
                   setActiveTab('rubric');
                   evalRef.current?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className={`px-4 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all focus-ring ${
                   activeTab === 'rubric'
-                    ? 'bg-surface-container-lowest text-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-primary'
+                    ? 'bg-white text-[#351B32] shadow-xs font-bold border border-[#EDE5E1]'
+                    : 'text-[#63555F] hover:text-[#351B32]'
                 }`}
                 type="button"
               >
@@ -323,18 +324,18 @@ export default function InterviewPrepPage() {
               </button>
               <button
                 onClick={() => setActiveTab('history')}
-                className={`px-4 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg font-label-md text-label-md font-semibold transition-all focus-ring ${
                   activeTab === 'history'
-                    ? 'bg-surface-container-lowest text-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-primary'
+                    ? 'bg-white text-[#351B32] shadow-xs font-bold border border-[#EDE5E1]'
+                    : 'text-[#63555F] hover:text-[#351B32]'
                 }`}
                 type="button"
               >
                 Session History
               </button>
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
-              <span className="material-symbols-outlined text-[18px] text-tertiary-fixed-dim">verified</span>
+            <div className="hidden sm:flex items-center gap-2 text-[#63555F] font-label-sm text-label-sm">
+              <span className="material-symbols-outlined text-[18px] text-[#268566]">verified</span>
               <span>Auto-syncing audio &amp; text transcripts</span>
             </div>
           </div>
@@ -343,23 +344,23 @@ export default function InterviewPrepPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Column: Question Navigator (4 Cols) */}
             <aside className="lg:col-span-4 flex flex-col gap-4">
-              <div className="bg-surface-container-lowest rounded-xl p-5 shadow-[0_2px_8px_-2px_rgba(53,27,50,0.04),0_12px_24px_-4px_rgba(53,27,50,0.03)] flex flex-col gap-4">
+              <div className="editorial-card p-5 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-headline-sm text-headline-sm text-primary">Interview Prompts</span>
-                    <span className="px-2 py-0.5 rounded-full bg-surface-container font-caption-caps text-caption-caps text-on-surface-variant font-bold">
+                    <span className="font-headline-sm text-headline-sm text-[#351B32] font-bold">Interview Prompts</span>
+                    <span className="badge-neutral">
                       {prompts.length} Focus Items
                     </span>
                   </div>
                   <button
                     onClick={handleCycleFilter}
-                    className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors flex items-center gap-1"
+                    className="p-1.5 rounded-lg text-[#63555F] hover:bg-[#FAF6F2] hover:text-[#351B32] transition-colors flex items-center gap-1 focus-ring"
                     title={`Filter Prompts (${filterCategory})`}
                     type="button"
                   >
                     <span className="material-symbols-outlined text-[20px]">filter_list</span>
                     {filterCategory !== 'all' && (
-                      <span className="font-caption-caps text-caption-caps text-secondary font-bold">
+                      <span className="font-caption-caps text-caption-caps text-[#E76F72] font-bold">
                         {filterCategory}
                       </span>
                     )}
@@ -375,21 +376,21 @@ export default function InterviewPrepPage() {
                     <div
                       key={p.id}
                       onClick={() => handleSelectPrompt(idx)}
-                      className={`p-4 rounded-xl cursor-pointer transition-all relative group ${
+                      className={`p-4 rounded-xl cursor-pointer transition-all relative group border ${
                         isSelected
-                          ? 'bg-surface-container-low hover:bg-surface-container'
-                          : 'bg-surface-container-lowest hover:bg-surface-container-low'
+                          ? 'bg-[#FAF6F2] border-[#E76F72] shadow-xs'
+                          : 'bg-white border-[#EDE5E1] hover:border-[#E76F72]/40 hover:bg-[#FAF6F2]/50'
                       }`}
                     >
-                      {isSelected && <div className="absolute left-0 top-3 bottom-3 w-1 bg-secondary rounded-r-full"></div>}
+                      {isSelected && <div className="absolute left-0 top-3 bottom-3 w-1 bg-[#E76F72] rounded-r-full"></div>}
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-caption-caps text-caption-caps font-bold uppercase ${p.badgeStyle}`}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-caption-caps text-caption-caps font-bold uppercase ${p.badgeStyle}`}
                         >
                           {p.badge}
                         </span>
                         <span
-                          className={`inline-flex items-center gap-1 font-label-sm text-label-sm px-2 py-0.5 rounded-full ${p.statusStyle}`}
+                          className={`inline-flex items-center gap-1 font-label-sm text-label-sm px-2.5 py-0.5 rounded-full ${p.statusStyle}`}
                         >
                           {p.statusIcon ? (
                             <span className="material-symbols-outlined text-[14px]">{p.statusIcon}</span>
@@ -399,21 +400,21 @@ export default function InterviewPrepPage() {
                           {idx === 0 ? `${overallScore}/100` : p.statusBadge}
                         </span>
                       </div>
-                      <h4 className="font-label-md text-label-md text-primary font-bold mb-1.5 leading-snug">
+                      <h4 className="font-label-md text-label-md text-[#351B32] font-bold mb-1.5 leading-snug">
                         {p.title}
                       </h4>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-3">
+                      <p className="font-body-sm text-body-sm text-[#63555F] line-clamp-2 mb-3">
                         {p.subtitle}
                       </p>
-                      <div className="flex items-center justify-between text-on-surface-variant font-caption-caps text-caption-caps pt-2">
+                      <div className="flex items-center justify-between text-[#63555F] font-caption-caps text-caption-caps pt-2 border-t border-[#EDE5E1]/60">
                         <span className="flex items-center gap-1">
                           <span className="material-symbols-outlined text-[15px]">{p.footerIcon}</span> {p.footerLeft}
                         </span>
                         <span
                           className={
                             isSelected
-                              ? 'text-secondary font-bold group-hover:translate-x-0.5 transition-transform'
-                              : 'font-semibold text-primary'
+                              ? 'text-[#E76F72] font-bold group-hover:translate-x-0.5 transition-transform'
+                              : 'font-semibold text-[#351B32]'
                           }
                         >
                           {isSelected ? 'Active In Editor →' : 'Select to Practice'}
@@ -424,22 +425,23 @@ export default function InterviewPrepPage() {
                 })}
 
                 {/* Custom AI Prompt Generator CTA */}
-                <div className="p-3.5 rounded-xl bg-gradient-to-br from-surface-container to-surface-container-high flex items-center justify-between gap-3">
+                <div className="p-3.5 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="material-symbols-outlined text-secondary text-[22px]">auto_awesome</span>
+                    <span className="material-symbols-outlined text-[#E76F72] text-[22px]">auto_awesome</span>
                     <div className="flex flex-col">
-                      <span className="font-label-sm text-label-sm text-primary font-bold">
+                      <span className="font-label-sm text-label-sm text-[#351B32] font-bold">
                         Generate Custom Question
                       </span>
-                      <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                      <span className="font-caption-caps text-caption-caps text-[#63555F]">
                         Tailored to {activeJob.company} job description
                       </span>
                     </div>
                   </div>
                   <button
                     onClick={handleGenerateCustomQuestion}
-                    className="w-7 h-7 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary hover:bg-primary-container hover:text-on-primary transition-colors shadow-sm"
+                    className="w-8 h-8 rounded-lg bg-white border border-[#EDE5E1] flex items-center justify-center text-[#351B32] hover:bg-[#351B32] hover:text-white transition-colors shadow-xs focus-ring"
                     type="button"
+                    aria-label="Generate custom question"
                   >
                     <span className="material-symbols-outlined text-[16px]">add</span>
                   </button>
@@ -496,28 +498,28 @@ export default function InterviewPrepPage() {
                 </div>
               )}
               {/* Question Focal Arena */}
-              <div className="bg-surface-container-lowest rounded-xl p-6 sm:p-7 shadow-[0_2px_8px_-2px_rgba(53,27,50,0.04),0_12px_24px_-4px_rgba(53,27,50,0.03)] flex flex-col gap-6 relative overflow-hidden">
+              <div className="editorial-card p-6 sm:p-7 flex flex-col gap-6 relative overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-secondary"></span>
-                    <span className="font-caption-caps text-caption-caps text-secondary font-bold uppercase tracking-wider">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#E76F72]"></span>
+                    <span className="font-caption-caps text-caption-caps text-[#E76F72] font-bold uppercase tracking-wider">
                       Active Evaluation Question
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleReadAloud}
-                      className="px-2.5 py-1 rounded-lg bg-surface-container font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg bg-[#FAF6F2] border border-[#EDE5E1] font-label-sm text-label-sm text-[#351B32] hover:bg-white transition-colors flex items-center gap-1.5 focus-ring"
                       type="button"
                     >
                       <span className="material-symbols-outlined text-[16px]">volume_up</span> Read Aloud
                     </button>
                     <button
                       onClick={handleToggleSavePrompt}
-                      className="px-2.5 py-1 rounded-lg bg-surface-container font-label-sm text-label-sm text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg bg-[#FAF6F2] border border-[#EDE5E1] font-label-sm text-label-sm text-[#351B32] hover:bg-white transition-colors flex items-center gap-1.5 focus-ring"
                       type="button"
                     >
-                      <span className="material-symbols-outlined text-[16px]">
+                      <span className="material-symbols-outlined text-[16px] text-[#E76F72]">
                         {savedPromptIds.includes(currentPrompt.id) ? 'bookmark' : 'bookmark_border'}
                       </span>{' '}
                       {savedPromptIds.includes(currentPrompt.id) ? 'Saved' : 'Save'}
@@ -526,10 +528,10 @@ export default function InterviewPrepPage() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <h2 className="font-headline-md text-headline-md text-primary leading-tight">
+                  <h2 className="font-serif text-2xl text-[#351B32] font-bold leading-tight">
                     {currentPrompt.title}
                   </h2>
-                  <p className="font-body-md text-body-md text-on-surface-variant">
+                  <p className="font-body-md text-body-md text-[#63555F]">
                     The interviewer wants to see both algorithmic reasoning and systems profiling (e.g., embedding
                     lookups, token streaming overhead, vector DB indices like HNSW vs. IVFFlat).
                   </p>
@@ -537,34 +539,34 @@ export default function InterviewPrepPage() {
 
                 {/* Interviewer Rubric Badges */}
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <span className="px-3 py-1 rounded-full bg-surface-container font-label-sm text-label-sm text-primary flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[15px] text-secondary">radar</span> Target: P99 &lt;
+                  <span className="badge-neutral">
+                    <span className="material-symbols-outlined text-[15px] text-[#E76F72]">radar</span> Target: P99 &lt;
                     850ms
                   </span>
-                  <span className="px-3 py-1 rounded-full bg-surface-container font-label-sm text-label-sm text-primary flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[15px] text-tertiary-fixed-dim">tune</span> Hybrid
+                  <span className="badge-neutral">
+                    <span className="material-symbols-outlined text-[15px] text-[#268566]">tune</span> Hybrid
                     Search + RRF
                   </span>
-                  <span className="px-3 py-1 rounded-full bg-surface-container font-label-sm text-label-sm text-primary flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[15px] text-outline">schema</span> Async LangGraph
+                  <span className="badge-neutral">
+                    <span className="material-symbols-outlined text-[15px] text-[#63555F]">schema</span> Async LangGraph
                     Execution
                   </span>
                 </div>
 
                 {/* STAR Helper Accordion Tray */}
-                <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-3">
+                <div className="p-4 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex flex-col gap-3">
                   <div
                     onClick={() => setFrameworkOpen(!frameworkOpen)}
                     className="flex items-center justify-between cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-secondary text-[20px]">psychology</span>
-                      <span className="font-label-md text-label-md text-primary font-bold">
+                      <span className="material-symbols-outlined text-[#E76F72] text-[20px]">psychology</span>
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold">
                         Recommended Framework: STAR + Quantified Impact
                       </span>
                     </div>
                     <span
-                      className={`material-symbols-outlined text-on-surface-variant text-[20px] transition-transform ${
+                      className={`material-symbols-outlined text-[#63555F] text-[20px] transition-transform ${
                         frameworkOpen ? '' : 'rotate-180'
                       }`}
                     >
@@ -573,33 +575,33 @@ export default function InterviewPrepPage() {
                   </div>
                   {frameworkOpen && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                      <div className="p-2.5 rounded-lg bg-surface-container-lowest flex flex-col gap-0.5">
-                        <span className="font-caption-caps text-caption-caps text-secondary font-bold">
+                      <div className="p-2.5 rounded-lg bg-white border border-[#EDE5E1] flex flex-col gap-0.5">
+                        <span className="font-caption-caps text-caption-caps text-[#E76F72] font-bold">
                           Situation (15%)
                         </span>
-                        <span className="font-body-sm text-body-sm text-on-surface-variant">
+                        <span className="font-body-sm text-body-sm text-[#63555F]">
                           Pipeline P99 spiking to 3.2s on high-concurrency requests.
                         </span>
                       </div>
-                      <div className="p-2.5 rounded-lg bg-surface-container-lowest flex flex-col gap-0.5">
-                        <span className="font-caption-caps text-caption-caps text-secondary font-bold">Task (10%)</span>
-                        <span className="font-body-sm text-body-sm text-on-surface-variant">
+                      <div className="p-2.5 rounded-lg bg-white border border-[#EDE5E1] flex flex-col gap-0.5">
+                        <span className="font-caption-caps text-caption-caps text-[#E76F72] font-bold">Task (10%)</span>
+                        <span className="font-body-sm text-body-sm text-[#63555F]">
                           Slash latency sub-second without degrading recall score.
                         </span>
                       </div>
-                      <div className="p-2.5 rounded-lg bg-surface-container-lowest flex flex-col gap-0.5">
-                        <span className="font-caption-caps text-caption-caps text-secondary font-bold">
+                      <div className="p-2.5 rounded-lg bg-white border border-[#EDE5E1] flex flex-col gap-0.5">
+                        <span className="font-caption-caps text-caption-caps text-[#E76F72] font-bold">
                           Action (55%)
                         </span>
-                        <span className="font-body-sm text-body-sm text-on-surface-variant">
+                        <span className="font-body-sm text-body-sm text-[#63555F]">
                           Added Redis vector cache, quantization &amp; speculative streaming.
                         </span>
                       </div>
-                      <div className="p-2.5 rounded-lg bg-surface-container-lowest flex flex-col gap-0.5">
-                        <span className="font-caption-caps text-caption-caps text-secondary font-bold">
+                      <div className="p-2.5 rounded-lg bg-white border border-[#EDE5E1] flex flex-col gap-0.5">
+                        <span className="font-caption-caps text-caption-caps text-[#E76F72] font-bold">
                           Result (20%)
                         </span>
-                        <span className="font-body-sm text-body-sm text-on-surface-variant">
+                        <span className="font-body-sm text-body-sm text-[#63555F]">
                           4.1x throughput boost; latency dropped to 680ms at 99th percentile.
                         </span>
                       </div>
@@ -611,20 +613,20 @@ export default function InterviewPrepPage() {
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="font-label-md text-label-md text-primary font-bold">Your Response</span>
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold">Your Response</span>
                       {isRecording && (
-                        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-caption-caps text-caption-caps font-bold">
-                          <span className="w-2 h-2 rounded-full bg-secondary animate-ping"></span> Recording Audio
+                        <span className="badge-coral">
+                          <span className="w-2 h-2 rounded-full bg-[#E76F72] animate-ping"></span> Recording Audio
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                      <span className="font-caption-caps text-caption-caps text-[#63555F]">
                         {wordCount} Words · {charCount.toLocaleString()} Characters
                       </span>
                       <button
                         onClick={() => setAnswerText('')}
-                        className="text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm flex items-center gap-1"
+                        className="text-[#63555F] hover:text-[#351B32] transition-colors text-label-sm font-label-sm flex items-center gap-1 focus-ring"
                         type="button"
                       >
                         <span className="material-symbols-outlined text-[16px]">clear_all</span> Reset
@@ -633,11 +635,11 @@ export default function InterviewPrepPage() {
                   </div>
 
                   {/* Answer Textarea Container */}
-                  <div className="relative rounded-xl bg-surface-container-lowest focus-within:ring-2 focus-within:ring-secondary/25 transition-all shadow-inner">
+                  <div className="relative rounded-xl bg-white border border-[#EDE5E1] focus-within:ring-2 focus-within:ring-[#E76F72]/30 focus-within:border-[#E76F72] transition-all shadow-2xs">
                     <textarea
                       value={answerText}
                       onChange={(e) => setAnswerText(e.target.value)}
-                      className="w-full bg-transparent p-4 font-body-md text-body-md text-primary placeholder-on-surface-variant focus:outline-none resize-y leading-relaxed"
+                      className="w-full bg-transparent p-4 font-body-md text-body-md text-[#1D1A21] placeholder-[#63555F]/60 focus:outline-none resize-y leading-relaxed"
                       placeholder="Type your structured technical answer or click Record Voice to practice vocal cadence..."
                       rows={7}
                     />
@@ -648,30 +650,30 @@ export default function InterviewPrepPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setIsRecording(!isRecording)}
-                        className={`px-4 py-2.5 rounded-xl font-label-md text-label-md font-semibold transition-colors flex items-center gap-2 ${
+                        className={`btn-editorial-secondary focus-ring ${
                           isRecording
-                            ? 'bg-secondary-fixed text-on-secondary-fixed'
-                            : 'bg-surface-container text-primary hover:bg-surface-container-high'
+                            ? '!bg-[#E76F72] !text-white !border-[#E76F72]'
+                            : ''
                         }`}
                         type="button"
                       >
-                        <span className="material-symbols-outlined text-secondary text-[20px]">mic</span>
+                        <span className={`material-symbols-outlined text-[20px] ${isRecording ? 'text-white animate-pulse' : 'text-[#E76F72]'}`}>mic</span>
                         <span>{isRecording ? 'Stop Recording' : 'Record Voice'}</span>
                       </button>
                       <button
                         onClick={handleListenBack}
-                        className="px-3 py-2.5 rounded-xl bg-surface-container font-label-md text-label-md text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors flex items-center gap-1.5"
+                        className="btn-editorial-secondary focus-ring"
                         title="Generate audio playback of response"
                         type="button"
                       >
-                        <span className="material-symbols-outlined text-[20px]">play_circle</span>
+                        <span className="material-symbols-outlined text-[20px] text-[#351B32]">play_circle</span>
                         <span>Listen Back</span>
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleSaveDraft}
-                        className="px-4 py-2.5 rounded-xl bg-surface-container font-label-md text-label-md text-primary font-semibold hover:bg-surface-container-high transition-colors"
+                        className="btn-editorial-secondary focus-ring"
                         type="button"
                       >
                         Save Draft
@@ -679,7 +681,7 @@ export default function InterviewPrepPage() {
                       <button
                         disabled={evaluating}
                         onClick={handleRunEvaluation}
-                        className="px-5 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-semibold hover:bg-primary transition-all shadow-sm flex items-center gap-2"
+                        className="btn-editorial-primary focus-ring"
                         type="button"
                       >
                         <span className={`material-symbols-outlined text-[18px] ${evaluating ? 'animate-spin' : ''}`}>
@@ -695,88 +697,88 @@ export default function InterviewPrepPage() {
               {/* AI Evaluation & Rubric Breakdown Panel */}
               <div
                 ref={evalRef}
-                className="bg-surface-container-lowest rounded-xl p-6 sm:p-7 shadow-[0_2px_8px_-2px_rgba(53,27,50,0.04),0_12px_24px_-4px_rgba(53,27,50,0.03)] flex flex-col gap-6"
+                className="editorial-card p-6 sm:p-7 flex flex-col gap-6"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-secondary">
+                    <div className="w-12 h-12 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-center text-[#E76F72]">
                       <span className="material-symbols-outlined text-[28px]">insights</span>
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <span className="font-headline-sm text-headline-sm text-primary font-bold">
+                        <span className="font-serif text-2xl text-[#351B32] font-bold">
                           AI Assessment Score
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-container font-caption-caps text-caption-caps font-bold">
+                        <span className="badge-emerald">
                           Top 8% Candidate Tier
                         </span>
                       </div>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">
+                      <span className="font-body-sm text-body-sm text-[#63555F]">
                         Calibrated against Senior Machine Learning Interview Benchmarks
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 bg-surface-container-low px-4 py-2 rounded-xl self-start sm:self-auto">
-                    <span className="font-display-hero text-headline-lg font-bold text-primary leading-none">
+                  <div className="flex items-center gap-3 bg-[#FAF6F2] border border-[#EDE5E1] px-4 py-2 rounded-xl self-start sm:self-auto">
+                    <span className="font-serif text-3xl font-bold text-[#351B32] leading-none">
                       {overallScore}
                     </span>
                     <div className="flex flex-col">
-                      <span className="font-caption-caps text-caption-caps uppercase text-on-surface-variant">
+                      <span className="font-caption-caps text-caption-caps uppercase text-[#63555F]">
                         Overall
                       </span>
-                      <span className="font-label-sm text-label-sm text-secondary font-bold">/ 100 PTS</span>
+                      <span className="font-label-sm text-label-sm text-[#E76F72] font-bold">/ 100 PTS</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Score Breakdown Progress Indicators */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-2">
+                  <div className="p-4 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-label-sm text-label-sm text-primary font-bold">Technical Depth</span>
-                      <span className="font-label-md text-label-md text-primary font-bold">{techScore} / 10</span>
+                      <span className="font-label-sm text-label-sm text-[#351B32] font-bold">Technical Depth</span>
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold">{techScore} / 10</span>
                     </div>
-                    <div className="w-full bg-surface-container-highest rounded-full h-2">
+                    <div className="w-full bg-[#EDE5E1] rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-secondary h-2 rounded-full transition-all duration-700"
+                        className="bg-[#268566] h-2 rounded-full transition-all duration-700"
                         style={{ width: `${Math.min(100, techScore * 10)}%` }}
                       ></div>
                     </div>
-                    <p className="font-caption-caps text-caption-caps text-on-surface-variant">
+                    <p className="font-caption-caps text-caption-caps text-[#63555F]">
                       Identified HNSW quantization and OpenTelemetry metrics.
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-2">
+                  <div className="p-4 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-label-sm text-label-sm text-primary font-bold">
+                      <span className="font-label-sm text-label-sm text-[#351B32] font-bold">
                         Conciseness &amp; Pacing
                       </span>
-                      <span className="font-label-md text-label-md text-primary font-bold">{pacingScore} / 10</span>
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold">{pacingScore} / 10</span>
                     </div>
-                    <div className="w-full bg-surface-container-highest rounded-full h-2">
+                    <div className="w-full bg-[#EDE5E1] rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-surface-tint h-2 rounded-full transition-all duration-700"
+                        className="bg-[#E76F72] h-2 rounded-full transition-all duration-700"
                         style={{ width: `${Math.min(100, pacingScore * 10)}%` }}
                       ></div>
                     </div>
-                    <p className="font-caption-caps text-caption-caps text-on-surface-variant">
+                    <p className="font-caption-caps text-caption-caps text-[#63555F]">
                       154 wpm delivered. High information density without filler.
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-2">
+                  <div className="p-4 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-label-sm text-label-sm text-primary font-bold">STAR Adherence</span>
-                      <span className="font-label-md text-label-md text-primary font-bold">{starScore} / 10</span>
+                      <span className="font-label-sm text-label-sm text-[#351B32] font-bold">STAR Adherence</span>
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold">{starScore} / 10</span>
                     </div>
-                    <div className="w-full bg-surface-container-highest rounded-full h-2">
+                    <div className="w-full bg-[#EDE5E1] rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-tertiary-fixed-dim h-2 rounded-full transition-all duration-700"
+                        className="bg-[#268566] h-2 rounded-full transition-all duration-700"
                         style={{ width: `${Math.min(100, starScore * 10)}%` }}
                       ></div>
                     </div>
-                    <p className="font-caption-caps text-caption-caps text-on-surface-variant">
+                    <p className="font-caption-caps text-caption-caps text-[#63555F]">
                       Direct quantifiable outcome (4.1x boost, 38% AWS savings).
                     </p>
                   </div>
@@ -786,39 +788,39 @@ export default function InterviewPrepPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[20px] text-on-tertiary-container">
+                      <span className="material-symbols-outlined text-[20px] text-[#268566]">
                         check_circle
                       </span>
-                      <span className="font-label-md text-label-md text-primary font-bold">
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold">
                         Strong Points Identified
                       </span>
                     </div>
                     <div className="flex flex-col gap-2.5">
-                      <div className="p-3.5 rounded-xl bg-tertiary-fixed/20 flex items-start gap-3">
-                        <span className="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-caption-caps text-caption-caps font-bold shrink-0 mt-0.5">
+                      <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
+                        <span className="badge-emerald shrink-0 mt-0.5">
                           Quantified Metrics
                         </span>
-                        <p className="font-body-sm text-body-sm text-on-surface">
+                        <p className="font-body-sm text-body-sm text-[#1D1A21]">
                           Specified concrete percentiles (
-                          <strong className="font-semibold text-primary">P99 dropped 3,200ms → 680ms</strong>) rather
+                          <strong className="font-semibold text-[#351B32]">P99 dropped 3,200ms → 680ms</strong>) rather
                           than vague speedups.
                         </p>
                       </div>
-                      <div className="p-3.5 rounded-xl bg-tertiary-fixed/20 flex items-start gap-3">
-                        <span className="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-caption-caps text-caption-caps font-bold shrink-0 mt-0.5">
+                      <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
+                        <span className="badge-emerald shrink-0 mt-0.5">
                           Systems Architecture
                         </span>
-                        <p className="font-body-sm text-body-sm text-on-surface">
+                        <p className="font-body-sm text-body-sm text-[#1D1A21]">
                           Explicitly addressed distributed cache invalidation strategies and ONNX runtime optimizations.
                         </p>
                       </div>
-                      <div className="p-3.5 rounded-xl bg-tertiary-fixed/20 flex items-start gap-3">
-                        <span className="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-caption-caps text-caption-caps font-bold shrink-0 mt-0.5">
+                      <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
+                        <span className="badge-emerald shrink-0 mt-0.5">
                           Cost Consciousness
                         </span>
-                        <p className="font-body-sm text-body-sm text-on-surface">
+                        <p className="font-body-sm text-body-sm text-[#1D1A21]">
                           Emphasized cloud fiscal responsibility (
-                          <strong className="font-semibold text-primary">38% inference reduction</strong>), heavily
+                          <strong className="font-semibold text-[#351B32]">38% inference reduction</strong>), heavily
                           aligning with leadership principles.
                         </p>
                       </div>
@@ -827,35 +829,35 @@ export default function InterviewPrepPage() {
 
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[20px] text-secondary">tips_and_updates</span>
-                      <span className="font-label-md text-label-md text-primary font-bold">
+                      <span className="material-symbols-outlined text-[20px] text-[#E76F72]">tips_and_updates</span>
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold">
                         Recommended Improvements
                       </span>
                     </div>
                     <div className="flex flex-col gap-2.5">
-                      <div className="p-3.5 rounded-xl bg-secondary-fixed/40 flex items-start gap-3">
-                        <span className="px-2 py-0.5 rounded bg-secondary text-on-secondary font-caption-caps text-caption-caps font-bold shrink-0 mt-0.5">
+                      <div className="p-3.5 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-start gap-3">
+                        <span className="badge-coral shrink-0 mt-0.5">
                           Failover Handling
                         </span>
-                        <p className="font-body-sm text-body-sm text-on-surface">
+                        <p className="font-body-sm text-body-sm text-[#1D1A21]">
                           Clarify cache misses: What is your fallback SLA if the Redis semantic cache cluster becomes
                           unavailable during a traffic surge?
                         </p>
                       </div>
-                      <div className="p-3.5 rounded-xl bg-secondary-fixed/40 flex items-start gap-3">
-                        <span className="px-2 py-0.5 rounded bg-secondary text-on-secondary font-caption-caps text-caption-caps font-bold shrink-0 mt-0.5">
+                      <div className="p-3.5 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-start gap-3">
+                        <span className="badge-coral shrink-0 mt-0.5">
                           Model Drift
                         </span>
-                        <p className="font-body-sm text-body-sm text-on-surface">
+                        <p className="font-body-sm text-body-sm text-[#1D1A21]">
                           Mention how you continuously evaluate embedding alignment when retraining or tuning vector
                           databases.
                         </p>
                       </div>
-                      <div className="p-3.5 rounded-xl bg-secondary-fixed/40 flex items-start gap-3">
-                        <span className="px-2 py-0.5 rounded bg-secondary text-on-secondary font-caption-caps text-caption-caps font-bold shrink-0 mt-0.5">
+                      <div className="p-3.5 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-start gap-3">
+                        <span className="badge-coral shrink-0 mt-0.5">
                           Delivery Note
                         </span>
-                        <p className="font-body-sm text-body-sm text-on-surface">
+                        <p className="font-body-sm text-body-sm text-[#1D1A21]">
                           Pause for 1-2 seconds between the technical root cause and your implementation step to let the
                           interviewer absorb your schema.
                         </p>
@@ -866,45 +868,45 @@ export default function InterviewPrepPage() {
               </div>
 
               {/* Practice History Timeline & Progress Trend Chart */}
-              <div className="bg-surface-container-lowest rounded-xl p-6 sm:p-7 shadow-[0_2px_8px_-2px_rgba(53,27,50,0.04),0_12px_24px_-4px_rgba(53,27,50,0.03)] flex flex-col gap-6">
+              <div className="editorial-card p-6 sm:p-7 flex flex-col gap-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex flex-col">
-                    <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase tracking-wider">
+                    <span className="font-caption-caps text-caption-caps text-[#63555F] uppercase tracking-wider">
                       Historical Progress
                     </span>
-                    <h3 className="font-headline-sm text-headline-sm text-primary">Simulated Attempt Trajectory</h3>
+                    <h3 className="font-serif text-2xl text-[#351B32] font-bold">Simulated Attempt Trajectory</h3>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
-                      <span className="w-3 h-3 rounded-full bg-secondary"></span> Actual Score
+                    <span className="badge-coral">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#E76F72]"></span> Actual Score
                     </span>
-                    <span className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
-                      <span className="w-3 h-1 bg-surface-tint"></span> Target Benchmark (85)
+                    <span className="badge-emerald">
+                      <span className="w-2.5 h-1 bg-[#268566]"></span> Target Benchmark (85)
                     </span>
                   </div>
                 </div>
 
                 {/* Trend Chart Visual */}
-                <div className="relative w-full h-44 bg-surface-container-low rounded-xl p-4 flex flex-col justify-end overflow-hidden">
+                <div className="relative w-full h-44 bg-[#FAF6F2] border border-[#EDE5E1] rounded-xl p-4 flex flex-col justify-end overflow-hidden">
                   <div className="absolute inset-0 flex flex-col justify-between p-4 pointer-events-none opacity-40">
-                    <div className="w-full border-b border-dashed border-outline-variant text-[10px] text-on-surface-variant font-caption-caps">
+                    <div className="w-full border-b border-dashed border-[#EDE5E1] text-[10px] text-[#63555F] font-caption-caps">
                       100 PTS
                     </div>
-                    <div className="w-full border-b border-dashed border-outline-variant text-[10px] text-on-surface-variant font-caption-caps">
+                    <div className="w-full border-b border-dashed border-[#EDE5E1] text-[10px] text-[#63555F] font-caption-caps">
                       85 BENCHMARK
                     </div>
-                    <div className="w-full border-b border-dashed border-outline-variant text-[10px] text-on-surface-variant font-caption-caps">
+                    <div className="w-full border-b border-dashed border-[#EDE5E1] text-[10px] text-[#63555F] font-caption-caps">
                       70 THRESHOLD
                     </div>
-                    <div className="w-full border-b border-dashed border-outline-variant text-[10px] text-on-surface-variant font-caption-caps">
+                    <div className="w-full border-b border-dashed border-[#EDE5E1] text-[10px] text-[#63555F] font-caption-caps">
                       50 BASELINE
                     </div>
                   </div>
                   <svg className="w-full h-28 overflow-visible z-10" preserveAspectRatio="none" viewBox="0 0 600 120">
                     <defs>
                       <linearGradient id="scoreGrad" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor="#a33b40" stopOpacity="0.25"></stop>
-                        <stop offset="100%" stopColor="#a33b40" stopOpacity="0.0"></stop>
+                        <stop offset="0%" stopColor="#E76F72" stopOpacity="0.25"></stop>
+                        <stop offset="100%" stopColor="#E76F72" stopOpacity="0.0"></stop>
                       </linearGradient>
                     </defs>
                     <path
@@ -914,15 +916,15 @@ export default function InterviewPrepPage() {
                     <path
                       d="M 0,95 Q 100,82 150,75 T 300,50 T 450,30 T 600,14"
                       fill="none"
-                      stroke="#a33b40"
+                      stroke="#E76F72"
                       strokeLinecap="round"
                       strokeWidth="3"
                     ></path>
-                    <circle cx="0" cy="95" fill="#351b32" r="4.5" stroke="#ffffff" strokeWidth="2"></circle>
-                    <circle cx="150" cy="75" fill="#351b32" r="4.5" stroke="#ffffff" strokeWidth="2"></circle>
-                    <circle cx="300" cy="50" fill="#351b32" r="4.5" stroke="#ffffff" strokeWidth="2"></circle>
-                    <circle cx="450" cy="30" fill="#351b32" r="4.5" stroke="#ffffff" strokeWidth="2"></circle>
-                    <circle cx="600" cy="14" fill="#a33b40" r="5.5" stroke="#ffffff" strokeWidth="2"></circle>
+                    <circle cx="0" cy="95" fill="#351B32" r="4.5" stroke="#ffffff" strokeWidth="2"></circle>
+                    <circle cx="150" cy="75" fill="#351B32" r="4.5" stroke="#ffffff" strokeWidth="2"></circle>
+                    <circle cx="300" cy="50" fill="#351B32" r="4.5" stroke="#ffffff" strokeWidth="2"></circle>
+                    <circle cx="450" cy="30" fill="#351B32" r="4.5" stroke="#ffffff" strokeWidth="2"></circle>
+                    <circle cx="600" cy="14" fill="#E76F72" r="5.5" stroke="#ffffff" strokeWidth="2"></circle>
                   </svg>
                   <div className="flex items-center justify-between text-on-surface-variant font-caption-caps text-caption-caps pt-2 z-10">
                     <span>Attempt 1 (64)</span>
@@ -935,31 +937,31 @@ export default function InterviewPrepPage() {
 
                 {/* Chronological History Log */}
                 <div className="flex flex-col gap-3">
-                  <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase tracking-wider">
+                  <span className="font-caption-caps text-caption-caps text-[#63555F] uppercase tracking-wider font-semibold">
                     Detailed Past Attempts
                   </span>
                   <div
                     onClick={() => handleSelectPrompt(0)}
-                    className="p-3.5 rounded-xl bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-surface-container transition-colors cursor-pointer"
+                    className="p-3.5 rounded-xl bg-white border border-[#EDE5E1] flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#E76F72]/50 hover:bg-[#FAF6F2]/40 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-center text-[#E76F72] shrink-0">
                         <span className="material-symbols-outlined text-[18px]">mic</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-label-md text-label-md text-primary font-bold">
+                        <span className="font-label-md text-label-md text-[#351B32] font-bold">
                           Attempt #5: Latency Optimization (Multi-Agent RAG)
                         </span>
-                        <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                        <span className="font-caption-caps text-caption-caps text-[#63555F]">
                           Today, 11:24 AM · Audio + Transcript · 3m 42s
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 self-end sm:self-auto">
-                      <span className="font-headline-sm text-headline-sm text-secondary font-bold">
+                      <span className="font-headline-sm text-headline-sm text-[#E76F72] font-bold">
                         {overallScore}/100
                       </span>
-                      <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[20px] text-[#63555F]">
                         chevron_right
                       </span>
                     </div>
@@ -967,24 +969,24 @@ export default function InterviewPrepPage() {
 
                   <div
                     onClick={() => handleSelectPrompt(2)}
-                    className="p-3.5 rounded-xl bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-surface-container transition-colors cursor-pointer"
+                    className="p-3.5 rounded-xl bg-white border border-[#EDE5E1] flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#E76F72]/50 hover:bg-[#FAF6F2]/40 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-center text-[#351B32] shrink-0">
                         <span className="material-symbols-outlined text-[18px]">edit_note</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-label-md text-label-md text-primary font-bold">
+                        <span className="font-label-md text-label-md text-[#351B32] font-bold">
                           Attempt #4: AWS SageMaker Cost vs. Scale
                         </span>
-                        <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                        <span className="font-caption-caps text-caption-caps text-[#63555F]">
                           Yesterday, 4:15 PM · Text Response · 410 words
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 self-end sm:self-auto">
-                      <span className="font-headline-sm text-headline-sm text-primary font-bold">86/100</span>
-                      <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+                      <span className="font-headline-sm text-headline-sm text-[#351B32] font-bold">86/100</span>
+                      <span className="material-symbols-outlined text-[20px] text-[#63555F]">
                         chevron_right
                       </span>
                     </div>
@@ -992,24 +994,24 @@ export default function InterviewPrepPage() {
 
                   <div
                     onClick={() => handleSelectPrompt(1)}
-                    className="p-3.5 rounded-xl bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-surface-container transition-colors cursor-pointer"
+                    className="p-3.5 rounded-xl bg-white border border-[#EDE5E1] flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#E76F72]/50 hover:bg-[#FAF6F2]/40 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-center text-[#351B32] shrink-0">
                         <span className="material-symbols-outlined text-[18px]">mic</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-label-md text-label-md text-primary font-bold">
+                        <span className="font-label-md text-label-md text-[#351B32] font-bold">
                           Attempt #3: Conflicting Latency &amp; Accuracy Requirements
                         </span>
-                        <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                        <span className="font-caption-caps text-caption-caps text-[#63555F]">
                           Oct 24, 2:30 PM · Audio · 4m 12s
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 self-end sm:self-auto">
-                      <span className="font-headline-sm text-headline-sm text-on-surface-variant font-bold">80/100</span>
-                      <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+                      <span className="font-headline-sm text-headline-sm text-[#63555F] font-bold">80/100</span>
+                      <span className="material-symbols-outlined text-[20px] text-[#63555F]">
                         chevron_right
                       </span>
                     </div>

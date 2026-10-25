@@ -198,47 +198,43 @@ export default function EmailComposerPage() {
           {/* Page Header & Tab Rail */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="font-caption-caps text-caption-caps uppercase tracking-wider text-secondary font-bold">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span className="badge-coral">
                   Dispatch Studio
                 </span>
-                <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">
+                <span className="badge-neutral">
                   Step 4 of 4 • Outbound Outreach
                 </span>
                 {jobs.length > 1 && (
-                  <>
-                    <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
-                    <select
-                      value={activeJob.id}
-                      onChange={(e) => {
-                        const found = jobs.find((j) => j.id === e.target.value);
-                        if (found) setSelectedJob(found);
-                      }}
-                      className="bg-surface-container px-2.5 py-0.5 rounded-lg font-label-sm text-label-sm text-primary focus:outline-none cursor-pointer"
-                    >
-                      {jobs.map((j) => (
-                        <option key={j.id} value={j.id}>
-                          Target: {j.company} — {j.title}
-                        </option>
-                      ))}
-                    </select>
-                  </>
+                  <select
+                    value={activeJob.id}
+                    onChange={(e) => {
+                      const found = jobs.find((j) => j.id === e.target.value);
+                      if (found) setSelectedJob(found);
+                    }}
+                    className="bg-white border border-[#EDE5E1] px-3 py-1 rounded-lg font-label-sm text-label-sm text-[#351B32] font-semibold focus-ring cursor-pointer"
+                  >
+                    {jobs.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        Target: {j.company} — {j.title}
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
-              <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">
+              <h1 className="font-serif text-3xl sm:text-4xl text-[#351B32] tracking-tight font-bold">
                 Application Email Composer
               </h1>
             </div>
 
             {/* Navigation Segmented Tabs */}
-            <div className="flex items-center p-1 bg-surface-container rounded-xl shadow-inner self-start md:self-auto">
+            <div className="flex items-center p-1 bg-[#FAF6F2] border border-[#EDE5E1] rounded-xl self-start md:self-auto gap-1">
               <button
                 onClick={() => setActiveTab('compose')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-label-md text-label-md transition-all duration-150 ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-label-md text-label-md transition-all duration-150 focus-ring ${
                   activeTab === 'compose'
-                    ? 'bg-surface-container-lowest text-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                    ? 'bg-white text-[#351B32] shadow-xs font-bold border border-[#EDE5E1]'
+                    : 'text-[#63555F] hover:text-[#351B32]'
                 }`}
                 type="button"
               >
@@ -247,31 +243,31 @@ export default function EmailComposerPage() {
               </button>
               <button
                 onClick={() => setActiveTab('preview')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-label-md text-label-md transition-all duration-150 ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-label-md text-label-md transition-all duration-150 focus-ring ${
                   activeTab === 'preview'
-                    ? 'bg-surface-container-lowest text-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                    ? 'bg-white text-[#351B32] shadow-xs font-bold border border-[#EDE5E1]'
+                    : 'text-[#63555F] hover:text-[#351B32]'
                 }`}
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
                 <span>Preview &amp; AI Review</span>
-                <span className="font-caption-caps text-caption-caps bg-secondary-fixed text-on-secondary-fixed px-1.5 py-0.5 rounded-full font-bold">
+                <span className="badge-coral text-[10px] py-0 px-1.5">
                   98%
                 </span>
               </button>
               <button
                 onClick={() => setActiveTab('attachments')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-label-md text-label-md transition-all duration-150 ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-label-md text-label-md transition-all duration-150 focus-ring ${
                   activeTab === 'attachments'
-                    ? 'bg-surface-container-lowest text-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                    ? 'bg-white text-[#351B32] shadow-xs font-bold border border-[#EDE5E1]'
+                    : 'text-[#63555F] hover:text-[#351B32]'
                 }`}
                 type="button"
               >
                 <span className="material-symbols-outlined text-[18px]">attachment</span>
                 <span>Attachments</span>
-                <span className="font-caption-caps text-caption-caps bg-surface-container-highest text-on-surface px-1.5 py-0.5 rounded-full">
+                <span className="badge-neutral text-[10px] py-0 px-1.5">
                   {attachments.length}
                 </span>
               </button>
@@ -279,20 +275,20 @@ export default function EmailComposerPage() {
           </div>
 
           {/* Security & OAuth Status Banner */}
-          <div className="w-full bg-surface-container-low rounded-xl p-3.5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="w-full editorial-card p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-on-tertiary-fixed-variant shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-center text-[#268566] shrink-0">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path>
                 </svg>
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-body-md text-body-md text-on-surface font-semibold">Sender Identity:</span>
-                  <span className="font-body-md text-body-md text-on-surface-variant">{senderEmail}</span>
+                  <span className="font-body-md text-body-md text-[#351B32] font-semibold">Sender Identity:</span>
+                  <span className="font-body-md text-body-md text-[#63555F]">{senderEmail}</span>
                 </div>
-                <span className="inline-flex items-center gap-1.5 font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-fixed-variant"></span>
+                <span className="badge-emerald">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#268566]"></span>
                   Manual Confirmation Required • Mailto &amp; .EML Export Ready
                 </span>
               </div>
@@ -301,14 +297,14 @@ export default function EmailComposerPage() {
               <button
                 type="button"
                 onClick={handleOpenMailClient}
-                className="px-3 py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold shadow-2xs transition-colors"
+                className="btn-editorial-secondary !py-1.5 !px-3 !text-xs focus-ring"
               >
                 Open in Mail Client (mailto:)
               </button>
               <button
                 type="button"
                 onClick={handleDownloadEml}
-                className="px-3 py-1.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold shadow-2xs transition-colors"
+                className="btn-editorial-secondary !py-1.5 !px-3 !text-xs focus-ring"
               >
                 Export .EML
               </button>
@@ -321,24 +317,24 @@ export default function EmailComposerPage() {
             <div className="lg:col-span-8 flex flex-col gap-6">
               {activeTab !== 'preview' ? (
                 /* Compose View Panel */
-                <div className="bg-surface-container-lowest rounded-xl shadow-md p-6 flex flex-col gap-5">
+                <div className="editorial-card p-6 flex flex-col gap-5">
                   {/* Send From Field */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <label className="w-24 font-label-md text-label-md text-on-surface-variant">From</label>
+                    <label className="w-24 font-label-md text-label-md text-[#63555F] font-semibold">From</label>
                     <div className="flex-1 relative">
-                      <div className="w-full bg-surface-container-low rounded-lg px-3.5 py-2.5 flex items-center justify-between text-on-surface font-body-md text-body-md shadow-xs">
+                      <div className="w-full bg-[#FAF6F2] border border-[#EDE5E1] rounded-xl px-3.5 py-2.5 flex items-center justify-between text-[#1D1A21] font-body-md text-body-md shadow-2xs">
                         <div className="flex items-center gap-2 truncate">
-                          <div className="w-5 h-5 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm">
+                          <div className="w-5 h-5 rounded-full bg-[#351B32] text-white flex items-center justify-center font-label-sm text-label-sm font-bold">
                             {senderInitial}
                           </div>
-                          <span className="font-semibold text-primary">{senderName}</span>
-                          <span className="text-on-surface-variant truncate">&lt;{senderEmail}&gt;</span>
+                          <span className="font-semibold text-[#351B32]">{senderName}</span>
+                          <span className="text-[#63555F] truncate">&lt;{senderEmail}&gt;</span>
                         </div>
                         <div className="flex items-center gap-2 ml-2 shrink-0">
-                          <span className="font-caption-caps text-caption-caps bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded-full font-bold">
+                          <span className="badge-emerald text-[11px] py-0 px-2">
                             Connected
                           </span>
-                          <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
+                          <span className="material-symbols-outlined text-[#63555F] text-[18px]">
                             expand_more
                           </span>
                         </div>
@@ -348,24 +344,24 @@ export default function EmailComposerPage() {
 
                   {/* To Recipient Field */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <label className="w-24 font-label-md text-label-md text-on-surface-variant">To</label>
-                    <div className="flex-1 flex flex-wrap items-center gap-2 p-2 rounded-lg bg-surface-container-low/60 shadow-xs">
-                      <div className="inline-flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-lg shadow-sm">
-                        <div className="w-5 h-5 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-label-sm text-label-sm font-bold">
+                    <label className="w-24 font-label-md text-label-md text-[#63555F] font-semibold">To</label>
+                    <div className="flex-1 flex flex-wrap items-center gap-2 p-2 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] shadow-2xs">
+                      <div className="inline-flex items-center gap-2 bg-white border border-[#EDE5E1] px-3 py-1.5 rounded-lg shadow-2xs">
+                        <div className="w-5 h-5 rounded-full bg-[#E76F72] text-white flex items-center justify-center font-label-sm text-label-sm font-bold">
                           {recruiterInitials}
                         </div>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                          <span className="font-label-md text-label-md text-primary font-bold">{recruiterName}</span>
-                          <span className="font-body-sm text-body-sm text-on-surface-variant">{recruiterEmail}</span>
+                          <span className="font-label-md text-label-md text-[#351B32] font-bold">{recruiterName}</span>
+                          <span className="font-body-sm text-body-sm text-[#63555F]">{recruiterEmail}</span>
                         </div>
-                        <span className="font-caption-caps text-caption-caps bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded">
+                        <span className="badge-neutral text-[10px] py-0 px-1.5">
                           Sr. Tech Recruiter
                         </span>
                       </div>
                       <input
                         value={ccBcc}
                         onChange={(e) => setCcBcc(e.target.value)}
-                        className="flex-1 min-w-[120px] bg-transparent font-body-sm text-body-sm text-on-surface placeholder-on-surface-variant focus:outline-none px-2 py-1"
+                        className="flex-1 min-w-[120px] bg-transparent font-body-sm text-body-sm text-[#1D1A21] placeholder-[#63555F]/60 focus:outline-none px-2 py-1"
                         placeholder="Add Cc or Bcc..."
                         type="text"
                       />
@@ -374,26 +370,26 @@ export default function EmailComposerPage() {
 
                   {/* Subject Line */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <label className="w-24 font-label-md text-label-md text-on-surface-variant">Subject</label>
+                    <label className="w-24 font-label-md text-label-md text-[#63555F] font-semibold">Subject</label>
                     <div className="flex-1 relative">
                       <input
                         value={subject}
                         onChange={(e) => setSubject(e.target.value)}
-                        className="w-full bg-surface-container-low rounded-lg px-3.5 py-2.5 pr-36 font-label-md text-label-md text-primary font-semibold focus:outline-none focus:bg-surface-container-lowest shadow-xs"
+                        className="w-full bg-[#FAF6F2] border border-[#EDE5E1] rounded-xl px-3.5 py-2.5 pr-36 font-label-md text-label-md text-[#351B32] font-semibold focus-ring shadow-2xs"
                         type="text"
                       />
-                      <span className="absolute right-3 top-2.5 flex items-center gap-1 font-caption-caps text-caption-caps text-on-tertiary-container bg-tertiary-fixed px-2 py-0.5 rounded">
+                      <span className="absolute right-3 top-2.5 badge-emerald text-[11px] py-0.5 px-2">
                         <span className="material-symbols-outlined text-[14px]">bolt</span> High Open Rate
                       </span>
                     </div>
                   </div>
 
                   {/* Rich Text Formatting Bar */}
-                  <div className="flex items-center justify-between flex-wrap gap-2 pt-2 pb-1 bg-surface-container-low px-3 rounded-lg">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pt-2 pb-1.5 bg-[#FAF6F2] border border-[#EDE5E1] px-3 rounded-xl">
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setIsEditingBody(!isEditingBody)}
-                        className="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-white text-[#63555F] hover:text-[#351B32] transition-colors focus-ring"
                         title="Toggle Raw Editor"
                         type="button"
                       >
@@ -401,7 +397,7 @@ export default function EmailComposerPage() {
                       </button>
                       <button
                         onClick={() => setIsEditingBody(!isEditingBody)}
-                        className="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-white text-[#63555F] hover:text-[#351B32] transition-colors focus-ring"
                         title="Italic"
                         type="button"
                       >
@@ -409,16 +405,16 @@ export default function EmailComposerPage() {
                       </button>
                       <button
                         onClick={() => setIsEditingBody(!isEditingBody)}
-                        className="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-white text-[#63555F] hover:text-[#351B32] transition-colors focus-ring"
                         title="Underline"
                         type="button"
                       >
                         <span className="material-symbols-outlined text-[18px]">format_underlined</span>
                       </button>
-                      <div className="w-px h-4 bg-outline-variant mx-1"></div>
+                      <div className="w-px h-4 bg-[#EDE5E1] mx-1"></div>
                       <button
                         onClick={() => setIsEditingBody(!isEditingBody)}
-                        className="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-white text-[#63555F] hover:text-[#351B32] transition-colors focus-ring"
                         title="Bulleted List"
                         type="button"
                       >
@@ -426,16 +422,16 @@ export default function EmailComposerPage() {
                       </button>
                       <button
                         onClick={() => setIsEditingBody(!isEditingBody)}
-                        className="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-white text-[#63555F] hover:text-[#351B32] transition-colors focus-ring"
                         title="Numbered List"
                         type="button"
                       >
                         <span className="material-symbols-outlined text-[18px]">format_list_numbered</span>
                       </button>
-                      <div className="w-px h-4 bg-outline-variant mx-1"></div>
+                      <div className="w-px h-4 bg-[#EDE5E1] mx-1"></div>
                       <button
                         onClick={() => setIsEditingBody(!isEditingBody)}
-                        className="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-white text-[#63555F] hover:text-[#351B32] transition-colors focus-ring"
                         title="Edit Text"
                         type="button"
                       >
@@ -443,15 +439,15 @@ export default function EmailComposerPage() {
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                      <span className="font-caption-caps text-caption-caps text-[#63555F]">
                         {wordCount} Words • {charCount.toLocaleString()} Chars
                       </span>
                       <button
                         onClick={handleCycleTone}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest text-primary text-label-sm font-label-sm shadow-xs hover:bg-surface-container transition-all"
+                        className="badge-neutral hover:border-[#E76F72] transition-all focus-ring cursor-pointer"
                         type="button"
                       >
-                        <span className="material-symbols-outlined text-[16px] text-secondary">tune</span> Tone:{' '}
+                        <span className="material-symbols-outlined text-[16px] text-[#E76F72]">tune</span> Tone:{' '}
                         {toneLabel}
                       </button>
                     </div>
@@ -530,30 +526,30 @@ export default function EmailComposerPage() {
                       {attachments.map((att) => (
                         <div
                           key={att.id}
-                          className="flex items-center gap-3 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all shadow-xs group"
+                          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] hover:border-[#E76F72]/50 transition-all shadow-2xs group"
                         >
                           <div
-                            className={`w-8 h-8 rounded-lg ${att.iconBg} flex items-center justify-center shrink-0`}
+                            className="w-8 h-8 rounded-lg bg-white border border-[#EDE5E1] text-[#E76F72] flex items-center justify-center shrink-0"
                           >
                             <span className="material-symbols-outlined text-[18px]">{att.icon}</span>
                           </div>
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-label-md text-label-md text-primary font-bold truncate max-w-[210px]">
+                              <span className="font-label-md text-label-md text-[#351B32] font-bold truncate max-w-[210px]">
                                 {att.name}
                               </span>
                               <span
-                                className={`font-caption-caps text-caption-caps px-1.5 py-0.5 rounded-full ${att.badgeStyle}`}
+                                className="badge-emerald text-[10px] py-0 px-1.5"
                               >
                                 {att.badge}
                               </span>
                             </div>
-                            <span className="font-body-sm text-body-sm text-on-surface-variant">{att.meta}</span>
+                            <span className="font-body-sm text-body-sm text-[#63555F]">{att.meta}</span>
                           </div>
                           <div className="flex items-center gap-1 ml-2">
                             <button
                               onClick={() => showToast(`Previewing ${att.name}`)}
-                              className="p-1 rounded text-on-surface-variant hover:text-primary transition-colors"
+                              className="p-1 rounded text-[#63555F] hover:text-[#351B32] transition-colors focus-ring"
                               title="Preview Document"
                               type="button"
                             >
@@ -561,7 +557,7 @@ export default function EmailComposerPage() {
                             </button>
                             <button
                               onClick={() => setAttachments((prev) => prev.filter((item) => item.id !== att.id))}
-                              className="p-1 rounded text-on-surface-variant hover:text-error transition-colors"
+                              className="p-1 rounded text-[#63555F] hover:text-rose-700 transition-colors focus-ring"
                               title="Remove"
                               type="button"
                             >
@@ -574,7 +570,7 @@ export default function EmailComposerPage() {
                       {/* Quick Add Document Button */}
                       <button
                         onClick={handleAttachPortfolio}
-                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all text-label-md font-label-md shadow-xs"
+                        className="btn-editorial-secondary !py-2 !px-3.5 !text-xs focus-ring"
                         type="button"
                       >
                         <span className="material-symbols-outlined text-[18px]">add_circle</span>
@@ -585,60 +581,60 @@ export default function EmailComposerPage() {
                 </div>
               ) : (
                 /* Preview & AI Review Panel */
-                <div className="bg-surface-container-lowest rounded-xl shadow-md p-6 flex flex-col gap-5">
-                  <div className="flex items-center justify-between pb-4 bg-surface-container-low rounded-lg p-3">
+                <div className="editorial-card p-6 flex flex-col gap-5">
+                  <div className="flex items-center justify-between pb-4 bg-[#FAF6F2] border border-[#EDE5E1] rounded-xl p-3">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-secondary">verified</span>
-                      <span className="font-label-md text-label-md text-primary font-bold">
+                      <span className="material-symbols-outlined text-[#268566]">verified</span>
+                      <span className="font-label-md text-label-md text-[#351B32] font-bold">
                         Email Copilot Diagnostic Analysis
                       </span>
                     </div>
-                    <span className="font-caption-caps text-caption-caps bg-tertiary-fixed text-on-tertiary-fixed-variant px-2.5 py-1 rounded-full font-bold">
+                    <span className="badge-emerald font-bold">
                       Readiness Score: 98/100
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="p-3 bg-surface-container-low rounded-lg">
-                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                    <div className="p-3 bg-[#FAF6F2] border border-[#EDE5E1] rounded-xl">
+                      <span className="font-caption-caps text-caption-caps text-[#63555F] uppercase">
                         Tone Alignment
                       </span>
-                      <p className="font-label-md text-label-md text-primary font-bold mt-1">
+                      <p className="font-label-md text-label-md text-[#351B32] font-bold mt-1">
                         Direct &amp; Engineering-Focused
                       </p>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                      <p className="font-body-sm text-body-sm text-[#63555F] mt-0.5">
                         Scores 99% for technical recruiting style guidelines.
                       </p>
                     </div>
-                    <div className="p-3 bg-surface-container-low rounded-lg">
-                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                    <div className="p-3 bg-[#FAF6F2] border border-[#EDE5E1] rounded-xl">
+                      <span className="font-caption-caps text-caption-caps text-[#63555F] uppercase">
                         Keywords Density
                       </span>
-                      <p className="font-label-md text-label-md text-primary font-bold mt-1">
+                      <p className="font-label-md text-label-md text-[#351B32] font-bold mt-1">
                         {(activeJob.skills || ['PyTorch', 'RAG', 'Latency']).slice(0, 3).join(', ')}
                       </p>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                      <p className="font-body-sm text-body-sm text-[#63555F] mt-0.5">
                         Matches core hard requirements from job specification.
                       </p>
                     </div>
-                    <div className="p-3 bg-surface-container-low rounded-lg">
-                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                    <div className="p-3 bg-[#FAF6F2] border border-[#EDE5E1] rounded-xl">
+                      <span className="font-caption-caps text-caption-caps text-[#63555F] uppercase">
                         Readability Index
                       </span>
-                      <p className="font-label-md text-label-md text-primary font-bold mt-1">45-Sec Scan Time</p>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                      <p className="font-label-md text-label-md text-[#351B32] font-bold mt-1">45-Sec Scan Time</p>
+                      <p className="font-body-sm text-body-sm text-[#63555F] mt-0.5">
                         Bullet points front-load highest value qualifications.
                       </p>
                     </div>
                   </div>
-                  <div className="bg-surface-container-lowest p-5 rounded-lg shadow-inner">
-                    <div className="font-body-sm text-body-sm text-on-surface-variant mb-2">
+                  <div className="bg-[#FAF6F2] border border-[#EDE5E1] p-5 rounded-xl shadow-2xs">
+                    <div className="font-body-sm text-body-sm text-[#63555F] mb-2 font-medium">
                       Simulated Recruiter View (Gmail Desktop client)
                     </div>
-                    <div className="font-label-md text-label-md text-primary font-bold mb-1">{subject}</div>
-                    <div className="font-body-sm text-body-sm text-on-surface-variant mb-4">
+                    <div className="font-label-md text-label-md text-[#351B32] font-bold mb-1">{subject}</div>
+                    <div className="font-body-sm text-body-sm text-[#63555F] mb-4">
                       From: {senderName} &lt;{senderEmail}&gt; • To: {recruiterName} &lt;{recruiterEmail}&gt;
                     </div>
-                    <p className="font-body-md text-body-md text-on-surface leading-relaxed whitespace-pre-line">
+                    <p className="font-body-md text-body-md text-[#1D1A21] leading-relaxed whitespace-pre-line">
                       {emailBody}
                     </p>
                   </div>
@@ -646,11 +642,11 @@ export default function EmailComposerPage() {
               )}
 
               {/* Bottom Action Bar */}
-              <div className="bg-surface-container-lowest rounded-xl shadow-md p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="editorial-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button
                     onClick={() => showToast('Draft saved to local workspace.')}
-                    className="px-4 py-2 rounded-lg font-label-md text-label-md text-primary hover:bg-surface-container-high transition-all"
+                    className="btn-editorial-secondary focus-ring"
                     type="button"
                   >
                     Save as Draft
@@ -660,20 +656,20 @@ export default function EmailComposerPage() {
                       setActiveTab('preview');
                       showToast('AI Copilot verified 98% recruiter alignment.');
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-label-md text-label-md text-secondary hover:bg-secondary-fixed/30 transition-all"
+                    className="btn-editorial-secondary !border-[#E76F72]/50 text-[#E76F72] focus-ring"
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-[18px]">spark</span>
+                    <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
                     <span>Review AI Polish</span>
                   </button>
                 </div>
                 {/* Primary Confirmation Dispatch Trigger */}
                 <button
                   onClick={() => setModalOpen(true)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary-container hover:bg-on-primary-fixed text-on-primary font-label-md text-label-md shadow-md hover:shadow-lg transition-all duration-150 transform active:scale-95"
+                  className="w-full sm:w-auto btn-editorial-primary focus-ring"
                   type="button"
                 >
-                  <span className="material-symbols-outlined text-[18px] text-tertiary-fixed">send</span>
+                  <span className="material-symbols-outlined text-[18px] text-[#E76F72]">send</span>
                   <span>
                     Approve &amp; Send via {profile.emailProvider === 'outlook' ? 'Outlook' : 'Gmail'}
                   </span>
@@ -684,13 +680,13 @@ export default function EmailComposerPage() {
             {/* Right-Side Copilot Intelligence Drawer (4 Columns) */}
             <div className="lg:col-span-4 flex flex-col gap-6">
               {/* Recruiter Intelligence Card */}
-              <div className="bg-surface-container-lowest rounded-xl shadow-md p-6 flex flex-col gap-5">
+              <div className="editorial-card p-6 flex flex-col gap-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-[22px]">psychology</span>
-                    <h2 className="font-headline-sm text-headline-sm text-primary font-bold">Recruiter Intelligence</h2>
+                    <span className="material-symbols-outlined text-[#E76F72] text-[22px]">psychology</span>
+                    <h2 className="font-serif text-xl text-[#351B32] font-bold">Recruiter Intelligence</h2>
                   </div>
-                  <span className="font-caption-caps text-caption-caps bg-surface-container-highest text-on-surface px-2 py-0.5 rounded-full">
+                  <span className="badge-neutral font-semibold">
                     {activeJob.company}
                   </span>
                 </div>
@@ -838,54 +834,54 @@ export default function EmailComposerPage() {
 
         {/* Modal / Approval Confirmation Dialog */}
         {modalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/60 backdrop-blur-sm transition-opacity duration-200">
-            <div className="bg-surface-container-lowest max-w-lg w-full rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#351B32]/60 backdrop-blur-sm transition-opacity duration-200">
+            <div className="bg-white border border-[#EDE5E1] max-w-lg w-full rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-center text-[#E76F72] shadow-2xs">
                     <span className="material-symbols-outlined text-[22px]">outgoing_mail</span>
                   </div>
                   <div>
-                    <h3 className="font-headline-sm text-headline-sm text-primary font-bold">
+                    <h3 className="font-serif text-2xl text-[#351B32] font-bold">
                       Confirm Email Dispatch
                     </h3>
-                    <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase">
+                    <span className="font-caption-caps text-caption-caps text-[#63555F] uppercase">
                       Final Verification Check
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => setModalOpen(false)}
-                  className="text-on-surface-variant hover:text-primary transition-colors p-1"
+                  className="text-[#63555F] hover:text-[#351B32] transition-colors p-1 rounded-lg focus-ring"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[20px]">close</span>
                 </button>
               </div>
 
-              <div className="bg-surface-container-low p-4 rounded-xl flex items-start gap-3">
-                <span className="material-symbols-outlined text-secondary text-[22px] shrink-0 mt-0.5">security</span>
-                <p className="font-body-md text-body-md text-on-surface leading-snug">
+              <div className="bg-[#FAF6F2] border border-[#EDE5E1] p-4 rounded-xl flex items-start gap-3">
+                <span className="material-symbols-outlined text-[#E76F72] text-[22px] shrink-0 mt-0.5">security</span>
+                <p className="font-body-md text-body-md text-[#1D1A21] leading-snug">
                   Once approved, this email will be dispatched directly through your connected account (
-                  <strong className="text-primary font-semibold">{senderEmail}</strong>) and logged in Applications
+                  <strong className="text-[#351B32] font-semibold">{senderEmail}</strong>) and logged in Applications
                   Tracker.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2 bg-surface-container p-3.5 rounded-xl">
+              <div className="flex flex-col gap-2.5 bg-[#FAF6F2] border border-[#EDE5E1] p-3.5 rounded-xl">
                 <div className="flex justify-between items-center text-body-sm font-body-sm">
-                  <span className="text-on-surface-variant">Recipient:</span>
-                  <span className="font-semibold text-primary">
+                  <span className="text-[#63555F]">Recipient:</span>
+                  <span className="font-semibold text-[#351B32]">
                     {recruiterName} ({activeJob.company})
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-body-sm font-body-sm">
-                  <span className="text-on-surface-variant">Attachments:</span>
-                  <span className="font-semibold text-primary">{attachments.length} PDF documents (ATS verified)</span>
+                  <span className="text-[#63555F]">Attachments:</span>
+                  <span className="font-semibold text-[#351B32]">{attachments.length} PDF documents (ATS-friendly formatted)</span>
                 </div>
                 <div className="flex justify-between items-center text-body-sm font-body-sm">
-                  <span className="text-on-surface-variant">Tracking:</span>
-                  <span className="font-semibold text-on-tertiary-fixed-variant">
+                  <span className="text-[#63555F]">Tracking:</span>
+                  <span className="badge-emerald text-[11px] py-0 px-2">
                     Real-time open &amp; click tracking
                   </span>
                 </div>
@@ -894,7 +890,7 @@ export default function EmailComposerPage() {
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container transition-all"
+                  className="btn-editorial-secondary focus-ring"
                   type="button"
                 >
                   Cancel &amp; Continue Editing
@@ -902,7 +898,7 @@ export default function EmailComposerPage() {
                 <button
                   disabled={sending}
                   onClick={handleConfirmSend}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-on-primary-fixed font-label-md text-label-md shadow-md transition-all"
+                  className="btn-editorial-primary focus-ring"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[18px]">
@@ -918,8 +914,8 @@ export default function EmailComposerPage() {
         {/* Toast Notification Pill */}
         {toastMsg && (
           <div className="fixed bottom-6 right-6 z-50 transition-all duration-300">
-            <div className="bg-primary text-on-primary px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
-              <span className="material-symbols-outlined text-secondary-fixed text-[20px]">check_circle</span>
+            <div className="bg-[#351B32] text-white border border-[#EDE5E1]/20 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+              <span className="material-symbols-outlined text-[#E76F72] text-[20px]">check_circle</span>
               <span className="font-label-md text-label-md">{toastMsg}</span>
             </div>
           </div>

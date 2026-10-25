@@ -5,7 +5,13 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = getAuthenticatedUserId(req) || 'local_workspace';
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Authentication required.' } },
+        { status: 401 }
+      );
+    }
     const body = await req.json();
 
     if (!body || typeof body !== 'object') {
@@ -24,7 +30,7 @@ export async function POST(req: NextRequest) {
     };
 
     profilesStore.set(userId, updated);
-    return NextResponse.json({ profile: updated, completed: true });
+    return NextResponse.json({ success: true, profile: updated, completed: true });
   } catch (err) {
     console.error('[POST /api/onboarding]', err);
     return NextResponse.json(

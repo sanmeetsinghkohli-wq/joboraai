@@ -285,7 +285,7 @@ export default function OnboardingPage() {
 
               {/* STEP 1: PERSONAL INFO */}
               {step === 1 && (
-                <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm flex flex-col gap-5">
+                <div className="bg-surface-container-lowest border border-[#EDE5E1] rounded-xl p-6 shadow-sm flex flex-col gap-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="font-label-md text-label-md text-primary">Full Name</label>
@@ -293,7 +293,7 @@ export default function OnboardingPage() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Enter your full name"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -302,7 +302,7 @@ export default function OnboardingPage() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+971 50 000 0000"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -311,7 +311,7 @@ export default function OnboardingPage() {
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
                         placeholder="Dubai, United Arab Emirates"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -320,7 +320,7 @@ export default function OnboardingPage() {
                         value={github}
                         onChange={(e) => setGithub(e.target.value)}
                         placeholder="github.com/yourusername"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                   </div>
@@ -330,7 +330,7 @@ export default function OnboardingPage() {
                       value={linkedin}
                       onChange={(e) => setLinkedin(e.target.value)}
                       placeholder="linkedin.com/in/yourusername"
-                      className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                      className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                     />
                   </div>
                 </div>
@@ -338,7 +338,7 @@ export default function OnboardingPage() {
 
               {/* STEP 2: PREFERENCES */}
               {step === 2 && (
-                <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm flex flex-col gap-5">
+                <div className="bg-surface-container-lowest border border-[#EDE5E1] rounded-xl p-6 shadow-sm flex flex-col gap-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="font-label-md text-label-md text-primary">Target Role / Title</label>
@@ -346,7 +346,7 @@ export default function OnboardingPage() {
                         value={targetRole}
                         onChange={(e) => setTargetRole(e.target.value)}
                         placeholder="e.g. AI Engineering Intern / Full Stack Engineer"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -354,7 +354,7 @@ export default function OnboardingPage() {
                       <select
                         value={workMode}
                         onChange={(e) => setWorkMode(e.target.value)}
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       >
                         <option value="Hybrid & Remote">Hybrid &amp; Remote</option>
                         <option value="Remote Only">Remote Only</option>
@@ -370,14 +370,14 @@ export default function OnboardingPage() {
                       value={skillInput}
                       onChange={(e) => setSkillInput(e.target.value)}
                       placeholder="PyTorch, Python, React, TypeScript, FastAPI, Docker, AWS"
-                      className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                      className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                     />
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {currentSkills.map((s) => (
                       <span
                         key={s}
-                        className="font-label-sm text-label-sm px-3 py-1 rounded-full bg-surface-container text-primary"
+                        className="font-label-sm text-label-sm px-3 py-1 rounded-full bg-surface-container border border-[#EDE5E1] text-primary"
                       >
                         {s}
                       </span>
@@ -388,7 +388,7 @@ export default function OnboardingPage() {
 
               {/* STEP 3: EDUCATION */}
               {step === 3 && (
-                <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm flex flex-col gap-5">
+                <div className="bg-surface-container-lowest border border-[#EDE5E1] rounded-xl p-6 shadow-sm flex flex-col gap-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="font-label-md text-label-md text-primary">University / Institution</label>
@@ -396,7 +396,7 @@ export default function OnboardingPage() {
                         value={university}
                         onChange={(e) => setUniversity(e.target.value)}
                         placeholder="e.g. Heriot-Watt University Dubai / BITS Pilani"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -405,7 +405,7 @@ export default function OnboardingPage() {
                         value={degree}
                         onChange={(e) => setDegree(e.target.value)}
                         placeholder="e.g. B.S. Computer Science & AI"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -414,7 +414,7 @@ export default function OnboardingPage() {
                         value={graduationYear}
                         onChange={(e) => setGraduationYear(e.target.value)}
                         placeholder="e.g. Summer 2025 / Class of 2026"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -423,7 +423,7 @@ export default function OnboardingPage() {
                         value={gpa}
                         onChange={(e) => setGpa(e.target.value)}
                         placeholder="e.g. 3.85 / 4.0 (Dean's List)"
-                        className="bg-surface-container-low px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="bg-surface-container-low border border-[#EDE5E1] px-4 py-3 rounded-lg font-body-md text-body-md text-on-surface focus-ring"
                       />
                     </div>
                   </div>

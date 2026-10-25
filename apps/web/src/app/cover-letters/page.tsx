@@ -182,13 +182,13 @@ export default function CoverLettersPage() {
       <div className="flex flex-col w-full py-6 gap-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="font-caption-caps text-caption-caps uppercase tracking-wider text-secondary font-bold">
+            <span className="badge-coral uppercase tracking-wider text-[11px] font-bold">
               Editorial Narrative Studio
             </span>
-            <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight mt-1">
+            <h1 className="font-serif text-3xl md:text-4xl font-semibold text-[#351B32] tracking-tight mt-1">
               AI Cover Letter Generator
             </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+            <p className="text-sm text-[#7D747D] mt-1 font-sans">
               Synthesized strictly from your verified profile skills and target job description — zero fabricated qualifications.
             </p>
           </div>
@@ -204,7 +204,7 @@ export default function CoverLettersPage() {
                   }
                 }}
                 aria-label="Select target job for cover letter"
-                className="bg-surface-container-lowest px-3.5 py-2.5 rounded-xl font-label-md text-label-md text-primary shadow-sm focus:outline-none"
+                className="bg-white border border-[#EDE5E1] px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#351B32] shadow-sm focus-ring cursor-pointer"
               >
                 {jobs.map((j) => (
                   <option key={j.id} value={j.id}>
@@ -215,7 +215,7 @@ export default function CoverLettersPage() {
             )}
             <button
               onClick={handleSaveDraft}
-              className="px-4 py-2.5 rounded-xl bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-container-high transition-all flex items-center gap-1.5"
+              className="btn-editorial-secondary text-xs flex items-center gap-1.5"
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">save</span>
@@ -223,7 +223,7 @@ export default function CoverLettersPage() {
             </button>
             <button
               onClick={handleDownloadDocx}
-              className="px-4 py-2.5 rounded-xl bg-surface-container-high text-primary font-label-md text-label-md hover:bg-surface-variant transition-all flex items-center gap-1.5"
+              className="btn-editorial-secondary text-xs flex items-center gap-1.5"
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">download</span>
@@ -231,7 +231,7 @@ export default function CoverLettersPage() {
             </button>
             <button
               onClick={handlePrintPdf}
-              className="px-4 py-2.5 rounded-xl bg-surface-container-high text-primary font-label-md text-label-md hover:bg-surface-variant transition-all flex items-center gap-1.5"
+              className="btn-editorial-secondary text-xs flex items-center gap-1.5"
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
@@ -239,7 +239,7 @@ export default function CoverLettersPage() {
             </button>
             <button
               onClick={() => router.push('/email-composer')}
-              className="px-5 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md shadow-sm hover:opacity-95 transition-all flex items-center gap-2"
+              className="btn-editorial-primary text-xs flex items-center gap-2"
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">forward_to_inbox</span>
@@ -249,9 +249,13 @@ export default function CoverLettersPage() {
         </div>
 
         {statusNotice && (
-          <div className="px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between text-label-sm font-label-sm text-primary">
-            <span>{statusNotice}</span>
-            <button type="button" onClick={() => setStatusNotice(null)}>
+          <div className="px-4 py-2.5 rounded-xl editorial-card border border-[#EDE5E1] flex items-center justify-between text-xs text-[#351B32] animate-fade-in">
+            <span className="font-medium">{statusNotice}</span>
+            <button
+              type="button"
+              onClick={() => setStatusNotice(null)}
+              className="text-[#7D747D] hover:text-[#351B32] p-1 rounded transition-colors"
+            >
               ✕
             </button>
           </div>
@@ -260,17 +264,17 @@ export default function CoverLettersPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Drafts & Controls Sidebar (4 cols) */}
           <aside className="lg:col-span-4 flex flex-col gap-4">
-            <div className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-              <h2 className="font-headline-sm text-headline-sm text-primary">Tone &amp; Length Calibration</h2>
+            <div className="editorial-card border border-[#EDE5E1] rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+              <h2 className="font-serif text-lg font-semibold text-[#351B32]">Tone &amp; Length Calibration</h2>
               <div className="flex flex-col gap-1.5">
-                <label className="font-label-sm text-label-sm text-on-surface-variant">Editorial Tone</label>
+                <label className="text-xs font-semibold text-[#5A525A]">Editorial Tone</label>
                 <select
                   value={tone}
                   onChange={(e) => {
                     setActiveDraftId(null);
                     setTone(e.target.value as CoverLetterDraft['tone']);
                   }}
-                  className="bg-surface-container-low px-3.5 py-2 rounded-xl font-label-md text-label-md text-primary"
+                  className="bg-[#F8F5F0]/60 border border-[#EDE5E1] px-3.5 py-2 rounded-xl text-sm text-[#351B32] focus-ring"
                 >
                   <option value="Editorial & Professional">Editorial &amp; Professional</option>
                   <option value="Executive & Concise">Executive &amp; Concise</option>
@@ -278,7 +282,7 @@ export default function CoverLettersPage() {
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="font-label-sm text-label-sm text-on-surface-variant">Target Length</label>
+                <label className="text-xs font-semibold text-[#5A525A]">Target Length</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['Concise', 'Standard', 'Detailed'] as const).map((len) => (
                     <button
@@ -288,10 +292,10 @@ export default function CoverLettersPage() {
                         setActiveDraftId(null);
                         setLengthMode(len);
                       }}
-                      className={`py-2 rounded-xl font-label-sm text-label-sm font-semibold transition-all ${
+                      className={`py-2 rounded-xl text-xs font-semibold transition-all focus-ring ${
                         lengthMode === len
-                          ? 'bg-primary-container text-on-primary'
-                          : 'bg-surface-container-low text-on-surface-variant hover:text-primary'
+                          ? 'bg-[#351B32] text-white shadow-sm'
+                          : 'bg-[#F8F5F0] text-[#5A525A] hover:text-[#351B32] border border-[#EDE5E1]'
                       }`}
                     >
                       {len}
@@ -306,33 +310,36 @@ export default function CoverLettersPage() {
                   setLetterText(buildGroundedLetter(tone, lengthMode));
                   setStatusNotice('Regenerated grounded cover letter from profile & job.');
                 }}
-                className="w-full py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-bold flex items-center justify-center gap-1.5"
+                className="w-full btn-editorial-secondary text-xs flex items-center justify-center gap-1.5 font-bold"
               >
                 <span className="material-symbols-outlined text-[18px]">autorenew</span>
                 <span>Regenerate Letter</span>
               </button>
             </div>
 
-            <div className="bg-surface-container-lowest rounded-2xl p-5 shadow-sm flex flex-col gap-3">
+            <div className="editorial-card border border-[#EDE5E1] rounded-2xl p-5 shadow-sm flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <h2 className="font-headline-sm text-headline-sm text-primary">Saved Drafts</h2>
-                <span className="font-caption-caps text-caption-caps text-on-surface-variant">
+                <h2 className="font-serif text-lg font-semibold text-[#351B32]">Saved Drafts</h2>
+                <span className="badge-neutral text-[11px]">
                   {drafts.length} saved
                 </span>
               </div>
               {drafts.length === 0 ? (
-                <p className="font-body-sm text-body-sm text-on-surface-variant py-3">
-                  No saved drafts yet. Click &ldquo;Save Draft&rdquo; to store versions for different employers.
-                </p>
+                <div className="text-center py-6 px-4 bg-[#F8F5F0]/50 rounded-xl border border-dashed border-[#EDE5E1]">
+                  <span className="material-symbols-outlined text-[#7D747D] text-3xl mb-1">drafts</span>
+                  <p className="text-xs text-[#7D747D] mt-1">
+                    No saved drafts yet. Click &ldquo;Save Draft&rdquo; to store versions for different employers.
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-2.5">
                   {drafts.map((d) => (
                     <div
                       key={d.id}
-                      className={`p-3 rounded-xl border transition-all ${
+                      className={`p-3.5 rounded-xl border transition-all ${
                         activeDraftId === d.id
-                          ? 'bg-surface-container-low border-secondary'
-                          : 'bg-surface-container-lowest border-outline-variant/20'
+                          ? 'bg-[#F8F5F0] border-[#E76F72] shadow-sm'
+                          : 'bg-white border-[#EDE5E1] hover:border-[#351B32]/30'
                       }`}
                     >
                       {renameId === d.id ? (
@@ -340,12 +347,17 @@ export default function CoverLettersPage() {
                           <input
                             value={renameText}
                             onChange={(e) => setRenameText(e.target.value)}
-                            className="flex-1 bg-white px-2 py-1 rounded text-xs text-primary border"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleRenameSubmit(d.id);
+                              if (e.key === 'Escape') setRenameId(null);
+                            }}
+                            autoFocus
+                            className="flex-1 bg-white px-2.5 py-1.5 rounded-lg text-xs text-[#351B32] border border-[#EDE5E1] focus-ring"
                           />
                           <button
                             type="button"
                             onClick={() => handleRenameSubmit(d.id)}
-                            className="px-2 py-1 rounded bg-primary text-white text-xs"
+                            className="btn-editorial-primary text-xs px-2.5 py-1.5"
                           >
                             Save
                           </button>
@@ -360,29 +372,29 @@ export default function CoverLettersPage() {
                           }}
                           className="cursor-pointer"
                         >
-                          <div className="font-label-sm text-label-sm text-primary font-bold truncate">
+                          <div className="text-xs font-semibold text-[#351B32] truncate">
                             {d.name}
                           </div>
-                          <div className="font-caption-caps text-caption-caps text-on-surface-variant mt-0.5">
+                          <div className="text-[11px] text-[#7D747D] mt-0.5">
                             {d.tone} • {d.updatedAt}
                           </div>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-outline-variant/15 text-xs">
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#EDE5E1] text-xs">
                         <button
                           type="button"
                           onClick={() => {
                             setRenameId(d.id);
                             setRenameText(d.name);
                           }}
-                          className="text-primary hover:underline"
+                          className="text-[#351B32] font-medium hover:underline"
                         >
                           Rename
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteDraft(d.id)}
-                          className="text-rose-700 hover:underline ml-auto"
+                          className="text-[#E76F72] font-medium hover:underline ml-auto"
                         >
                           Delete
                         </button>
@@ -395,15 +407,15 @@ export default function CoverLettersPage() {
           </aside>
 
           {/* Right Editor Canvas (8 cols) */}
-          <div className="lg:col-span-8 bg-surface-container-lowest rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
-              <span className="font-label-md text-label-md text-primary font-bold">
+          <div className="lg:col-span-8 editorial-card border border-[#EDE5E1] rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-[#EDE5E1] pb-3">
+              <span className="font-serif text-base font-semibold text-[#351B32]">
                 Editable Cover Letter Manuscript
               </span>
               <button
                 type="button"
                 onClick={handleCopy}
-                className="px-3 py-1 rounded-lg bg-surface-container text-primary font-label-sm text-label-sm hover:bg-surface-container-high flex items-center gap-1"
+                className="btn-editorial-secondary text-xs flex items-center gap-1"
               >
                 <span className="material-symbols-outlined text-[15px]">content_copy</span>
                 <span>Copy Text</span>
@@ -414,7 +426,7 @@ export default function CoverLettersPage() {
               onChange={(e) => setLetterText(e.target.value)}
               rows={18}
               aria-label="Cover letter editor"
-              className="w-full bg-transparent font-body-md text-body-md text-on-surface leading-relaxed focus:outline-none resize-y"
+              className="w-full bg-[#F8F5F0]/30 border border-[#EDE5E1] rounded-xl p-4 font-sans text-sm text-[#1D1A21] leading-relaxed focus-ring resize-y"
             />
           </div>
         </div>

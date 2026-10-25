@@ -110,13 +110,13 @@ export default function DocumentsPage() {
       <div className="flex flex-col w-full py-6 gap-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="font-caption-caps text-caption-caps uppercase tracking-wider text-secondary font-bold">
+            <span className="badge-coral uppercase tracking-wider text-[11px] font-bold">
               Private Candidate Vault
             </span>
-            <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight mt-1">
+            <h1 className="font-serif text-3xl md:text-4xl font-semibold text-[#351B32] tracking-tight mt-1">
               Career Documents &amp; Artifacts
             </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+            <p className="text-sm text-[#7D747D] mt-1 font-sans">
               Upload, preview, rename, download, and manage your master resume, tailored CV variants, and application packets.
             </p>
           </div>
@@ -130,7 +130,7 @@ export default function DocumentsPage() {
             />
             <button
               onClick={() => fileRef.current?.click()}
-              className="px-5 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md shadow-sm hover:opacity-95 transition-all flex items-center gap-2"
+              className="btn-editorial-primary flex items-center gap-2 text-xs"
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">upload_file</span>
@@ -139,10 +139,22 @@ export default function DocumentsPage() {
           </div>
         </div>
 
+        {/* Local Workspace Mode Notice */}
+        <div className="p-3.5 rounded-xl bg-surface-container-low/60 border border-[#EDE5E1] flex items-center gap-3 text-xs text-[#63555F]">
+          <span className="material-symbols-outlined text-[20px] text-primary shrink-0">inventory_2</span>
+          <span>
+            <strong className="text-primary font-semibold">Local Workspace Storage:</strong> Your career documents and tailored variants are stored in your current local session and browser cache. Cloud multi-device synchronization will activate once Supabase database credentials are connected.
+          </span>
+        </div>
+
         {errorMsg && (
-          <div className="p-4 rounded-xl bg-rose-50 text-rose-800 font-body-sm text-body-sm flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between animate-fade-in">
             <span>{errorMsg}</span>
-            <button type="button" onClick={() => setErrorMsg(null)}>
+            <button
+              type="button"
+              onClick={() => setErrorMsg(null)}
+              className="text-rose-600 hover:text-rose-900 p-1 rounded"
+            >
               ✕
             </button>
           </div>
@@ -150,30 +162,30 @@ export default function DocumentsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Primary Master Resume Card */}
-          <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between gap-4">
+          <div className="editorial-card border border-[#EDE5E1] bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-primary-container text-on-primary flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-[#351B32] text-white flex items-center justify-center shadow-xs">
                   <span className="material-symbols-outlined text-[22px]">description</span>
                 </div>
                 <div>
-                  <h3 className="font-label-md text-label-md text-primary font-bold truncate max-w-[200px]">
+                  <h3 className="font-serif text-base font-semibold text-[#351B32] truncate max-w-[200px]">
                     {primaryResumeName}
                   </h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  <p className="text-xs text-[#7D747D]">
                     {profile.resumeSize || 'Master Profile'} • {profile.resumeUploadedAt || 'Synced'}
                   </p>
                 </div>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-caption-caps text-caption-caps font-bold">
+              <span className="badge-emerald text-[11px] font-bold">
                 {profile.atsScore ? `ATS ${profile.atsScore}%` : 'Master'}
               </span>
             </div>
-            <div className="pt-3 border-t border-surface-container flex items-center justify-between">
-              <span className="font-caption-caps text-caption-caps text-on-surface-variant">Primary Master Resume</span>
+            <div className="pt-3 border-t border-[#EDE5E1] flex items-center justify-between">
+              <span className="text-[11px] text-[#7D747D]">Primary Master Resume</span>
               <Link
                 href="/cv-studio"
-                className="font-label-sm text-label-sm text-secondary font-semibold hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-[#351B32] hover:text-[#E76F72] flex items-center gap-1 transition-colors"
               >
                 <span>Open in CV Studio</span>
                 <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
@@ -185,11 +197,11 @@ export default function DocumentsPage() {
           {vaultDocs.map((doc) => (
             <div
               key={doc.id}
-              className="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between gap-4"
+              className="editorial-card border border-[#EDE5E1] bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0">
+                  <div className="w-11 h-11 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1] text-[#351B32] flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-[22px]">description</span>
                   </div>
                   <div className="min-w-0">
@@ -198,43 +210,48 @@ export default function DocumentsPage() {
                         <input
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
-                          className="bg-surface-container-low px-2 py-1 rounded text-xs text-primary border"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRenameDoc(doc.id);
+                            if (e.key === 'Escape') setRenameId(null);
+                          }}
+                          autoFocus
+                          className="bg-white px-2 py-1 rounded-lg text-xs text-[#351B32] border border-[#EDE5E1] focus-ring"
                         />
                         <button
                           type="button"
                           onClick={() => handleRenameDoc(doc.id)}
-                          className="px-2 py-1 rounded bg-primary text-white text-xs"
+                          className="btn-editorial-primary text-xs px-2 py-1"
                         >
                           Save
                         </button>
                       </div>
                     ) : (
-                      <h3 className="font-label-md text-label-md text-primary font-bold truncate">
+                      <h3 className="font-serif text-base font-semibold text-[#351B32] truncate">
                         {doc.name}
                       </h3>
                     )}
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    <p className="text-xs text-[#7D747D]">
                       {doc.size} • {doc.uploadedAt}
                     </p>
                   </div>
                 </div>
-                <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-caption-caps text-caption-caps">
+                <span className="badge-neutral text-[11px]">
                   {doc.type}
                 </span>
               </div>
-              <div className="pt-3 border-t border-surface-container flex items-center justify-between text-xs font-semibold">
+              <div className="pt-3 border-t border-[#EDE5E1] flex items-center justify-between text-xs font-semibold">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setPreviewDoc(doc)}
-                    className="text-primary hover:underline"
+                    className="text-[#351B32] hover:underline"
                   >
                     Preview
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDownloadDoc(doc)}
-                    className="text-secondary hover:underline"
+                    className="text-[#268566] hover:underline"
                   >
                     Download
                   </button>
@@ -244,7 +261,7 @@ export default function DocumentsPage() {
                       setRenameId(doc.id);
                       setRenameValue(doc.name);
                     }}
-                    className="text-on-surface-variant hover:text-primary"
+                    className="text-[#7D747D] hover:text-[#351B32]"
                   >
                     Rename
                   </button>
@@ -252,7 +269,7 @@ export default function DocumentsPage() {
                 <button
                   type="button"
                   onClick={() => handleDeleteDoc(doc.id)}
-                  className="text-rose-700 hover:underline"
+                  className="text-[#E76F72] hover:underline"
                 >
                   Delete
                 </button>
@@ -264,33 +281,34 @@ export default function DocumentsPage() {
           {applications.map((app) => (
             <div
               key={app.id}
-              className="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between gap-4"
+              className="editorial-card border border-[#EDE5E1] bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center text-primary">
+                  <div className="w-11 h-11 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1] text-[#351B32] flex items-center justify-center">
                     <span className="material-symbols-outlined text-[22px]">folder_shared</span>
                   </div>
                   <div>
-                    <h3 className="font-label-md text-label-md text-primary font-bold">
+                    <h3 className="font-serif text-base font-semibold text-[#351B32]">
                       {app.company} Application Packet
                     </h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    <p className="text-xs text-[#7D747D]">
                       {app.title} • {app.appliedAt}
                     </p>
                   </div>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-caption-caps text-caption-caps">
+                <span className="badge-neutral text-[11px]">
                   {app.attachments?.length || 1} Files
                 </span>
               </div>
-              <div className="pt-3 border-t border-surface-container flex items-center justify-between">
-                <span className="font-caption-caps text-caption-caps text-on-surface-variant">{app.status}</span>
+              <div className="pt-3 border-t border-[#EDE5E1] flex items-center justify-between">
+                <span className="badge-emerald text-[11px] font-bold">{app.status}</span>
                 <Link
                   href={`/applications/${app.id}`}
-                  className="font-label-sm text-label-sm text-primary font-semibold hover:underline"
+                  className="text-xs font-semibold text-[#351B32] hover:text-[#E76F72] flex items-center gap-1 transition-colors"
                 >
-                  Inspect Packet →
+                  <span>Inspect Packet</span>
+                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
                 </Link>
               </div>
             </div>
@@ -300,31 +318,43 @@ export default function DocumentsPage() {
         {/* Document Preview Modal */}
         {previewDoc && (
           <div
-            className="fixed inset-0 z-50 bg-primary/50 backdrop-blur-xs flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-[#351B32]/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
             onClick={() => setPreviewDoc(null)}
           >
             <div
-              className="bg-surface-container-lowest max-w-lg w-full rounded-2xl p-6 shadow-2xl flex flex-col gap-4"
+              className="editorial-card border border-[#EDE5E1] bg-white max-w-lg w-full rounded-2xl p-6 shadow-2xl flex flex-col gap-4 animate-scale-in"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between">
-                <h3 className="font-headline-sm text-headline-sm text-primary font-bold">
+              <div className="flex items-center justify-between border-b border-[#EDE5E1] pb-3">
+                <h3 className="font-serif text-xl font-bold text-[#351B32] truncate">
                   {previewDoc.name}
                 </h3>
-                <button type="button" onClick={() => setPreviewDoc(null)}>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDoc(null)}
+                  className="text-[#7D747D] hover:text-[#351B32] p-1 rounded-lg"
+                >
                   ✕
                 </button>
               </div>
-              <div className="p-4 rounded-xl bg-surface-container-low font-mono text-xs text-on-surface whitespace-pre-wrap">
+              <div className="p-4 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1] font-mono text-xs text-[#1D1A21] whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
                 {previewDoc.contentPreview}
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewDoc(null)}
+                  className="btn-editorial-secondary text-xs"
+                >
+                  Close
+                </button>
                 <button
                   type="button"
                   onClick={() => handleDownloadDoc(previewDoc)}
-                  className="px-4 py-2 rounded-xl bg-primary-container text-on-primary font-label-sm text-label-sm"
+                  className="btn-editorial-primary text-xs flex items-center gap-1.5"
                 >
-                  Download File
+                  <span className="material-symbols-outlined text-[16px]">download</span>
+                  <span>Download File</span>
                 </button>
               </div>
             </div>

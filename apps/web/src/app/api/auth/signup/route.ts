@@ -1,10 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { setCookie, generateToken, hashPassword, usersStore } from '../_lib';
+import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`signup:${ip}`, 15, 60000);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: 'Too many signup attempts. Please wait a moment before trying again.',
+          },
+          retryAfter: rateCheck.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: getRateLimitHeaders(rateCheck),
+        }
+      );
+    }
+
     const body = await request.json();
     const { firstName, lastName = '', email, password } = body;
 

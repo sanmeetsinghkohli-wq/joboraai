@@ -91,8 +91,8 @@ export function extractCandidateProfile(input: CVExtractionInput): ExtractionRes
 
   // Skills
   const skillLines = content.split(/\n/).filter((l) => {
-    const s = l.trim().toLowerCase();
-    return s.length > 2 && s.length < 40 && !/http/i.test(s) && !/[0-9]{4}/.test(s) && !/experience|education|certification|project|summary|profile/i.test(s);
+    const s = l.trim();
+    return s.length > 2 && !/http/i.test(s) && !/[0-9]{4}/.test(s);
   });
 
   const detectedSkills = detectSkills(skillLines, lower);
@@ -191,13 +191,25 @@ function detectSkills(lines: string[], lower: string): Array<{ name: string; pro
   const seen = new Set<string>();
 
   for (const line of lines) {
-    const parts = line.split(/[,;]+/).map((p) => p.trim());
+    const isExplicitSkillLine = /skills\s*:/i.test(line);
+    const clean = line.replace(/^(?:technical\s+|core\s+)?skills\s*:\s*/i, '');
+    const parts = clean.split(/[,;•·]+/).map((p) => p.trim());
     for (const part of parts) {
       const key = part.toLowerCase();
-      if (known.has(key) && !seen.has(key)) {
+      if (!key) continue;
+      if ((known.has(key) || (isExplicitSkillLine && part.length >= 2 && part.length <= 35 && !/experience|education|university/i.test(part))) && !seen.has(key)) {
         seen.add(key);
         found.push({ name: part, proficiency: guessProficiency(part, lower) });
       }
+    }
+  }
+
+  // Also combine regex-inferred skills from document body
+  for (const inf of detectInferredSkills(lower)) {
+    const key = inf.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      found.push({ name: inf, proficiency: guessProficiency(inf, lower) });
     }
   }
 
@@ -205,6 +217,7 @@ function detectSkills(lines: string[], lower: string): Array<{ name: string; pro
 }
 
 function detectInferredSkills(lower: string): string[] {
+  if (!lower || !lower.trim()) return [];
   const inferred = new Set<string>();
   const patterns: { regex: RegExp; name: string }[] = [
     { regex: /\b(?:react|reactjs|react.js)\b/gi, name: 'React' },
@@ -219,6 +232,10 @@ function detectInferredSkills(lower: string): string[] {
     { regex: /\b(?:git|github|version control)\b/gi, name: 'Git' },
     { regex: /\b(?:graphql|rest|api)\b/gi, name: 'REST APIs' },
     { regex: /\b(?:playwright|selenium|cypress)\b/gi, name: 'Playwright' },
+    { regex: /\b(?:pytorch|torch)\b/gi, name: 'PyTorch' },
+    { regex: /\b(?:kubernetes|k8s)\b/gi, name: 'Kubernetes' },
+    { regex: /\b(?:aws|amazon web services)\b/gi, name: 'AWS' },
+    { regex: /\b(?:redis)\b/gi, name: 'Redis' },
   ];
 
   for (const { regex, name } of patterns) {

@@ -3,7 +3,13 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import type { User, EmailConnection } from '@jobora/types';
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'jobora-dev-secret-change-in-production';
+export const isProduction = process.env.NODE_ENV === 'production';
+const DEFAULT_SECRET = 'jobora-dev-secret-change-in-production';
+export const JWT_SECRET = process.env.JWT_SECRET || DEFAULT_SECRET;
+
+if (isProduction && JWT_SECRET === DEFAULT_SECRET) {
+  console.warn('[SECURITY WARNING] Jobora AI is running in production with the default development JWT_SECRET. Set JWT_SECRET in environment variables to secure user sessions.');
+}
 
 export interface StoredUser extends User {
   passwordHash: string;
@@ -44,6 +50,7 @@ declare global {
   var __jobora_profiles: Map<string, StoredProfileRecord> | undefined;
   var __jobora_applications: Map<string, any[]> | undefined;
   var __jobora_resumes: Map<string, any> | undefined;
+  var __jobora_saved_jobs: Map<string, any[]> | undefined;
 }
 
 export const usersStore: Map<string, StoredUser> =
@@ -57,6 +64,8 @@ export const applicationsStore: Map<string, any[]> =
   global.__jobora_applications || (global.__jobora_applications = new Map<string, any[]>());
 export const resumesStore: Map<string, any> =
   global.__jobora_resumes || (global.__jobora_resumes = new Map<string, any>());
+export const savedJobsStore: Map<string, any[]> =
+  global.__jobora_saved_jobs || (global.__jobora_saved_jobs = new Map<string, any[]>());
 
 export function generateToken(
   userId: string,
@@ -109,14 +118,17 @@ export function comparePassword(password: string, hash: string): Promise<boolean
   return bcrypt.compare(password, hash);
 }
 
-export function setCookie(res: Response, name: string, value: string, options: { maxAge?: number } = {}) {
+export function setCookie(res: Response, name: string, value: string, options: { maxAge?: number; secure?: boolean } = {}) {
   const maxAge = options.maxAge ?? 604800;
-  const cookieHeader = `jobora_${name}=${value}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}`;
+  const isSecure = options.secure ?? isProduction;
+  const secureFlag = isSecure ? '; Secure' : '';
+  const cookieHeader = `jobora_${name}=${value}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${secureFlag}`;
   res.headers.append('Set-Cookie', cookieHeader);
 }
 
 export function clearCookie(res: Response, name: string) {
-  const cookieHeader = `jobora_${name}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  const secureFlag = isProduction ? '; Secure' : '';
+  const cookieHeader = `jobora_${name}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT${secureFlag}`;
   res.headers.append('Set-Cookie', cookieHeader);
 }
 

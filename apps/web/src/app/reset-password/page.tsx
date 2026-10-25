@@ -75,9 +75,9 @@ function ResetPasswordContent() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-surface-container-lowest rounded-2xl shadow-lg p-8 flex flex-col gap-5">
+      <div className="max-w-md w-full bg-surface-container-lowest rounded-2xl border border-[#EDE5E1] shadow-lg p-8 flex flex-col gap-5">
         <div>
-          <Link href="/auth?tab=login" className="font-label-sm text-label-sm text-secondary hover:underline">
+          <Link href="/auth?tab=login" className="font-label-sm text-label-sm text-secondary hover:underline focus-ring rounded">
             ← Back to Sign In
           </Link>
           <h1 className="font-headline-md text-headline-md text-primary mt-2">
@@ -91,12 +91,12 @@ function ResetPasswordContent() {
         </div>
 
         {statusMsg && (
-          <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-900 font-body-sm text-body-sm">
+          <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200 font-body-sm text-body-sm">
             {statusMsg}
           </div>
         )}
         {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-rose-50 text-rose-800 font-body-sm text-body-sm">
+          <div className="p-3.5 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 font-body-sm text-body-sm">
             {errorMsg}
           </div>
         )}
@@ -111,20 +111,20 @@ function ResetPasswordContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@domain.com"
-                className="bg-surface-container-low px-4 py-2.5 rounded-xl font-body-md text-body-md text-on-surface"
+                className="bg-surface-container-low border border-[#EDE5E1] px-4 py-2.5 rounded-xl font-body-md text-body-md text-on-surface focus-ring"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-bold"
+              className="w-full py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-bold hover:bg-on-primary-fixed focus-ring transition-colors shadow-sm disabled:opacity-50"
             >
               {loading ? 'Sending...' : 'Request Reset Token'}
             </button>
             <button
               type="button"
               onClick={() => setMode('reset')}
-              className="font-label-sm text-label-sm text-primary hover:underline text-center"
+              className="font-label-sm text-label-sm text-primary hover:underline text-center focus-ring rounded py-1"
             >
               Already have a reset token? Enter it here
             </button>
@@ -138,7 +138,7 @@ function ResetPasswordContent() {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="Paste reset token"
-                className="bg-surface-container-low px-4 py-2.5 rounded-xl font-mono text-xs text-on-surface"
+                className="bg-surface-container-low border border-[#EDE5E1] px-4 py-2.5 rounded-xl font-mono text-xs text-on-surface focus-ring"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -149,13 +149,13 @@ function ResetPasswordContent() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Minimum 8 characters"
-                className="bg-surface-container-low px-4 py-2.5 rounded-xl font-body-md text-body-md text-on-surface"
+                className="bg-surface-container-low border border-[#EDE5E1] px-4 py-2.5 rounded-xl font-body-md text-body-md text-on-surface focus-ring"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-bold"
+              className="w-full py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-bold hover:bg-on-primary-fixed focus-ring transition-colors shadow-sm disabled:opacity-50"
             >
               {loading ? 'Updating...' : 'Reset Password'}
             </button>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuthenticatedUserId } from '../auth/_lib';
 import {
   type NormalizedJobRecord,
   type ProviderHealthDetail,
@@ -29,12 +30,26 @@ interface JobsCacheEntry {
 }
 
 declare global {
-  var __jobora_custom_jobs: LiveJobRecord[] | undefined;
+  var __jobora_user_jobs: Map<string, LiveJobRecord[]> | undefined;
   var __jobora_jobs_cache: Map<string, JobsCacheEntry> | undefined;
 }
 
-const customJobsStore: LiveJobRecord[] =
-  global.__jobora_custom_jobs || (global.__jobora_custom_jobs = []);
+/** Roles a user adds themselves are private to that user. */
+const userJobsStore: Map<string, LiveJobRecord[]> =
+  global.__jobora_user_jobs instanceof Map
+    ? global.__jobora_user_jobs
+    : (global.__jobora_user_jobs = new Map<string, LiveJobRecord[]>());
+
+function matchesQuery(job: LiveJobRecord, query: string): boolean {
+  if (!query) return true;
+  return (
+    job.title.toLowerCase().includes(query) ||
+    job.company.toLowerCase().includes(query) ||
+    job.description.toLowerCase().includes(query) ||
+    job.location.toLowerCase().includes(query) ||
+    job.skills.some((s) => s.toLowerCase().includes(query))
+  );
+}
 
 const jobsCacheStore: Map<string, JobsCacheEntry> =
   global.__jobora_jobs_cache instanceof Map
@@ -42,37 +57,6 @@ const jobsCacheStore: Map<string, JobsCacheEntry> =
     : (global.__jobora_jobs_cache = new Map<string, JobsCacheEntry>());
 
 const CACHE_TTL_MS = 3 * 60 * 1000; // 3-minute server-side cache per query/location filter
-
-/**
- * Emergency offline fallback records — ONLY returned if ALL live external providers fail or time out.
- * Never mixed into normal live provider responses.
- */
-const EMERGENCY_FALLBACK_JOBS: LiveJobRecord[] = [
-  {
-    id: 'fallback-careem-dubai',
-    title: 'Senior Product Designer (Design Systems)',
-    company: 'Careem',
-    location: 'Dubai, United Arab Emirates',
-    city: 'Dubai',
-    country: 'United Arab Emirates',
-    regionTag: 'UAE',
-    workMode: 'Hybrid',
-    employmentType: 'Full-Time',
-    salaryRange: 'Salary Not Disclosed by Employer',
-    description:
-      'Emergency offline fallback listing: Lead Careem’s regional design system across Super App mobility, fintech, and delivery experiences in Dubai.',
-    responsibilities: [
-      'Architect multi-platform design tokens and accessible UI primitives.',
-      'Partner with product and engineering teams in Dubai and across the MENA region.',
-    ],
-    skills: ['Design Systems', 'Figma', 'Product Design', 'Prototyping', 'Mobile UX'],
-    postedAt: 'Offline Fallback',
-    sourceUrl: 'https://boards.greenhouse.io/careem',
-    applicationUrl: 'https://boards.greenhouse.io/careem',
-    source: 'Offline Fallback (All Live Providers Unreachable)',
-    recruiterName: 'Careem Talent Acquisition',
-  },
-];
 
 function matchesLocationFilter(job: LiveJobRecord, locationFilter: string): boolean {
   if (!locationFilter) return true;
@@ -149,6 +133,11 @@ export async function GET(req: NextRequest) {
   const locationFilter = (searchParams.get('location') || '').toLowerCase().trim();
   const forceRefresh = searchParams.get('refresh') === '1';
 
+  const userId = getAuthenticatedUserId(req);
+  const mine = (userId ? userJobsStore.get(userId) || [] : []).filter(
+    (job) => matchesQuery(job, query) && matchesLocationFilter(job, locationFilter)
+  );
+
   const cacheKey = `${query}::${locationFilter}`;
   const cached = jobsCacheStore.get(cacheKey);
 
@@ -158,7 +147,7 @@ export async function GET(req: NextRequest) {
     Date.now() - cached.timestamp < CACHE_TTL_MS &&
     cached.jobs.length > 0
   ) {
-    const mergedCached = deduplicateJobs([...customJobsStore, ...cached.jobs]);
+    const mergedCached = deduplicateJobs([...mine, ...cached.jobs]);
     return NextResponse.json({
       jobs: mergedCached,
       total: mergedCached.length,
@@ -223,31 +212,22 @@ export async function GET(req: NextRequest) {
   ];
 
   const fallbackActive = liveProviderJobs.length === 0;
-  const combined = deduplicateJobs([
-    ...customJobsStore,
-    ...(fallbackActive ? EMERGENCY_FALLBACK_JOBS : liveProviderJobs),
-  ]);
+  // When every provider is unreachable the list is simply empty; the client
+  // shows that state rather than a placeholder listing.
+  const providerFiltered = deduplicateJobs(liveProviderJobs).filter(
+    (job) => matchesQuery(job, query) && matchesLocationFilter(job, locationFilter)
+  );
 
-  const filtered = combined.filter((job) => {
-    const matchesQuery =
-      !query ||
-      job.title.toLowerCase().includes(query) ||
-      job.company.toLowerCase().includes(query) ||
-      job.description.toLowerCase().includes(query) ||
-      job.location.toLowerCase().includes(query) ||
-      job.skills.some((s) => s.toLowerCase().includes(query));
-
-    const matchesLoc = matchesLocationFilter(job, locationFilter);
-    return matchesQuery && matchesLoc;
-  });
-
+  // Only shared provider results are cached — never a user's private roles.
   jobsCacheStore.set(cacheKey, {
     timestamp: Date.now(),
-    jobs: filtered,
+    jobs: providerFiltered,
     providerStatus,
     providerDetails,
     fallbackActive,
   });
+
+  const filtered = deduplicateJobs([...mine, ...providerFiltered]);
 
   return NextResponse.json({
     jobs: filtered,
@@ -263,6 +243,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Sign in to add a role.' } },
+        { status: 401 }
+      );
+    }
     const body = await req.json();
     const title = String(body?.title || '').trim();
     const company = String(body?.company || '').trim();
@@ -274,11 +261,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rawLocation = String(body.location || 'Dubai, United Arab Emirates').trim();
-    const workMode: 'Remote' | 'Hybrid' | 'On-site' = body.workMode || 'Hybrid';
-    const locMeta = normalizeLocationAndRegion(rawLocation, title, workMode);
-    const sourceUrl = sanitizeExternalUrl(body.sourceUrl, 'https://boards.greenhouse.io/careem');
+    const rawLocation = String(body.location || '').trim();
+    const workMode: 'Remote' | 'Hybrid' | 'On-site' = ['Remote', 'Hybrid', 'On-site'].includes(body.workMode)
+      ? body.workMode
+      : 'On-site';
+    const locMeta = rawLocation
+      ? normalizeLocationAndRegion(rawLocation, title, workMode)
+      : { location: '', city: undefined, country: undefined };
+    const sourceUrl = sanitizeExternalUrl(body.sourceUrl, '');
 
+    // A role the user adds contains only what they typed — no filler text or skills.
     const newJob: LiveJobRecord = {
       id: `custom-${Date.now()}`,
       title,
@@ -286,31 +278,28 @@ export async function POST(req: NextRequest) {
       location: locMeta.location,
       city: locMeta.city,
       country: locMeta.country,
-      regionTag: classifyRegionTag(locMeta.location, workMode, title),
+      regionTag: rawLocation ? classifyRegionTag(locMeta.location, workMode, title) : 'Global',
       workMode,
-      employmentType: String(body.employmentType || 'Full-Time').trim(),
-      salaryRange: String(body.salaryRange || 'Salary Not Disclosed by Employer').trim(),
-      description: String(
-        body.description || `Custom role added for ${title} at ${company}.`
-      ).trim(),
-      responsibilities:
-        Array.isArray(body.responsibilities) && body.responsibilities.length > 0
-          ? body.responsibilities
-          : [`Lead key initiatives as ${title} at ${company}.`],
-      skills:
-        Array.isArray(body.skills) && body.skills.length > 0
-          ? body.skills
-          : ['Strategy', 'Execution', 'Cross-functional Leadership'],
-      postedAt: 'Just added',
+      employmentType: String(body.employmentType || '').trim(),
+      salaryRange: String(body.salaryRange || '').trim(),
+      description: String(body.description || '').trim().slice(0, 20000),
+      responsibilities: Array.isArray(body.responsibilities)
+        ? body.responsibilities.map((r: unknown) => String(r)).slice(0, 30)
+        : [],
+      skills: Array.isArray(body.skills)
+        ? body.skills.map((s: unknown) => String(s).trim()).filter(Boolean).slice(0, 30)
+        : [],
+      postedAt: 'Added by you',
       postedTimestamp: Date.now(),
       sourceUrl,
       applicationUrl: sourceUrl,
-      source: 'User Custom Job',
-      recruiterName: String(body.recruiterName || `${company} Hiring Team`).trim(),
+      source: 'Added by you',
+      recruiterName: body.recruiterName ? String(body.recruiterName).trim() : undefined,
       recruiterEmail: body.recruiterEmail ? String(body.recruiterEmail).trim() : undefined,
     };
-    customJobsStore.unshift(newJob);
-    jobsCacheStore.clear();
+    const mine = userJobsStore.get(userId) || [];
+    mine.unshift(newJob);
+    userJobsStore.set(userId, mine.slice(0, 200));
     return NextResponse.json({ job: newJob }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Invalid job payload' }, { status: 400 });

@@ -1,12 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-export default function FeaturesRedirect() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/#features');
-  }, [router]);
-  return null;
+/** Landing page section. */
+export default function Page() {
+  redirect('/#features');
 }

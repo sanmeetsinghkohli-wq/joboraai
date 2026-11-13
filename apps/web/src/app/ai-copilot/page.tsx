@@ -1,395 +1,213 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { StitchShell } from '@/components/StitchShell';
+import { ArrowUp, Sparkles } from 'lucide-react';
+import { AppShell } from '@/components/AppShell';
+import { Markdown } from '@/components/Markdown';
+import { Button } from '@/components/ui/button';
+import { Badge, Notice } from '@/components/ui/primitives';
 import { useAppData } from '@/context/AppDataContext';
+import { cn } from '@/lib/cn';
 
-interface AgentToolLog {
-  tool: string;
-  status: 'completed' | 'requires_approval' | 'info';
-  summary: string;
-}
-
-interface ChatMessage {
+interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: string;
-  toolLogs?: AgentToolLog[];
-  suggestedActions?: Array<{ label: string; href: string }>;
-  approvalRequired?: {
-    actionType: 'apply_external' | 'send_email';
-    targetLabel: string;
-    targetHref: string;
-    description: string;
-  } | null;
+  actions?: Array<{ label: string; href: string }>;
+  usedModel?: boolean;
 }
 
-const QUICK_PROMPTS = [
-  'Find remote software or AI engineering jobs',
-  'Explain which saved jobs match my profile',
-  'Analyze my CV and identify missing keywords',
-  'Generate a cover letter outline for my top job',
-  'Prepare an application package with approval checklist',
-  'Show applications requiring follow-up',
+const STARTERS = [
+  'Which of my saved roles fit my skills best?',
+  'What skills am I missing for the roles I have saved?',
+  'Which applications need a follow-up?',
+  'How should I prepare for a behavioural interview?',
 ];
 
-export default function AICopilotPage() {
+export default function CopilotPage() {
   const { profile, jobs, savedJobIds, applications, logActivity } = useAppData();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome-msg',
-      role: 'assistant',
-      content:
-        'Welcome to your **Jobora AI Career Copilot & Agent Activity Workspace**. Ask me to search live roles, explain profile match scores, audit your CV against a target role, draft a grounded cover letter, or stage an application package for your explicit approval.',
-      timestamp: 'Ready',
-      toolLogs: [
-        {
-          tool: 'system.context_sync',
-          status: 'completed',
-          summary: 'Connected to live Jobora workspace context (Profile, Jobs, Saved Roles, Applications).',
-        },
-      ],
-      suggestedActions: [
-        { label: 'Open Job Search', href: '/jobs' },
-        { label: 'Application Preparation Copilot', href: '/applications/prepare' },
-        { label: 'CV Studio', href: '/cv-studio' },
-      ],
-    },
-  ]);
+  const [error, setError] = useState<string | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const sendPrompt = async (promptText: string) => {
-    const trimmed = promptText.trim();
-    if (!trimmed || sending) return;
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, sending]);
 
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: trimmed,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+  const send = async (text: string) => {
+    const prompt = text.trim();
+    if (!prompt || sending) return;
+    setError(null);
     setInput('');
+    setMessages((m) => [...m, { id: `u-${Date.now()}`, role: 'user', content: prompt }]);
     setSending(true);
-    setErrorMsg(null);
-
     try {
       const res = await fetch('/api/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: trimmed,
-          context: {
-            profile,
-            jobs: jobs.slice(0, 15),
-            savedJobIds,
-            applications,
-          },
+          message: prompt,
+          context: { profile, jobs: jobs.slice(0, 15), savedJobIds, applications },
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setErrorMsg(data?.error?.message || 'Failed to process request.');
-      } else {
-        const assistantMsg: ChatMessage = {
-          id: `asst-${Date.now()}`,
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.reply) {
+        setError(data?.error?.message || 'Copilot could not answer just now. Please try again.');
+        setInput(prompt);
+        return;
+      }
+      setMessages((m) => [
+        ...m,
+        {
+          id: `a-${Date.now()}`,
           role: 'assistant',
           content: data.reply,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          toolLogs: data.toolLogs || [],
-          suggestedActions: data.suggestedActions || [],
-          approvalRequired: data.approvalRequired || null,
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
-        logActivity('auto_awesome', 'Ran AI Copilot task', trimmed.slice(0, 60));
-      }
+          actions: Array.isArray(data.suggestedActions) ? data.suggestedActions : [],
+          usedModel: data.providerMode === 'groq_ai',
+        },
+      ]);
+      logActivity('sparkles', 'Asked Copilot', prompt.slice(0, 60));
     } catch {
-      setErrorMsg('Network error communicating with /api/copilot. Your input has been preserved.');
-      setInput(trimmed);
+      setError('We could not reach Copilot. Check your connection and try again.');
+      setInput(prompt);
     } finally {
       setSending(false);
+      inputRef.current?.focus();
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendPrompt(input);
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send(input);
+    }
   };
 
   return (
-    <StitchShell activeNav="ai-copilot">
-      <div className="flex flex-col w-full py-6 gap-6 max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-caption-caps text-caption-caps uppercase font-bold">
-                Agent Activity &amp; Copilot
-              </span>
-              <span className="font-caption-caps text-caption-caps text-on-tertiary-container bg-tertiary-fixed px-2.5 py-0.5 rounded-full">
-                Human-in-the-Loop Approval Enforced
-              </span>
-            </div>
-            <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">
-              Jobora AI Career Assistant
-            </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">
-              Execute natural-language career tasks grounded strictly in your verified profile, live Remotive &amp; Arbeitnow job feeds, and tracked applications.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/applications/prepare"
-              className="px-4 py-2.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md shadow-sm hover:bg-primary transition-all flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">fact_check</span>
-              <span>Application Preparation Copilot</span>
-            </Link>
-          </div>
+    <AppShell>
+      <div className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col">
+        <header className="mb-4">
+          <h1 className="font-serif text-2xl text-plum sm:text-3xl">Copilot</h1>
+          <p className="mt-1.5 text-sm text-ink-muted">
+            Ask about your search. Copilot sees your profile, tracked applications and the roles currently loaded. It never
+            applies or sends anything for you.
+          </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Chat Stream (8 cols) */}
-          <div className="lg:col-span-8 editorial-card p-5 sm:p-6 flex flex-col gap-5 border border-[#EDE5E1]">
-            {/* Quick Prompt Pills */}
-            <div className="flex flex-wrap gap-2 pb-3 border-b border-outline-variant/20">
-              {QUICK_PROMPTS.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => sendPrompt(q)}
-                  className="px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-primary font-label-sm text-label-sm transition-colors text-left"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {/* Messages Container */}
-            <div className="flex flex-col gap-5 max-h-[560px] overflow-y-auto pr-1">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`p-4 sm:p-5 rounded-2xl flex flex-col gap-3 transition-all ${
-                    m.role === 'user'
-                      ? 'bg-primary text-on-primary self-end max-w-2xl shadow-sm border border-primary/20'
-                      : 'bg-surface-container-lowest text-on-surface border border-outline-variant/30 w-full shadow-xs'
-                  }`}
-                >
-                  {/* Message Header */}
-                  <div className="flex items-center justify-between gap-4 pb-2 border-b border-current/10">
-                    <span className="font-label-sm text-label-sm font-bold flex items-center gap-2">
-                      <span
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[14px] ${
-                          m.role === 'user'
-                            ? 'bg-on-primary/15 text-on-primary'
-                            : 'bg-secondary-container text-on-secondary'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[14px]">
-                          {m.role === 'user' ? 'person' : 'auto_awesome'}
-                        </span>
-                      </span>
-                      <span>{m.role === 'user' ? profile.firstName || 'You' : 'Jobora AI Copilot'}</span>
-                    </span>
-                    <span className="font-caption-caps text-caption-caps opacity-70 font-mono">{m.timestamp}</span>
-                  </div>
-
-                  {/* Message Body */}
-                  <div className="font-body-md text-body-md whitespace-pre-line leading-relaxed">
-                    {m.content}
-                  </div>
-
-                  {/* Collapsible Tool Execution Logs */}
-                  {m.toolLogs && m.toolLogs.length > 0 && (
-                    <details className="group rounded-xl border border-outline-variant/30 bg-surface-container-low/50 overflow-hidden text-on-surface">
-                      <summary className="flex items-center justify-between px-3.5 py-2.5 cursor-pointer select-none hover:bg-surface-container transition-colors list-none font-label-sm text-label-sm font-semibold">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[16px] text-tertiary">bolt</span>
-                          <span>
-                            {m.toolLogs.length} Agent Step{m.toolLogs.length > 1 ? 's' : ''} Executed
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-on-surface-variant font-caption-caps text-caption-caps">
-                          <span className="group-open:hidden">Show telemetry</span>
-                          <span className="hidden group-open:inline">Hide telemetry</span>
-                          <span className="material-symbols-outlined text-[16px] transition-transform group-open:rotate-180">
-                            expand_more
-                          </span>
-                        </div>
-                      </summary>
-                      <div className="p-3 pt-1 border-t border-outline-variant/20 flex flex-col gap-2 bg-surface-container-lowest/60">
-                        {m.toolLogs.map((log, i) => (
-                          <div
-                            key={i}
-                            className="flex items-start gap-2 text-xs p-2 rounded-lg bg-surface-container-low/40"
-                          >
-                            <span
-                              className={`material-symbols-outlined text-[15px] mt-0.5 ${
-                                log.status === 'requires_approval'
-                                  ? 'text-amber-600'
-                                  : 'text-tertiary'
-                              }`}
-                            >
-                              {log.status === 'requires_approval' ? 'gpp_maybe' : 'check_circle'}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <code className="font-mono font-bold text-primary">{log.tool}</code>
-                                <span
-                                  className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
-                                    log.status === 'requires_approval'
-                                      ? 'bg-amber-100 text-amber-900'
-                                      : 'bg-tertiary-fixed/40 text-on-tertiary-fixed'
-                                  }`}
-                                >
-                                  {log.status === 'requires_approval' ? 'Awaiting Approval' : 'Completed'}
-                                </span>
-                              </div>
-                              <p className="text-on-surface-variant mt-0.5 text-[12px]">{log.summary}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  )}
-
-                  {/* High-Visibility Human-in-the-Loop Approval Checkpoint */}
-                  {m.approvalRequired && (
-                    <div className="p-4 rounded-xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-900 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[20px]">gpp_maybe</span>
-                        </div>
-                        <div>
-                          <div className="font-label-md text-label-md font-bold text-amber-950 flex items-center gap-1.5">
-                            <span>Human Approval Gate:</span>
-                            <span className="underline decoration-amber-400">
-                              {m.approvalRequired.targetLabel}
-                            </span>
-                          </div>
-                          <p className="font-body-sm text-body-sm text-amber-900/90 mt-0.5">
-                            {m.approvalRequired.description}
-                          </p>
-                          <span className="font-caption-caps text-caption-caps text-amber-800 font-bold uppercase tracking-wider block mt-1">
-                            Jobora Policy: No external submissions without explicit human authorization
-                          </span>
-                        </div>
-                      </div>
-                      <Link
-                        href={m.approvalRequired.targetHref}
-                        className="px-4 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary/90 font-label-sm text-label-sm font-bold whitespace-nowrap shadow-sm flex items-center gap-1.5 self-end sm:self-center"
-                      >
-                        <span>Review &amp; Authorize</span>
-                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                      </Link>
-                    </div>
-                  )}
-
-                  {/* Suggested Next Actions */}
-                  {m.suggestedActions && m.suggestedActions.length > 0 && (
-                    <div className="flex flex-col gap-2 pt-1">
-                      <span className="font-caption-caps text-caption-caps text-on-surface-variant uppercase tracking-wider font-bold">
-                        Suggested Actions
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {m.suggestedActions.map((act) => (
-                          <Link
-                            key={act.href + act.label}
-                            href={act.href}
-                            className="px-3.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold border border-outline-variant/30 transition-all flex items-center gap-1.5"
-                          >
-                            <span>{act.label}</span>
-                            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-50 text-rose-800 font-body-sm text-body-sm">
-                {errorMsg}
+        <div className="flex-1 space-y-5 pb-4" aria-live="polite">
+          {messages.length === 0 && (
+            <div className="rounded-xl border border-line bg-paper p-6 shadow-card sm:p-8">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-plum text-coral">
+                <Sparkles className="h-6 w-6" aria-hidden="true" />
               </div>
-            )}
-
-            {/* Chat Form */}
-            <form onSubmit={handleSubmit} className="flex items-center gap-3 pt-2">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Jobora AI to find jobs, explain matches, analyze your CV, or stage an application..."
-                aria-label="Prompt Jobora AI Copilot"
-                className="flex-1 bg-surface-container-low px-4 py-3 rounded-xl font-body-md text-body-md text-on-surface border border-[#EDE5E1] focus-ring focus:border-[#351B32] transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={sending || !input.trim()}
-                className="px-6 py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-bold hover:bg-primary transition-all disabled:opacity-50 flex items-center gap-2 focus-ring"
-              >
-                <span>{sending ? 'Running...' : 'Send'}</span>
-                <span className="material-symbols-outlined text-[18px]">send</span>
-              </button>
-            </form>
-          </div>
-
-          {/* Right Agent Permissions & Telemetry Sidebar (4 cols) */}
-          <aside className="lg:col-span-4 flex flex-col gap-4">
-            <div className="editorial-card p-5 border border-[#EDE5E1] flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <h2 className="font-headline-sm text-headline-sm text-primary">Agent Guardrails</h2>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-caption-caps text-caption-caps font-bold">
-                  ENFORCED
-                </span>
-              </div>
-              <ul className="space-y-2.5 font-body-sm text-body-sm text-on-surface-variant">
-                <li className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-emerald-600 mt-0.5">verified</span>
-                  <span>Never fabricates skills, employers, degrees, or certifications.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-emerald-600 mt-0.5">verified</span>
-                  <span>Requires explicit user approval before opening external applications or sending emails.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-emerald-600 mt-0.5">verified</span>
-                  <span>Treats job descriptions and uploaded documents as untrusted data.</span>
-                </li>
+              <h2 className="mt-4 font-serif text-xl text-plum">What would you like to know?</h2>
+              <p className="mt-1 text-sm text-ink-muted">Try one of these, or ask your own question.</p>
+              <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+                {STARTERS.map((s) => (
+                  <li key={s}>
+                    <button
+                      type="button"
+                      onClick={() => send(s)}
+                      className="h-full w-full rounded border border-line bg-ivory px-4 py-3 text-left text-sm text-ink transition-colors hover:border-plum-200 hover:bg-plum-50"
+                    >
+                      {s}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
+          )}
 
-            <div className="editorial-card p-5 border border-[#EDE5E1] flex flex-col gap-3">
-              <h2 className="font-headline-sm text-headline-sm text-primary">Workspace Telemetry</h2>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-3.5 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1]/70">
-                  <div className="font-caption-caps text-caption-caps text-on-surface-variant">Live Jobs</div>
-                  <div className="font-headline-sm text-headline-sm text-primary font-bold">{jobs.length}</div>
-                </div>
-                <div className="p-3.5 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1]/70">
-                  <div className="font-caption-caps text-caption-caps text-on-surface-variant">Saved Roles</div>
-                  <div className="font-headline-sm text-headline-sm text-primary font-bold">{savedJobIds.length}</div>
-                </div>
-                <div className="p-3.5 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1]/70">
-                  <div className="font-caption-caps text-caption-caps text-on-surface-variant">Tracked Apps</div>
-                  <div className="font-headline-sm text-headline-sm text-primary font-bold">{applications.length}</div>
-                </div>
-                <div className="p-3.5 rounded-xl bg-[#F8F5F0] border border-[#EDE5E1]/70">
-                  <div className="font-caption-caps text-caption-caps text-on-surface-variant">Verified Skills</div>
-                  <div className="font-headline-sm text-headline-sm text-primary font-bold">{profile.skills.length}</div>
+          {messages.map((m) =>
+            m.role === 'user' ? (
+              <div key={m.id} className="flex justify-end">
+                <p className="max-w-[85%] whitespace-pre-line rounded-xl rounded-br-sm bg-plum px-4 py-3 text-sm text-paper">
+                  {m.content}
+                </p>
+              </div>
+            ) : (
+              <div key={m.id} className="flex gap-3">
+                <span
+                  aria-hidden="true"
+                  className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-plum text-coral"
+                >
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1 rounded-xl rounded-tl-sm border border-line bg-paper px-4 py-3 shadow-card">
+                  <Markdown text={m.content} />
+                  {(m.actions?.length || 0) > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+                      {m.actions!.map((a) => (
+                        <Link
+                          key={a.href + a.label}
+                          href={a.href}
+                          className="inline-flex h-9 items-center rounded border border-line bg-ivory px-3 text-sm font-medium text-plum hover:border-plum-200"
+                        >
+                          {a.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  {!m.usedModel && (
+                    <p className="mt-2 text-xs text-ink-subtle">Answered from your saved data without a language model.</p>
+                  )}
                 </div>
               </div>
+            )
+          )}
+
+          {sending && (
+            <div className="flex items-center gap-3 text-sm text-ink-muted">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-plum text-coral" aria-hidden="true">
+                <Sparkles className="h-4 w-4 animate-pulse" />
+              </span>
+              Thinking…
             </div>
-          </aside>
+          )}
+          {error && <Notice tone="error">{error}</Notice>}
+          <div ref={endRef} />
         </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            send(input);
+          }}
+          className="sticky bottom-4 mt-2 rounded-xl border border-line bg-paper p-2 shadow-raised"
+        >
+          <label htmlFor="copilot-input" className="sr-only">
+            Message Copilot
+          </label>
+          <div className="flex items-end gap-2">
+            <textarea
+              id="copilot-input"
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              rows={1}
+              maxLength={2000}
+              placeholder="Ask about your search"
+              className="max-h-40 min-h-[2.75rem] flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-ink placeholder:text-ink-subtle focus:outline-none"
+            />
+            <Button type="submit" size="md" aria-label="Send" disabled={!input.trim()} loading={sending} className="w-11 px-0">
+              {!sending && <ArrowUp className="h-4 w-4" aria-hidden="true" />}
+            </Button>
+          </div>
+          <div className="flex items-center justify-between px-3 pb-1 pt-1">
+            <span className="text-xs text-ink-subtle">Enter to send · Shift+Enter for a new line</span>
+            {profile.skills.length === 0 && (
+              <Badge tone="warn" className={cn('hidden sm:inline-flex')}>
+                Add skills for better answers
+              </Badge>
+            )}
+          </div>
+        </form>
       </div>
-    </StitchShell>
+    </AppShell>
   );
 }

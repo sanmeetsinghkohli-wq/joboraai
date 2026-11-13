@@ -11,7 +11,7 @@ export interface StoredApplication {
   company: string;
   location: string;
   status: string;
-  matchScore: number;
+  matchScore: number | null;
   syncChannel: string;
   nextAction: string;
   recruiterName: string;
@@ -97,30 +97,26 @@ export async function POST(req: NextRequest) {
       jobId,
       title,
       company,
-      location: String(body.location || 'Remote').trim(),
-      status: String(body.status || 'Sent Today').trim(),
-      matchScore: typeof body.matchScore === 'number' ? body.matchScore : 90,
-      syncChannel: String(body.syncChannel || 'Direct Application').trim(),
-      nextAction: String(body.nextAction || 'Follow up in 5 days').trim(),
-      recruiterName: String(body.recruiterName || `${company} Talent Acquisition`).trim(),
-      recruiterEmail: String(
-        body.recruiterEmail || `careers@${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`
-      ).trim(),
+      // Only values the user or the job feed actually supplied are stored;
+      // nothing is guessed on their behalf.
+      location: String(body.location || '').trim(),
+      status: String(body.status || 'Applied').trim(),
+      matchScore: typeof body.matchScore === 'number' ? body.matchScore : null,
+      syncChannel: String(body.syncChannel || '').trim(),
+      nextAction: String(body.nextAction || '').trim(),
+      recruiterName: String(body.recruiterName || '').trim(),
+      recruiterEmail: String(body.recruiterEmail || '').trim(),
       appliedAt: formattedDate,
-      timeline: body.timeline || [
-        {
-          title: 'Application Logged',
-          timestamp: `${formattedDate} • ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-          description: `Tracked application for ${title} at ${company}.`,
-        },
-      ],
-      attachments: body.attachments || [
-        {
-          name: `${title.replace(/\s+/g, '_')}_Tailored_CV.pdf`,
-          size: '420 KB',
-          badge: 'TAILORED',
-        },
-      ],
+      timeline: Array.isArray(body.timeline)
+        ? body.timeline
+        : [
+            {
+              title: 'Added to tracker',
+              timestamp: `${formattedDate} • ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+              description: `${title} at ${company}.`,
+            },
+          ],
+      attachments: Array.isArray(body.attachments) ? body.attachments : [],
     };
 
     apps.unshift(newApp);
@@ -160,7 +156,7 @@ export async function PATCH(req: NextRequest) {
     if (status && status !== target.status) {
       target.status = status;
       target.timeline.unshift({
-        title: `Stage Updated: ${status}`,
+        title: `Moved to ${status}`,
         timestamp: new Date().toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',

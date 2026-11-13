@@ -1,11 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
 import { AppDataProvider } from '@/context/AppDataContext';
+import { cn } from '@/lib/cn';
 
 export interface ToastProps {
-  type?: 'success' | 'error' | 'info' | 'warning';
-  title?: string;
+  type?: 'success' | 'error' | 'info';
+  title: string;
   description?: string;
   duration?: number;
 }
@@ -15,105 +17,80 @@ interface AppToast extends ToastProps {
 }
 
 interface ToastContextValue {
-  toasts: AppToast[];
-  addToast: (toast: Omit<AppToast, 'id'>) => void;
-  removeToast: (id: string) => void;
-  clearToasts: () => void;
+  addToast: (toast: ToastProps) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-export function ToastProviderWrapper({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<AppToast[]>([]);
+const toastIcon = {
+  success: { Icon: CircleCheck, color: 'text-success' },
+  error: { Icon: CircleAlert, color: 'text-danger' },
+  info: { Icon: Info, color: 'text-plum' },
+};
 
-  const addToast = useCallback((toast: Omit<AppToast, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newToast = { ...toast, id };
-    setToasts((prev) => [...prev, newToast]);
-    const duration = toast.duration ?? 5000;
-    if (duration > 0) {
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, duration);
-    }
-  }, []);
+function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<AppToast[]>([]);
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const clearToasts = useCallback(() => {
-    setToasts([]);
-  }, []);
+  const addToast = useCallback(
+    (toast: ToastProps) => {
+      const id = `${Date.now()}-${Math.round(performance.now())}`;
+      setToasts((prev) => [...prev.slice(-2), { ...toast, id }]);
+      const duration = toast.duration ?? (toast.type === 'error' ? 7000 : 4000);
+      if (duration > 0) setTimeout(() => removeToast(id), duration);
+    },
+    [removeToast]
+  );
 
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast, clearToasts }}>
+    <ToastContext.Provider value={{ addToast }}>
       {children}
-      {toasts.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
-          {toasts.map((toast) => (
+      <div
+        aria-live="polite"
+        className="no-print pointer-events-none fixed inset-x-4 bottom-4 z-[90] flex flex-col items-center gap-2 sm:inset-x-auto sm:right-6 sm:items-end"
+      >
+        {toasts.map((toast) => {
+          const { Icon, color } = toastIcon[toast.type || 'success'];
+          return (
             <div
               key={toast.id}
-              onClick={() => removeToast(toast.id)}
-              className="bg-primary text-on-primary px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 cursor-pointer"
+              role={toast.type === 'error' ? 'alert' : 'status'}
+              className="pointer-events-auto flex w-full max-w-sm animate-fade-up items-start gap-3 rounded-lg border border-line bg-paper p-4 shadow-raised"
             >
-              <span className="material-symbols-outlined text-secondary-fixed text-[20px]">
-                check_circle
-              </span>
-              <div className="flex flex-col">
-                {toast.title && <span className="font-label-md text-label-md font-bold">{toast.title}</span>}
-                {toast.description && <span className="font-body-sm text-body-sm">{toast.description}</span>}
+              <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', color)} aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-ink">{toast.title}</p>
+                {toast.description && <p className="mt-0.5 text-sm text-ink-muted">{toast.description}</p>}
               </div>
+              <button
+                type="button"
+                onClick={() => removeToast(toast.id)}
+                aria-label="Dismiss"
+                className="-m-1.5 rounded p-1.5 text-ink-subtle hover:bg-sand hover:text-ink"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </ToastContext.Provider>
   );
 }
 
 export function useToast() {
   const ctx = useContext(ToastContext);
-  if (!ctx) {
-    throw new Error('useToast must be used within ToastProviderWrapper');
-  }
+  if (!ctx) throw new Error('useToast must be used within Providers');
   return ctx;
 }
 
-interface ThemeContextValue {
-  darkMode: boolean;
-  toggleDarkMode: () => void;
-  setDarkMode: (dark: boolean) => void;
-}
-
-const ThemeContext = createContext<ThemeContextValue | null>(null);
-
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode((prev) => !prev);
-  }, []);
-
-  return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, setDarkMode }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-}
-
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <AppDataProvider>
-      <ToastProviderWrapper>{children}</ToastProviderWrapper>
+      <ToastProvider>{children}</ToastProvider>
     </AppDataProvider>
   );
-}
-
-export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    throw new Error('useTheme must be used within ThemeProvider');
-  }
-  return ctx;
 }

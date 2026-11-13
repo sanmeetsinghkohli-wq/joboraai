@@ -1,10 +1,22 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { StitchShell } from '@/components/StitchShell';
-import { useAppData, type LiveJob } from '@/context/AppDataContext';
+import { ArrowRight, Bookmark, Briefcase, Inbox, Mic, Search, Send } from 'lucide-react';
+import { AppShell } from '@/components/AppShell';
+import { JobRow } from '@/components/JobRow';
+import { ButtonLink } from '@/components/ui/button';
+import { Badge, Card, CardTitle, EmptyState, Notice, Skeleton, Stat } from '@/components/ui/primitives';
+import { useAppData } from '@/context/AppDataContext';
+import { timeAgo } from '@/lib/format';
+import { APPLICATION_STATUSES, STATUS_TONE, normalizeStatus } from '@/lib/status';
+
+interface NextStep {
+  title: string;
+  body: string;
+  cta: string;
+  href: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -12,409 +24,226 @@ export default function DashboardPage() {
     profile,
     jobs,
     loadingJobs,
+    jobsError,
     savedJobIds,
+    toggleSavedJob,
     setSelectedJob,
     applications,
     activities,
   } = useAppData();
 
-  const greetingHour = new Date().getHours();
-  const timeOfDay = greetingHour < 12 ? 'morning' : greetingHour < 18 ? 'afternoon' : 'evening';
-  const displayFirstName = profile.firstName || (profile.fullName ? profile.fullName.split(' ')[0] : '');
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const hasSkills = profile.skills.length > 0;
 
-  // Calculate real profile completion percentage based on filled fields
-  const completionFields = [
-    profile.fullName || profile.firstName,
-    profile.email,
-    profile.targetRole,
-    profile.location,
-    profile.skills.length > 0 ? 'yes' : '',
-    profile.resumeFileName,
-    profile.summary,
-  ];
-  const filledCount = completionFields.filter(Boolean).length;
-  const profileCompletionPct = Math.max(20, Math.round((filledCount / completionFields.length) * 100));
+  const byStatus = APPLICATION_STATUSES.map((status) => ({
+    status,
+    count: applications.filter((a) => normalizeStatus(a.status) === status).length,
+  }));
+  const interviews = applications.filter((a) => normalizeStatus(a.status) === 'Interview');
+  const savedNotApplied = savedJobIds.filter((id) => !applications.some((a) => a.jobId === id));
 
-  const activeApplicationsCount = applications.length;
-  const interviewCount = applications.filter((a) => a.status.toLowerCase().includes('interview')).length;
-  const upcomingInterview = applications.find((a) => a.status.toLowerCase().includes('interview'));
-
-  const handleTailorCV = (job: LiveJob) => {
-    setSelectedJob(job);
-    router.push(`/cv-studio?jobId=${encodeURIComponent(job.id)}`);
-  };
-
-  const handleApply = (job: LiveJob) => {
-    setSelectedJob(job);
-    router.push(`/email-composer?jobId=${encodeURIComponent(job.id)}`);
-  };
-
-  const topJobs = jobs.slice(0, 4);
-  const topJob = jobs.length > 0 ? jobs[0] : null;
-  const hasUploadedResume = Boolean(profile.resumeFileName);
-
-  // Compute honest Next Best Action based on real user state
-  let nextActionTitle = '';
-  let nextActionDescription = '';
-  let nextActionCta = '';
-  let nextActionHref = '';
-  let nextActionIcon = '';
-
-  if (!hasUploadedResume) {
-    nextActionTitle = 'Upload your Master CV to calibrate ATS matching';
-    nextActionDescription = jobs.length > 0
-      ? `Extract your verified skills and benchmark them against ${jobs.length} live opportunities.`
-      : 'Extract your verified skills and benchmark them against verified career opportunities.';
-    nextActionCta = 'Upload CV in Studio';
-    nextActionHref = '/cv-studio';
-    nextActionIcon = 'upload_file';
-  } else if (savedJobIds.length > 0 && activeApplicationsCount === 0) {
-    nextActionTitle = `Stage your application package for ${savedJobIds.length} saved role${savedJobIds.length > 1 ? 's' : ''}`;
-    nextActionDescription = 'You have bookmarked opportunities. Tailor your resume bullets and draft custom cover letters before submitting.';
-    nextActionCta = 'Review Saved Roles';
-    nextActionHref = '/saved-jobs';
-    nextActionIcon = 'bookmark';
-  } else if (upcomingInterview) {
-    nextActionTitle = `Prepare for scheduled interview at ${upcomingInterview.company}`;
-    nextActionDescription = `Practice mock technical and STAR-method behavioral rounds for ${upcomingInterview.title}.`;
-    nextActionCta = 'Open Interview Studio';
-    nextActionHref = '/interview';
-    nextActionIcon = 'psychology_alt';
-  } else if (topJob) {
-    nextActionTitle = `Tailor your CV for ${topJob.title} at ${topJob.company}`;
-    nextActionDescription = `High fit alignment in ${topJob.location} (${topJob.source}). Review keyword recommendations before applying.`;
-    nextActionCta = 'Tailor CV & Apply';
-    nextActionHref = `/cv-studio?jobId=${encodeURIComponent(topJob.id)}`;
-    nextActionIcon = 'auto_fix_high';
+  // The one thing most worth doing next, decided from the user's real state.
+  let nextStep: NextStep;
+  if (!profile.targetRole || !hasSkills) {
+    nextStep = {
+      title: 'Add your target role and skills',
+      body: 'Jobs are ordered by how many of their listed skills are on your profile. Without skills there is nothing to compare.',
+      cta: 'Complete profile',
+      href: '/settings',
+    };
+  } else if (interviews.length > 0) {
+    nextStep = {
+      title: `Prepare for your interview at ${interviews[0].company}`,
+      body: `You marked ${interviews[0].title} as being at interview stage. Practise answers built around that role.`,
+      cta: 'Open interview practice',
+      href: '/interview',
+    };
+  } else if (savedNotApplied.length > 0) {
+    nextStep = {
+      title: `You have ${savedNotApplied.length} saved role${savedNotApplied.length === 1 ? '' : 's'} you have not applied to`,
+      body: 'Review them, draft your documents and apply while the listings are still open.',
+      cta: 'Review saved roles',
+      href: '/jobs?view=saved',
+    };
+  } else if (applications.length === 0) {
+    nextStep = {
+      title: 'Find your first roles',
+      body: 'Browse the live feed, save what looks right, and track each application as you send it.',
+      cta: 'Browse jobs',
+      href: '/jobs',
+    };
   } else {
-    nextActionTitle = 'Explore live opportunities matching your profile';
-    nextActionDescription = jobs.length > 0
-      ? `Browse ${jobs.length} verified roles across Dubai, Abu Dhabi, Saudi Arabia, and remote engineering hubs.`
-      : 'Browse verified live roles across Dubai, Abu Dhabi, Saudi Arabia, and remote engineering hubs.';
-    nextActionCta = 'Browse Live Jobs';
-    nextActionHref = '/jobs';
-    nextActionIcon = 'travel_explore';
+    nextStep = {
+      title: 'Keep your pipeline moving',
+      body: 'Update the stage of any application that has changed, then look for new roles.',
+      cta: 'Open applications',
+      href: '/applications',
+    };
   }
 
-  return (
-    <StitchShell activeNav="dashboard">
-      <div className="flex flex-col w-full max-w-6xl mx-auto space-y-6 pb-12">
-        {/* Concise Header & Next Best Action Cockpit */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-          <div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-[#351B32] tracking-tight">
-              Good {timeOfDay}{displayFirstName ? `, ${displayFirstName}` : ''}
-            </h1>
-            <p className="text-sm text-[#7D747D] mt-0.5">
-              Targeting <span className="font-medium text-[#351B32]">{profile.targetRole || 'Software & AI Engineering'}</span> • {profile.location || 'Dubai & Remote'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF6F2] border border-[#EDE5E1] text-xs font-semibold text-[#351B32]">
-              <span className="w-2 h-2 rounded-full bg-[#268566]"></span>
-              {jobs.length} live matches synced
-            </span>
-          </div>
-        </div>
+  const topJobs = jobs.slice(0, 5);
 
-        {/* Primary Next Action Banner (Calm, Focused, High-Clarity) */}
-        <div className="bg-white border border-[#EDE5E1] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-[#D8C7C0]">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-[#FAF6F2] border border-[#EDE5E1] flex items-center justify-center text-[#E76F72] shrink-0 mt-0.5">
-              <span className="material-symbols-outlined text-[22px]">{nextActionIcon}</span>
-            </div>
+  const openJob = (id: string) => {
+    const job = jobs.find((j) => j.id === id);
+    if (job) setSelectedJob(job);
+    router.push(`/jobs?selected=${encodeURIComponent(id)}`);
+  };
+
+  return (
+    <AppShell>
+      <header className="mb-6">
+        <h1 className="font-serif text-2xl text-plum sm:text-3xl">
+          {greeting}
+          {profile.firstName ? `, ${profile.firstName}` : ''}
+        </h1>
+        <p className="mt-1.5 text-sm text-ink-muted">
+          {profile.targetRole
+            ? `Looking for ${profile.targetRole}${profile.location ? ` · ${profile.location}` : ''}`
+            : 'Tell us the role you are looking for to tailor this page.'}
+        </p>
+      </header>
+
+      {/* Next step */}
+      <Card as="section" className="mb-6 flex flex-col gap-4 border-plum-100 bg-plum text-paper sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-coral">Next step</p>
+          <h2 className="mt-1 font-serif text-xl">{nextStep.title}</h2>
+          <p className="mt-1 max-w-2xl text-sm text-plum-100">{nextStep.body}</p>
+        </div>
+        <ButtonLink href={nextStep.href} variant="accent" className="shrink-0 self-start sm:self-auto">
+          {nextStep.cta}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </ButtonLink>
+      </Card>
+
+      {/* Numbers */}
+      <section aria-label="Summary" className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat label="Applications" value={applications.length} icon={<Send className="h-5 w-5" />} />
+        <Stat label="At interview" value={interviews.length} icon={<Mic className="h-5 w-5" />} />
+        <Stat label="Saved roles" value={savedJobIds.length} icon={<Bookmark className="h-5 w-5" />} />
+        <Stat
+          label="Live roles"
+          value={loadingJobs && jobs.length === 0 ? '—' : jobs.length}
+          hint={loadingJobs ? 'Refreshing…' : undefined}
+          icon={<Briefcase className="h-5 w-5" />}
+        />
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        {/* Roles */}
+        <section aria-labelledby="top-roles">
+          <div className="mb-3 flex items-end justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#E76F72]">
-                  Priority Recommendation
-                </span>
-              </div>
-              <h2 className="text-base sm:text-lg font-bold text-[#351B32] leading-snug">
-                {nextActionTitle}
+              <h2 id="top-roles" className="font-serif text-xl text-plum">
+                {hasSkills ? 'Closest to your skills' : 'Latest roles'}
               </h2>
-              <p className="text-xs sm:text-sm text-[#7D747D] mt-1 max-w-2xl leading-relaxed">
-                {nextActionDescription}
+              <p className="text-sm text-ink-muted">
+                {hasSkills
+                  ? 'Ordered by how many of each role’s listed skills are on your profile.'
+                  : 'Add skills to your profile to order these by fit.'}
               </p>
             </div>
-          </div>
-          <div className="shrink-0 self-start md:self-center">
-            <Link
-              href={nextActionHref}
-              className="btn-editorial-primary !py-2 !px-4 text-xs font-bold flex items-center gap-2 focus-ring"
-            >
-              <span>{nextActionCta}</span>
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+            <Link href="/jobs" className="shrink-0 text-sm font-semibold text-plum underline-offset-4 hover:underline">
+              View all
             </Link>
           </div>
-        </div>
 
-        {/* 3 Useful Summary Metrics (Zero Clutter, Real Data) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Link
-            href="/applications"
-            className="editorial-card p-5 group hover:border-[#D8C7C0] transition-all"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#7D747D]">
-                Active Submissions
-              </span>
-              <span className="material-symbols-outlined text-[20px] text-[#7D747D] group-hover:text-[#351B32] transition-colors">
-                send
-              </span>
+          {jobsError ? (
+            <Notice tone="error" title="Jobs could not be loaded">
+              {jobsError}
+            </Notice>
+          ) : loadingJobs && jobs.length === 0 ? (
+            <div className="space-y-3">
+              <Skeleton className="h-28" />
+              <Skeleton className="h-28" />
+              <Skeleton className="h-28" />
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-bold font-serif text-[#351B32]">
-                {activeApplicationsCount}
-              </span>
-              <span className="text-xs text-[#7D747D]">tracked in pipeline</span>
-            </div>
-            <p className="text-xs text-[#8A7F88] mt-1 truncate">
-              {interviewCount > 0 ? `${interviewCount} in interview rounds` : '0 currently in interview'}
-            </p>
-          </Link>
-
-          <Link
-            href="/onboarding"
-            className="editorial-card p-5 group hover:border-[#D8C7C0] transition-all"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#7D747D]">
-                Profile Readiness
-              </span>
-              <span className="material-symbols-outlined text-[20px] text-[#7D747D] group-hover:text-[#351B32] transition-colors">
-                verified
-              </span>
-            </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-bold font-serif text-[#351B32]">
-                {profileCompletionPct}%
-              </span>
-              <span className="text-xs text-[#7D747D]">ATS calibrated</span>
-            </div>
-            <p className="text-xs text-[#8A7F88] mt-1 truncate">
-              {profile.skills.length > 0 ? `${profile.skills.length} verified technical skills` : 'Add skills to boost match'}
-            </p>
-          </Link>
-
-          <Link
-            href="/jobs"
-            className="editorial-card p-5 group hover:border-[#D8C7C0] transition-all"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#7D747D]">
-                Live Matches
-              </span>
-              <span className="material-symbols-outlined text-[20px] text-[#7D747D] group-hover:text-[#351B32] transition-colors">
-                travel_explore
-              </span>
-            </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-bold font-serif text-[#351B32]">
-                {jobs.length}
-              </span>
-              <span className="text-xs text-[#7D747D]">opportunities live</span>
-            </div>
-            <p className="text-xs text-[#8A7F88] mt-1 truncate">
-              UAE, GCC &amp; Global Remote
-            </p>
-          </Link>
-        </div>
-
-        {/* Main Content Area (8 Cols: Recommended Jobs | 4 Cols: Pipeline & Quick Actions) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
-          {/* LEFT: Recommended Jobs */}
-          <section className="lg:col-span-8 flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-1">
-              <div>
-                <h2 className="font-serif text-lg font-semibold text-[#351B32]">
-                  Recommended Opportunities
-                </h2>
-                <p className="text-xs text-[#7D747D] mt-0.5">
-                  Algorithmic matches based on your skills and target role
-                </p>
-              </div>
-              <Link
-                href="/jobs"
-                className="text-xs font-semibold text-[#E76F72] hover:text-[#351B32] flex items-center gap-1 transition-colors"
+          ) : topJobs.length === 0 ? (
+            <Card padded={false}>
+              <EmptyState
+                icon={<Search className="h-6 w-6" />}
+                title="No live roles right now"
+                action={<ButtonLink href="/jobs">Open job search</ButtonLink>}
               >
-                <span>View all {jobs.length}</span>
-                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                The job feeds returned nothing. Try again shortly, or add a role you found elsewhere.
+              </EmptyState>
+            </Card>
+          ) : (
+            <ul className="space-y-3">
+              {topJobs.map((job) => (
+                <JobRow
+                  key={job.id}
+                  job={job}
+                  saved={savedJobIds.includes(job.id)}
+                  hasProfileSkills={hasSkills}
+                  onSelect={() => openJob(job.id)}
+                  onToggleSave={() => toggleSavedJob(job.id)}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <div className="space-y-6">
+          {/* Pipeline */}
+          <Card as="section" aria-labelledby="pipeline">
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                <span id="pipeline">Pipeline</span>
+              </CardTitle>
+              <Link href="/applications" className="text-sm font-semibold text-plum underline-offset-4 hover:underline">
+                Manage
               </Link>
             </div>
-
-            {loadingJobs && topJobs.length === 0 ? (
-              <div className="editorial-card p-8 text-center">
-                <span className="material-symbols-outlined text-[#E76F72] text-[28px] animate-spin">refresh</span>
-                <p className="text-xs text-[#7D747D] mt-2">Loading curated live opportunities...</p>
-              </div>
-            ) : topJobs.length === 0 ? (
-              <div className="editorial-card p-8 text-center flex flex-col items-center">
-                <span className="material-symbols-outlined text-[32px] text-[#7D747D]">work_off</span>
-                <h3 className="text-sm font-semibold text-[#351B32] mt-2">No matching jobs found</h3>
-                <p className="text-xs text-[#7D747D] mt-1 max-w-sm">
-                  Adjust your search criteria or target role in settings to view more opportunities.
-                </p>
-              </div>
+            {applications.length === 0 ? (
+              <p className="mt-3 text-sm text-ink-muted">
+                Nothing tracked yet. When you apply to a role, add it here to follow it through to an offer.
+              </p>
             ) : (
-              <div className="flex flex-col gap-3">
-                {topJobs.map((job) => (
-                  <article
-                    key={job.id}
-                    className="editorial-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#D8C7C0] transition-all"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-[#E76F72]">{job.company}</span>
-                        <span className="text-xs text-[#8A7F88]">• {job.location}</span>
-                        {job.matchScore && (
-                          <span className="badge-emerald text-[11px] py-0 px-2">
-                            {job.matchScore}% Match
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-sm sm:text-base font-bold text-[#351B32] truncate">
-                        {job.title}
-                      </h3>
-                      <div className="flex flex-wrap gap-1.5 mt-2.5">
-                        {(job.skills || []).slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[11px] px-2 py-0.5 rounded-md bg-[#FAF6F2] border border-[#EDE5E1] text-[#574B53]"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-                      <button
-                        onClick={() => {
-                          setSelectedJob(job);
-                          router.push(`/jobs?selected=${encodeURIComponent(job.id)}`);
-                        }}
-                        className="btn-editorial-secondary !py-1.5 !px-3 text-xs focus-ring"
-                        type="button"
-                      >
-                        Details
-                      </button>
-                      <button
-                        onClick={() => handleTailorCV(job)}
-                        className="btn-editorial-primary !py-1.5 !px-3 text-xs font-semibold focus-ring"
-                        type="button"
-                      >
-                        Tailor CV
-                      </button>
-                    </div>
-                  </article>
+              <ul className="mt-4 space-y-2.5">
+                {byStatus.map(({ status, count }) => (
+                  <li key={status} className="flex items-center justify-between text-sm">
+                    <Badge tone={STATUS_TONE[status]}>{status}</Badge>
+                    <span className="font-semibold tabular-nums text-ink">{count}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </section>
+          </Card>
 
-          {/* RIGHT: Applications Pipeline & Quick Navigation */}
-          <aside className="lg:col-span-4 flex flex-col gap-5">
-            {/* Pipeline Status Summary */}
-            <div className="editorial-card p-5">
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#EDE5E1]">
-                <h3 className="font-serif text-sm font-semibold text-[#351B32]">Pipeline Status</h3>
-                <Link href="/applications" className="text-[11px] font-semibold text-[#E76F72] hover:underline">
-                  Manage →
+          {/* Activity */}
+          <Card as="section" aria-labelledby="recent">
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                <span id="recent">Recent activity</span>
+              </CardTitle>
+              {activities.length > 0 && (
+                <Link href="/notifications" className="text-sm font-semibold text-plum underline-offset-4 hover:underline">
+                  All
                 </Link>
-              </div>
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#574B53] flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#351B32]"></span>
-                    Submitted / Applied
-                  </span>
-                  <span className="font-bold text-[#351B32]">
-                    {applications.filter((a) => a.status === 'applied').length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#574B53] flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    Screening / Review
-                  </span>
-                  <span className="font-bold text-[#351B32]">
-                    {applications.filter((a) => a.status === 'screen').length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#574B53] flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#E76F72]"></span>
-                    Interview Scheduled
-                  </span>
-                  <span className="font-bold text-[#351B32]">
-                    {interviewCount}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Studio Tools */}
-            <div className="editorial-card p-5">
-              <h3 className="font-serif text-sm font-semibold text-[#351B32] mb-3 pb-2 border-b border-[#EDE5E1]">
-                Career Studio Tools
-              </h3>
-              <div className="flex flex-col gap-1.5">
-                <Link
-                  href="/cv-studio"
-                  className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-medium text-[#574B53] hover:bg-[#FAF6F2] hover:text-[#351B32] transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-[#7D747D]">description</span>
-                  <span>CV Studio &amp; ATS Diff</span>
-                </Link>
-                <Link
-                  href="/cover-letters"
-                  className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-medium text-[#574B53] hover:bg-[#FAF6F2] hover:text-[#351B32] transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-[#7D747D]">history_edu</span>
-                  <span>Cover Letter Generator</span>
-                </Link>
-                <Link
-                  href="/interview"
-                  className="flex items-center justify-between p-2 rounded-xl text-xs font-medium text-[#574B53] hover:bg-[#FAF6F2] hover:text-[#351B32] transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="material-symbols-outlined text-[18px] text-[#7D747D]">psychology_alt</span>
-                    <span>Interview Simulator</span>
-                  </div>
-                  <span className="text-[11px] text-[#8A7F88]">{interviewCount > 0 ? `${interviewCount} active` : '0 scheduled calls'}</span>
-                </Link>
-                <Link
-                  href="/career-insights"
-                  className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-medium text-[#574B53] hover:bg-[#FAF6F2] hover:text-[#351B32] transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-[#7D747D]">insights</span>
-                  <span>Skill Gap Matrix</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Recent Activity Log */}
-            <div className="editorial-card p-5">
-              <h3 className="font-serif text-sm font-semibold text-[#351B32] mb-3 pb-2 border-b border-[#EDE5E1]">
-                Recent Workspace Activity
-              </h3>
-              {activities.length === 0 ? (
-                <p className="text-xs text-[#7D747D] py-1">
-                  Actions like updating your CV, saving roles, or submitting applications will appear here.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {activities.slice(0, 3).map((act) => (
-                    <div key={act.id} className="text-xs">
-                      <p className="font-medium text-[#351B32] leading-snug">{act.title}</p>
-                      <span className="text-[11px] text-[#8A7F88]">{act.timestamp}</span>
-                    </div>
-                  ))}
-                </div>
               )}
             </div>
-          </aside>
+            {activities.length === 0 ? (
+              <div className="mt-3 flex items-center gap-3 text-sm text-ink-muted">
+                <Inbox className="h-5 w-5 shrink-0 text-ink-subtle" aria-hidden="true" />
+                Your saves, applications and drafts will be listed here.
+              </div>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {activities.slice(0, 5).map((a) => (
+                  <li key={a.id} className="text-sm">
+                    <p className="font-medium text-ink">{a.title}</p>
+                    <p className="text-xs text-ink-subtle">
+                      {[a.subtitle, timeAgo(a.timestamp)].filter(Boolean).join(' · ')}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
         </div>
       </div>
-    </StitchShell>
+    </AppShell>
   );
 }

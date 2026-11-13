@@ -1,12 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-export default function AIChatRedirect() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/interview');
-  }, [router]);
-  return null;
+/** Old URL for Copilot. */
+export default function Page() {
+  redirect('/ai-copilot');
 }

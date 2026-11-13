@@ -1,12 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-export default function VerifyEmailRedirectPage() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/auth?tab=verify');
-  }, [router]);
-  return null;
+/** Email verification is not implemented; send people to the app. */
+export default function Page() {
+  redirect('/dashboard');
 }

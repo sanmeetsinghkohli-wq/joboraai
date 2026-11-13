@@ -1,14 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-
-export default function JobDetailRedirect() {
-  const router = useRouter();
-  const params = useParams();
-  useEffect(() => {
-    const id = params?.id ? String(params.id) : '';
-    router.replace(id ? `/jobs?selected=${encodeURIComponent(id)}` : '/jobs');
-  }, [router, params]);
-  return null;
+/** Job links open the job inside the Jobs page. */
+export default function Page({ params }: { params: { id: string } }) {
+  redirect(`/jobs?selected=${encodeURIComponent(params.id)}`);
 }

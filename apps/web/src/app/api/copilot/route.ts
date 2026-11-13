@@ -353,7 +353,7 @@ export async function POST(req: NextRequest) {
           const groqData = await groqRes.json();
           const groqAnswer = groqData.choices?.[0]?.message?.content?.trim();
           if (groqAnswer) {
-            reply = `### AI Career Strategy & Advice (Powered by Groq)\n${groqAnswer}\n\n---\n${reply}`;
+            reply = `${groqAnswer}\n\n---\n${reply}`;
             groqActive = true;
             toolLogs.unshift({
               tool: 'groq.chat_completion',
@@ -380,11 +380,8 @@ export async function POST(req: NextRequest) {
       toolLogs: safeToolLogs,
       suggestedActions,
       approvalRequired,
-      providerMode: groqActive
-        ? 'groq_ai'
-        : process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY
-        ? 'cloud_llm'
-        : 'deterministic_copilot_engine',
+      // Report only what actually produced this reply.
+      providerMode: groqActive ? 'groq_ai' : 'deterministic_copilot_engine',
       activeModel: groqActive ? 'qwen/qwen3.8-27b' : null,
       timestamp: new Date().toISOString(),
     };

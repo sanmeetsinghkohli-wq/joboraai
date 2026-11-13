@@ -290,8 +290,8 @@ export function extractSkillsFromText(title: string, description: string, tags: 
 
   const matched = dictionary.filter((skill) => corpus.includes(skill.toLowerCase()));
   const combined = Array.from(new Set([...cleanTags, ...matched]));
-  if (combined.length > 0) return combined.slice(0, 6);
-  return ['Cross-Functional Execution', 'Stakeholder Alignment', 'Domain Expertise'];
+  // No filler: when a listing names no recognisable skills, it has none.
+  return combined.slice(0, 6);
 }
 
 export function normalizeEmploymentType(raw: unknown): string {

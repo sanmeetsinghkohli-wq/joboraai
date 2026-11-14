@@ -10,6 +10,7 @@ import {
   Sparkles,
   Target,
 } from 'lucide-react';
+import { DeviceShowcase } from '@/components/landing/DeviceShowcase';
 import { LandingNav } from '@/components/landing/LandingNav';
 import { Scene3D } from '@/components/landing/Scene3D';
 import { ButtonLink } from '@/components/ui/button';
@@ -128,6 +129,9 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Scroll-driven 3D reveal */}
+        <DeviceShowcase />
+
         {/* Features */}
         <section id="features" className="scroll-mt-20 border-t border-line bg-paper">
           <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
@@ -141,7 +145,7 @@ export default function LandingPage() {
             <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {FEATURES.map(({ icon: Icon, title, body }) => (
                 <li key={title}>
-                  <Tilt max={5} lift={12} className="h-full">
+                  <Tilt max={6} lift={14} sheen className="h-full">
                     <article className="flex h-full flex-col rounded-lg border border-line bg-ivory p-6 shadow-card transition-shadow duration-200 hover:shadow-raised">
                       <div className="flex h-11 w-11 items-center justify-center rounded bg-plum text-coral [transform:translateZ(24px)]">
                         <Icon className="h-5 w-5" aria-hidden="true" />

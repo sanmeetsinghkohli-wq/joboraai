@@ -1,14 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <defs>
-    <linearGradient id="brandGrad" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#E98D79" />
-      <stop offset="50%" stop-color="#D97762" />
-      <stop offset="100%" stop-color="#5B2E48" />
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="8" fill="url(#brandGrad)" />
-  <path d="M10 9H22C23.1 9 24 9.9 24 11V21C24 22.1 23.1 23 22 23H10C8.9 23 8 22.1 8 21V11C8 9.9 8.9 9 10 9Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M13 9V7C13 6.44772 13.4477 6 14 6H18C18.5523 6 19 6.44772 19 7V9" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-  <path d="M8 14H24" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.8"/>
-  <path d="M16 13V16" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <rect width="40" height="40" rx="9" fill="#F8F5F0"/>
+  <g transform="translate(1 1) scale(0.95)">
+    <path d="M18 8 L28 5 V25 A11 11 0 0 1 6 25 V20 H14 V25 A2 2 0 0 0 18 25 Z" fill="#3E1F38"/>
+    <path d="M18 5.5 Q18 3 21 3 H26 Q28.6 3 28 5.6 L27.6 7 Q23 9.4 18 11 Z" fill="#EF6764"/>
+    <path d="M33 0 Q33.6 3.4 37 4 Q33.6 4.6 33 8 Q32.4 4.6 29 4 Q32.4 3.4 33 0 Z" fill="#EF6764"/>
+  </g>
 </svg>

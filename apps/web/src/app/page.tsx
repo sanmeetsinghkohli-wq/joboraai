@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import {
   ArrowRight,
-  Check,
   FileText,
   ListChecks,
   Mic,
@@ -10,9 +9,8 @@ import {
   Sparkles,
   Target,
 } from 'lucide-react';
-import { DeviceShowcase } from '@/components/landing/DeviceShowcase';
+import { HeroStage } from '@/components/landing/HeroStage';
 import { LandingNav } from '@/components/landing/LandingNav';
-import { Scene3D } from '@/components/landing/Scene3D';
 import { ButtonLink } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
 import { Tilt } from '@/components/ui/tilt';
@@ -87,71 +85,69 @@ export default function LandingPage() {
 
       <main id="main">
         {/* Hero */}
-        <section className="relative">
+        <section className="relative overflow-hidden">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 h-[38rem] bg-[radial-gradient(60rem_30rem_at_80%_10%,rgba(231,111,114,0.14),transparent_60%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(50rem_28rem_at_50%_-10%,rgba(231,111,114,0.16),transparent_70%)]"
           />
-          <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-6 lg:pb-24 lg:pt-20">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(53,27,50,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(53,27,50,0.05)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_70%)]"
+          />
+          <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-16 text-center sm:px-6 sm:pt-24">
             <div className="animate-fade-up">
-              <p className="eyebrow">Job search workspace</p>
-              <h1 className="mt-4 font-serif text-4xl text-plum sm:text-5xl">
-                Find your fit.
-                <br />
-                <em className="text-coral-700">Make your move.</em>
+              <span className="inline-flex items-center gap-2 rounded-full border border-line bg-paper/80 px-3 py-1 text-xs font-semibold text-plum shadow-card backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5 text-coral" aria-hidden="true" />
+                Your job search, in one workspace
+              </span>
+              <h1 className="mx-auto mt-6 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight text-plum sm:text-7xl">
+                Find your fit. <em className="text-coral-700">Make your move.</em>
               </h1>
-              <p className="mt-5 max-w-xl text-lg text-ink-muted">
-                Jobora brings live roles, your skills and every application you send into one calm workspace — so you
-                always know what to apply for next and where each application stands.
+              <p className="mx-auto mt-6 max-w-xl text-lg text-ink-muted">
+                Live roles, your skills and every application you send — side by side, so you always know what to
+                apply for next.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-9 flex flex-wrap justify-center gap-3">
                 <ButtonLink href="/auth?tab=signup" size="lg">
-                  Create your account
+                  Get started free
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </ButtonLink>
-                <ButtonLink href="#how" variant="secondary" size="lg">
-                  See how it works
+                <ButtonLink href="#features" variant="secondary" size="lg">
+                  See what it does
                 </ButtonLink>
               </div>
-              <ul className="mt-8 flex flex-col gap-2 text-sm text-ink-muted sm:flex-row sm:gap-6">
-                {['Live roles from public job boards', 'Skill-by-skill comparison', 'One tracker for every application'].map(
-                  (item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
-                      {item}
-                    </li>
-                  )
-                )}
-              </ul>
             </div>
 
-            <Scene3D />
+            <HeroStage />
           </div>
         </section>
 
-        {/* Scroll-driven 3D reveal */}
-        <DeviceShowcase />
-
-        {/* Features */}
+        {/* Features — bento grid */}
         <section id="features" className="scroll-mt-20 border-t border-line bg-paper">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
-            <div className="max-w-2xl">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+            <div className="mx-auto max-w-2xl text-center">
               <p className="eyebrow">What you can do</p>
-              <h2 className="mt-3 font-serif text-3xl text-plum">Everything between “looking” and “hired”</h2>
-              <p className="mt-3 text-ink-muted">
-                Six tools that share one profile, so you enter your details once and use them everywhere.
-              </p>
+              <h2 className="mt-3 font-serif text-4xl text-plum">Everything between “looking” and “hired”</h2>
+              <p className="mt-3 text-ink-muted">Six tools sharing one profile. Enter your details once, use them everywhere.</p>
             </div>
-            <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map(({ icon: Icon, title, body }) => (
-                <li key={title}>
-                  <Tilt max={6} lift={14} sheen className="h-full">
-                    <article className="flex h-full flex-col rounded-lg border border-line bg-ivory p-6 shadow-card transition-shadow duration-200 hover:shadow-raised">
-                      <div className="flex h-11 w-11 items-center justify-center rounded bg-plum text-coral [transform:translateZ(24px)]">
+            <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map(({ icon: Icon, title, body }, i) => (
+                <li key={title} className={[0, 3, 5].includes(i) ? 'lg:col-span-2' : ''}>
+                  <Tilt max={5} lift={12} sheen className="h-full">
+                    <article
+                      className={`flex h-full flex-col rounded-2xl border p-7 shadow-card transition-shadow duration-200 hover:shadow-raised ${
+                        i === 0 ? 'border-plum bg-plum text-paper' : 'border-line bg-ivory'
+                      }`}
+                    >
+                      <div
+                        className={`flex h-11 w-11 items-center justify-center rounded-xl [transform:translateZ(30px)] ${
+                          i === 0 ? 'bg-coral text-white' : 'bg-plum text-coral'
+                        }`}
+                      >
                         <Icon className="h-5 w-5" aria-hidden="true" />
                       </div>
-                      <h3 className="mt-5 font-serif text-xl text-plum">{title}</h3>
-                      <p className="mt-2 text-sm text-ink-muted">{body}</p>
+                      <h3 className={`mt-6 font-serif text-2xl ${i === 0 ? 'text-paper' : 'text-plum'}`}>{title}</h3>
+                      <p className={`mt-2 max-w-md text-sm ${i === 0 ? 'text-plum-100' : 'text-ink-muted'}`}>{body}</p>
                     </article>
                   </Tilt>
                 </li>

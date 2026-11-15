@@ -27,6 +27,7 @@ export const config = {
     '/cv-studio/:path*',
     '/cover-letters/:path*',
     '/interview/:path*',
+    '/career-ops/:path*',
     '/career-insights/:path*',
     '/ai-copilot/:path*',
     '/email-composer/:path*',

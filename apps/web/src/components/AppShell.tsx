@@ -18,6 +18,7 @@ import {
   Settings,
   Sparkles,
   Target,
+  Briefcase,
   X,
 } from 'lucide-react';
 import { useAppData } from '@/context/AppDataContext';
@@ -50,6 +51,7 @@ const NAV: Array<{ title?: string; items: NavItem[] }> = [
       { href: '/cover-letters', label: 'Cover letters', icon: PenLine },
       { href: '/interview', label: 'Interview practice', icon: Mic },
       { href: '/career-insights', label: 'Skill gaps', icon: Target },
+      { href: '/career-ops', label: 'Career Ops', icon: Briefcase },
     ],
   },
   { title: 'Assistant', items: [{ href: '/ai-copilot', label: 'Copilot', icon: Sparkles }] },

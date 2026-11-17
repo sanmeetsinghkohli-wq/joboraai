@@ -20,6 +20,7 @@ import { fetchEmployerBoardJobs } from './_employerBoards';
 import { inferEmploymentType } from './_providers';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 export type LiveJobRecord = NormalizedJobRecord;
 

@@ -225,7 +225,7 @@ export function normalizeLocationAndRegion(
     };
   }
   const indiaCity = combined.match(
-    /(bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|new delhi|delhi|noida|chennai|kolkata|ahmedabad)/
+    /(bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|new delhi|delhi|noida|chennai|kolkata|ahmedabad|lucknow|jaipur|kochi|indore|coimbatore|chandigarh)/
   );
   if (indiaCity || /india/.test(combined)) {
     const raw = indiaCity?.[1] || '';

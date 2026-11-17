@@ -52,7 +52,7 @@ const BOARDS: Board[] = [
 const PER_BOARD = 30;
 
 const TARGET_REGION =
-  /\b(india|bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|delhi|noida|chennai|kolkata|ahmedabad|dubai|abu dhabi|sharjah|uae|united arab emirates|riyadh|jeddah|saudi arabia|doha|qatar)\b/i;
+  /\b(india|bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|delhi|noida|chennai|kolkata|ahmedabad|lucknow|jaipur|kochi|indore|coimbatore|chandigarh|dubai|abu dhabi|sharjah|uae|united arab emirates|riyadh|jeddah|saudi arabia|doha|qatar)\b/i;
 
 interface RawRole {
   id: string;
@@ -69,7 +69,7 @@ async function readBoard(board: Board): Promise<RawRole[]> {
   if (board.ats === 'greenhouse') {
     const res = await fetchWithTimeout(
       `https://boards-api.greenhouse.io/v1/boards/${board.slug}/jobs?content=true`,
-      { timeoutMs: 6000 }
+      { timeoutMs: 9000 }
     );
     if (!res.ok) return [];
     const data = await res.json();
@@ -85,7 +85,7 @@ async function readBoard(board: Board): Promise<RawRole[]> {
     }));
   }
   if (board.ats === 'lever') {
-    const res = await fetchWithTimeout(`https://api.lever.co/v0/postings/${board.slug}?mode=json`, { timeoutMs: 6000 });
+    const res = await fetchWithTimeout(`https://api.lever.co/v0/postings/${board.slug}?mode=json&limit=100`, { timeoutMs: 9000 });
     if (!res.ok) return [];
     const data = await res.json();
     return (Array.isArray(data) ? data : []).map((j: any) => ({
@@ -99,7 +99,7 @@ async function readBoard(board: Board): Promise<RawRole[]> {
       remote: String(j.workplaceType || '').toLowerCase() === 'remote',
     }));
   }
-  const res = await fetchWithTimeout(`https://api.ashbyhq.com/posting-api/job-board/${board.slug}`, { timeoutMs: 6000 });
+  const res = await fetchWithTimeout(`https://api.ashbyhq.com/posting-api/job-board/${board.slug}`, { timeoutMs: 9000 });
   if (!res.ok) return [];
   const data = await res.json();
   return (Array.isArray(data?.jobs) ? data.jobs : []).map((j: any) => ({
@@ -170,7 +170,8 @@ export async function fetchEmployerBoardJobs(): Promise<AdapterResult> {
         .sort((a, b) => rank(a) - rank(b))
         .slice(0, PER_BOARD)
         .map((r) => toRecord(board, r))
-        .filter((j) => !isJobExpiredOrMalformed(j));
+        // A role still listed on the employer's own board is open, whatever its post date.
+        .filter((j) => !isJobExpiredOrMalformed({ ...j, postedTimestamp: undefined }));
     })
   );
 

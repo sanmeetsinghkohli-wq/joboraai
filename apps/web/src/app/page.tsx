@@ -8,6 +8,9 @@ import {
   Send,
   Sparkles,
   Target,
+  Lock,
+  ShieldCheck,
+  Globe,
 } from 'lucide-react';
 import { HeroStage } from '@/components/landing/HeroStage';
 import { LandingNav } from '@/components/landing/LandingNav';
@@ -46,6 +49,14 @@ const FEATURES = [
     title: 'Copilot',
     body: 'Ask about your search in plain language. Copilot answers with your profile, your tracked applications and the roles on screen as context.',
   },
+];
+
+const SOURCES = ['Remotive', 'Arbeitnow', 'Jobicy', 'Himalayas', 'Employer career pages'];
+
+const TRUST = [
+  { icon: ShieldCheck, text: 'Nothing is sent without you' },
+  { icon: Lock, text: 'Drafts use only what you entered' },
+  { icon: Globe, text: 'UAE, Saudi Arabia, Qatar and remote' },
 ];
 
 const STEPS = [
@@ -94,13 +105,13 @@ export default function LandingPage() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(53,27,50,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(53,27,50,0.05)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_70%)]"
           />
-          <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-16 text-center sm:px-6 sm:pt-24">
+          <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-10 text-center sm:px-6 sm:pb-24 sm:pt-24">
             <div className="animate-fade-up">
               <span className="inline-flex items-center gap-2 rounded-full border border-line bg-paper/80 px-3 py-1 text-xs font-semibold text-plum shadow-card backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5 text-coral" aria-hidden="true" />
                 Your job search, in one workspace
               </span>
-              <h1 className="mx-auto mt-6 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight text-plum sm:text-7xl">
+              <h1 className="mx-auto mt-6 max-w-3xl font-serif text-[2.6rem] leading-[1.05] tracking-tight text-plum sm:text-7xl">
                 Find your fit. <em className="text-coral-700">Make your move.</em>
               </h1>
               <p className="mx-auto mt-6 max-w-xl text-lg text-ink-muted">
@@ -119,6 +130,28 @@ export default function LandingPage() {
             </div>
 
             <HeroStage />
+          </div>
+        </section>
+
+        {/* Trust strip */}
+        <section aria-label="Where roles come from" className="border-t border-line bg-ivory">
+          <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+            <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-ink-subtle">
+              Live roles from public job boards and employer career pages
+            </p>
+            <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-semibold text-ink-muted">
+              {SOURCES.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+            <ul className="mx-auto mt-8 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {TRUST.map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink">
+                  <Icon className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                  {text}
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 

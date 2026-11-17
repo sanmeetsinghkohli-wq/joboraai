@@ -49,7 +49,7 @@ export function HeroStage() {
     <div
       ref={ref}
       aria-hidden="true"
-      className="relative mx-auto mt-14 w-full max-w-5xl [--mx:0] [--my:0] [--p:0] [perspective:1800px] sm:mt-20"
+      className="relative mx-auto mt-12 w-full max-w-5xl [--mx:0] [--my:0] [--p:0] [perspective:1800px] sm:mt-20"
     >
       {/* Soft glow behind the window */}
       <div className="pointer-events-none absolute inset-x-[10%] top-[15%] h-[70%] rounded-full bg-coral/30 blur-[100px]" />
@@ -70,13 +70,13 @@ export function HeroStage() {
             <span className="h-2.5 w-2.5 rounded-full bg-sand" />
             <span className="ml-4 h-2 w-40 rounded-full bg-sand" />
           </div>
-          <div className="aspect-[16/9]">
+          <div className="aspect-[4/3] sm:aspect-[16/9]">
             <AppScreen />
           </div>
         </div>
 
         {/* Floating glass cards, lifted off the window in 3D */}
-        <FloatCard className="-left-4 top-[18%] sm:-left-10" depth={90} delay="0s">
+        <FloatCard className="-left-10 bottom-[10%] hidden md:block" depth={90} delay="0s">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">Skills, one by one</p>
           <ul className="mt-2 space-y-1.5 text-sm">
             {['React', 'TypeScript'].map((s) => (
@@ -90,7 +90,7 @@ export function HeroStage() {
           </ul>
         </FloatCard>
 
-        <FloatCard className="-right-4 top-[8%] sm:-right-12" depth={130} delay="1.2s">
+        <FloatCard className="-top-8 right-2 sm:-right-12 sm:top-[8%]" depth={130} delay="1.2s">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">Pipeline</p>
           <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold">
             <span className="rounded-full bg-plum-50 px-2 py-1 text-plum">Applied</span>
@@ -101,7 +101,7 @@ export function HeroStage() {
           </div>
         </FloatCard>
 
-        <FloatCard className="-bottom-6 right-[12%] hidden sm:block" depth={70} delay="2.4s">
+        <FloatCard className="-bottom-6 right-[10%] hidden md:block" depth={70} delay="2.4s">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-plum text-coral">
               <FileText className="h-4 w-4" />

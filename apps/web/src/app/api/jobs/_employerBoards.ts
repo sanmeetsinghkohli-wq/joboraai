@@ -159,7 +159,9 @@ export async function fetchEmployerBoardJobs(): Promise<AdapterResult> {
 
   const settled = await Promise.allSettled(
     BOARDS.map(async (board) => {
-      const roles = (await readBoard(board)).filter((r) => r.title && TARGET_REGION.test(r.location));
+      const roles = (await readBoard(board)).filter(
+        (r) => r.title && (TARGET_REGION.test(r.location) || r.remote || /\bremote\b/i.test(r.location))
+      );
       // Internships and AI/ML roles first, then newest, so they survive the per-board cap.
       const rank = (r: RawRole) =>
         (/\b(intern|internship|trainee)\b/i.test(r.title) ? 0 : 2) +

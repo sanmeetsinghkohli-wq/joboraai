@@ -16,6 +16,8 @@ import {
   normalizeLocationAndRegion,
   sanitizeExternalUrl,
 } from './_providers';
+import { fetchEmployerBoardJobs } from './_employerBoards';
+import { inferEmploymentType } from './_providers';
 
 export const dynamic = 'force-dynamic';
 
@@ -114,6 +116,19 @@ function matchesLocationFilter(job: LiveJobRecord, locationFilter: string): bool
   if (f === 'sharjah') {
     return city === 'sharjah' || loc.includes('sharjah');
   }
+  if (f === 'india') {
+    return region === 'india' || country === 'india';
+  }
+  const INDIA_CITIES: Record<string, string[]> = {
+    bengaluru: ['bengaluru', 'bangalore'],
+    mumbai: ['mumbai'],
+    hyderabad: ['hyderabad'],
+    pune: ['pune'],
+    'delhi ncr': ['delhi', 'gurugram', 'gurgaon', 'noida'],
+  };
+  if (INDIA_CITIES[f]) {
+    return INDIA_CITIES[f].some((c) => city.includes(c) || loc.includes(c));
+  }
   if (f === 'remote') {
     return mode === 'remote' || region === 'remote' || loc.includes('remote');
   }
@@ -169,6 +184,7 @@ export async function GET(req: NextRequest) {
     himalayasRes,
     jsearchRes,
     adzunaRes,
+    employerRes,
   ] = await Promise.all([
     fetchGreenhouseGccJobs(),
     fetchRemotiveJobs(query),
@@ -177,6 +193,7 @@ export async function GET(req: NextRequest) {
     fetchHimalayasJobs(),
     fetchJSearchJobs(query, locationFilter),
     fetchAdzunaJobs(query),
+    fetchEmployerBoardJobs(),
   ]);
 
   const providerDetails: ProviderHealthDetail[] = [
@@ -187,6 +204,7 @@ export async function GET(req: NextRequest) {
     himalayasRes.health,
     jsearchRes.health,
     adzunaRes.health,
+    employerRes.health,
   ];
 
   // Backward-compatible providerStatus dictionary
@@ -198,18 +216,20 @@ export async function GET(req: NextRequest) {
     himalayas: himalayasRes.health.status === 'ok' ? 'ok' : 'degraded',
     jsearch: jsearchRes.health.status === 'ok' ? 'ok' : 'degraded',
     adzuna: adzunaRes.health.status === 'ok' ? 'ok' : 'degraded',
+    employer_boards: employerRes.health.status === 'ok' ? 'ok' : 'degraded',
   };
 
   // Combine ONLY genuine live provider listings (plus any user-submitted custom jobs)
   const liveProviderJobs = [
     ...greenhouseRes.jobs,
+    ...employerRes.jobs,
     ...jsearchRes.jobs,
     ...remotiveRes.jobs,
     ...arbeitnowRes.jobs,
     ...jobicyRes.jobs,
     ...himalayasRes.jobs,
     ...adzunaRes.jobs,
-  ];
+  ].map((job) => ({ ...job, employmentType: inferEmploymentType(job.title, job.employmentType) }));
 
   const fallbackActive = liveProviderJobs.length === 0;
   // When every provider is unreachable the list is simply empty; the client

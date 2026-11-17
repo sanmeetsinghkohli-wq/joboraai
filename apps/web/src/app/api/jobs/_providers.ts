@@ -25,7 +25,8 @@ export type JobProviderId =
   | 'jobicy'
   | 'himalayas'
   | 'jsearch'
-  | 'adzuna';
+  | 'adzuna'
+  | 'employer_boards';
 
 export type ProviderHealthState =
   | 'ok'
@@ -43,7 +44,7 @@ export interface ProviderHealthDetail {
   lastSyncedAt: string | null;
   requiresCredentials: boolean;
   configured: boolean;
-  gccCoverage: 'Native UAE/GCC' | 'Global + Remote' | 'Non-GCC Markets Only' | 'Partner Restricted';
+  gccCoverage: 'Native UAE/GCC' | 'India + UAE Employers' | 'Global + Remote' | 'Non-GCC Markets Only' | 'Partner Restricted';
   note?: string;
 }
 
@@ -55,7 +56,7 @@ export interface NormalizedJobRecord {
   location: string;
   city?: string;
   country?: string;
-  regionTag: 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'Remote' | 'Global';
+  regionTag: 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'India' | 'Remote' | 'Global';
   workMode: 'Remote' | 'Hybrid' | 'On-site';
   employmentType: string;
   salaryRange: string;
@@ -111,7 +112,7 @@ export function normalizeLocationAndRegion(
   location: string;
   city: string;
   country: string;
-  regionTag: 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'Remote' | 'Global';
+  regionTag: 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'India' | 'Remote' | 'Global';
 } {
   const combined = `${title} ${rawLocation}`.toLowerCase();
   const locClean = (rawLocation || '').trim();
@@ -223,6 +224,21 @@ export function normalizeLocationAndRegion(
       regionTag: 'GCC / MENA',
     };
   }
+  const indiaCity = combined.match(
+    /(bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|new delhi|delhi|noida|chennai|kolkata|ahmedabad)/
+  );
+  if (indiaCity || /india/.test(combined)) {
+    const raw = indiaCity?.[1] || '';
+    const city =
+      { bangalore: 'Bengaluru', gurgaon: 'Gurugram', 'new delhi': 'New Delhi' }[raw] ||
+      (raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'India');
+    return {
+      location: raw ? `${city}, India` : locClean || 'India',
+      city,
+      country: 'India',
+      regionTag: 'India',
+    };
+  }
   if (locClean.toLowerCase().includes('remote') || workMode.toLowerCase() === 'remote') {
     return {
       location: locClean || 'Remote',
@@ -245,7 +261,7 @@ export function classifyRegionTag(
   location: string,
   workMode: string,
   title = ''
-): 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'Remote' | 'Global' {
+): 'UAE' | 'Saudi Arabia' | 'Qatar' | 'GCC / MENA' | 'India' | 'Remote' | 'Global' {
   return normalizeLocationAndRegion(location, title, workMode).regionTag;
 }
 
@@ -292,6 +308,12 @@ export function extractSkillsFromText(title: string, description: string, tags: 
   const combined = Array.from(new Set([...cleanTags, ...matched]));
   // No filler: when a listing names no recognisable skills, it has none.
   return combined.slice(0, 6);
+}
+
+/** Reads the job type from the title first: boards often label internships only there. */
+export function inferEmploymentType(title: string, raw: unknown): string {
+  if (/(intern|internship|trainee|apprentice|co-?op)/i.test(title)) return 'Internship';
+  return normalizeEmploymentType(raw);
 }
 
 export function normalizeEmploymentType(raw: unknown): string {

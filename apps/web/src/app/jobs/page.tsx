@@ -47,8 +47,19 @@ const REGIONS = [
   { label: 'Abu Dhabi', value: 'Abu Dhabi' },
   { label: 'Saudi Arabia', value: 'Saudi Arabia' },
   { label: 'Qatar', value: 'Qatar' },
+  { label: 'India', value: 'India' },
+  { label: 'Bengaluru', value: 'Bengaluru' },
+  { label: 'Delhi NCR', value: 'Delhi NCR' },
+  { label: 'Mumbai', value: 'Mumbai' },
+  { label: 'Hyderabad', value: 'Hyderabad' },
   { label: 'Remote', value: 'Remote' },
 ];
+
+const JOB_TYPES = [
+  { label: 'All types', value: '' },
+  { label: 'Internship', value: 'Internship' },
+  { label: 'Full-time', value: 'Full-Time' },
+] as const;
 
 const PAGE_SIZE = 30;
 
@@ -389,6 +400,7 @@ function JobsContent() {
   const initialQuery = params?.get('q') || '';
   const [query, setQuery] = useState(initialQuery);
   const [region, setRegion] = useState('');
+  const [jobType, setJobType] = useState<string>('');
   const [view, setView] = useState<'all' | 'saved'>(params?.get('view') === 'saved' ? 'saved' : 'all');
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [showDetailOnSmall, setShowDetailOnSmall] = useState(false);
@@ -420,8 +432,11 @@ function JobsContent() {
   }, [urlSelected, jobs, setSelectedJob]);
 
   const list = useMemo(
-    () => (view === 'saved' ? jobs.filter((j) => savedJobIds.includes(j.id)) : jobs),
-    [view, jobs, savedJobIds]
+    () =>
+      (view === 'saved' ? jobs.filter((j) => savedJobIds.includes(j.id)) : jobs).filter(
+        (j) => !jobType || j.employmentType === jobType
+      ),
+    [view, jobs, savedJobIds, jobType]
   );
   const shown = list.slice(0, visible);
   const current = selectedJob && list.some((j) => j.id === selectedJob.id) ? selectedJob : null;
@@ -524,6 +539,27 @@ function JobsContent() {
                   </button>
                 );
               })}
+            </div>
+            <div role="group" aria-label="Job type" className="flex shrink-0 gap-1.5">
+              {JOB_TYPES.map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => {
+                    setJobType(t.value);
+                    setVisible(PAGE_SIZE);
+                  }}
+                  aria-pressed={jobType === t.value}
+                  className={cn(
+                    'h-9 rounded-full border px-3.5 text-sm font-medium transition-colors',
+                    jobType === t.value
+                      ? 'border-coral-700 bg-coral-50 text-coral-700'
+                      : 'border-line bg-paper text-ink-muted hover:border-plum-200 hover:text-plum'
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
             <Segmented
               label="Show"

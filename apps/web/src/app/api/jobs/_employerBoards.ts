@@ -1,0 +1,186 @@
+/**
+ * Employer career boards read through their public, key-free ATS APIs
+ * (Greenhouse, Lever, Ashby). Each board was checked to return live roles
+ * in India and/or the UAE. Only roles located in India, the UAE or the
+ * wider GCC are kept; everything else on the board is dropped.
+ */
+import {
+  type AdapterResult,
+  type NormalizedJobRecord,
+  type ProviderHealthDetail,
+  extractSkillsFromText,
+  fetchWithTimeout,
+  formatRelativeDate,
+  inferEmploymentType,
+  isJobExpiredOrMalformed,
+  normalizeLocationAndRegion,
+  parseJobTimestamp,
+  sanitizeExternalUrl,
+  stripHtml,
+} from './_providers';
+
+type Ats = 'greenhouse' | 'lever' | 'ashby';
+
+interface Board {
+  ats: Ats;
+  slug: string;
+  company: string;
+  ai?: boolean;
+}
+
+const BOARDS: Board[] = [
+  // India
+  { ats: 'lever', slug: 'paytm', company: 'Paytm' },
+  { ats: 'lever', slug: 'meesho', company: 'Meesho' },
+  { ats: 'lever', slug: 'zeta', company: 'Zeta' },
+  { ats: 'lever', slug: 'cred', company: 'CRED' },
+  { ats: 'greenhouse', slug: 'inmobi', company: 'InMobi' },
+  { ats: 'greenhouse', slug: 'hackerrank', company: 'HackerRank' },
+  { ats: 'greenhouse', slug: 'druva', company: 'Druva' },
+  { ats: 'greenhouse', slug: 'groww', company: 'Groww' },
+  { ats: 'greenhouse', slug: 'stripe', company: 'Stripe' },
+  { ats: 'greenhouse', slug: 'datadog', company: 'Datadog' },
+  { ats: 'ashby', slug: 'sarvam', company: 'Sarvam AI', ai: true },
+  // AI companies hiring in India and/or the UAE
+  { ats: 'ashby', slug: 'openai', company: 'OpenAI', ai: true },
+  { ats: 'ashby', slug: 'cohere', company: 'Cohere', ai: true },
+  { ats: 'ashby', slug: 'elevenlabs', company: 'ElevenLabs', ai: true },
+  { ats: 'greenhouse', slug: 'scaleai', company: 'Scale AI', ai: true },
+  { ats: 'greenhouse', slug: 'xai', company: 'xAI', ai: true },
+];
+
+const PER_BOARD = 30;
+
+const TARGET_REGION =
+  /\b(india|bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|delhi|noida|chennai|kolkata|ahmedabad|dubai|abu dhabi|sharjah|uae|united arab emirates|riyadh|jeddah|saudi arabia|doha|qatar)\b/i;
+
+interface RawRole {
+  id: string;
+  title: string;
+  location: string;
+  description: string;
+  url: string;
+  updated: unknown;
+  type: unknown;
+  remote: boolean;
+}
+
+async function readBoard(board: Board): Promise<RawRole[]> {
+  if (board.ats === 'greenhouse') {
+    const res = await fetchWithTimeout(
+      `https://boards-api.greenhouse.io/v1/boards/${board.slug}/jobs?content=true`,
+      { timeoutMs: 6000 }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (Array.isArray(data?.jobs) ? data.jobs : []).map((j: any) => ({
+      id: String(j.id),
+      title: String(j.title || ''),
+      location: String(j.location?.name || ''),
+      description: String(j.content || ''),
+      url: j.absolute_url,
+      updated: j.updated_at,
+      type: '',
+      remote: /remote/i.test(String(j.location?.name || '')),
+    }));
+  }
+  if (board.ats === 'lever') {
+    const res = await fetchWithTimeout(`https://api.lever.co/v0/postings/${board.slug}?mode=json`, { timeoutMs: 6000 });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (Array.isArray(data) ? data : []).map((j: any) => ({
+      id: String(j.id),
+      title: String(j.text || ''),
+      location: String(j.categories?.location || ''),
+      description: String(j.descriptionPlain || j.description || ''),
+      url: j.hostedUrl,
+      updated: j.createdAt,
+      type: j.categories?.commitment,
+      remote: String(j.workplaceType || '').toLowerCase() === 'remote',
+    }));
+  }
+  const res = await fetchWithTimeout(`https://api.ashbyhq.com/posting-api/job-board/${board.slug}`, { timeoutMs: 6000 });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (Array.isArray(data?.jobs) ? data.jobs : []).map((j: any) => ({
+    id: String(j.id),
+    title: String(j.title || ''),
+    location: [j.location, ...(j.secondaryLocations || []).map((l: any) => l?.location)].filter(Boolean).join(' / '),
+    description: String(j.descriptionPlain || ''),
+    url: j.jobUrl,
+    updated: j.publishedAt,
+    type: j.employmentType,
+    remote: Boolean(j.isRemote),
+  }));
+}
+
+function toRecord(board: Board, r: RawRole): NormalizedJobRecord {
+  const workMode: 'Remote' | 'Hybrid' | 'On-site' = r.remote ? 'Remote' : 'On-site';
+  const loc = normalizeLocationAndRegion(r.location, '', workMode);
+  const desc = stripHtml(r.description).slice(0, 600);
+  const url = sanitizeExternalUrl(r.url);
+  return {
+    id: `${board.ats}-${board.slug}-${r.id}`,
+    title: r.title.trim(),
+    company: board.company,
+    companyLogo: null,
+    location: loc.location,
+    city: loc.city,
+    country: loc.country,
+    regionTag: loc.regionTag,
+    workMode,
+    employmentType: inferEmploymentType(r.title, r.type),
+    salaryRange: 'Salary Not Disclosed by Employer',
+    description: desc ? `${desc}…` : `${r.title} at ${board.company}.`,
+    responsibilities: [],
+    skills: extractSkillsFromText(r.title, desc),
+    postedAt: formatRelativeDate(r.updated),
+    postedTimestamp: parseJobTimestamp(r.updated)?.getTime(),
+    sourceUrl: url,
+    applicationUrl: url,
+    source: `${board.company} careers`,
+    recruiterName: '',
+  };
+}
+
+export async function fetchEmployerBoardJobs(): Promise<AdapterResult> {
+  const start = Date.now();
+  const health: ProviderHealthDetail = {
+    id: 'employer_boards',
+    name: `Employer career pages in India & UAE (${BOARDS.map((b) => b.company).join(', ')})`,
+    status: 'degraded',
+    latencyMs: null,
+    jobsReturned: 0,
+    lastSyncedAt: null,
+    requiresCredentials: false,
+    configured: true,
+    gccCoverage: 'India + UAE Employers',
+  };
+
+  const settled = await Promise.allSettled(
+    BOARDS.map(async (board) => {
+      const roles = (await readBoard(board)).filter((r) => r.title && TARGET_REGION.test(r.location));
+      // Internships and AI/ML roles first, then newest, so they survive the per-board cap.
+      const rank = (r: RawRole) =>
+        (/\b(intern|internship|trainee)\b/i.test(r.title) ? 0 : 2) +
+        (/\b(ai|ml|machine learning|llm|data scien|genai|nlp)\b/i.test(r.title) ? 0 : 1);
+      return roles
+        .sort((a, b) => rank(a) - rank(b))
+        .slice(0, PER_BOARD)
+        .map((r) => toRecord(board, r))
+        .filter((j) => !isJobExpiredOrMalformed(j));
+    })
+  );
+
+  const jobs = settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []));
+  return {
+    jobs,
+    health: {
+      ...health,
+      status: jobs.length ? 'ok' : 'degraded',
+      latencyMs: Date.now() - start,
+      jobsReturned: jobs.length,
+      lastSyncedAt: jobs.length ? new Date().toISOString() : null,
+    },
+  };
+}

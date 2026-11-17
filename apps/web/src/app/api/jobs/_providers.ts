@@ -225,9 +225,9 @@ export function normalizeLocationAndRegion(
     };
   }
   const indiaCity = combined.match(
-    /(bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|new delhi|delhi|noida|chennai|kolkata|ahmedabad|lucknow|jaipur|kochi|indore|coimbatore|chandigarh)/
+    /\b(bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|new delhi|delhi|noida|chennai|kolkata|ahmedabad|lucknow|jaipur|kochi|indore|coimbatore|chandigarh)\b/
   );
-  if (indiaCity || /india/.test(combined)) {
+  if (indiaCity || /\bindia\b/.test(combined)) {
     const raw = indiaCity?.[1] || '';
     const city =
       { bangalore: 'Bengaluru', gurgaon: 'Gurugram', 'new delhi': 'New Delhi' }[raw] ||
@@ -312,7 +312,7 @@ export function extractSkillsFromText(title: string, description: string, tags: 
 
 /** Reads the job type from the title first: boards often label internships only there. */
 export function inferEmploymentType(title: string, raw: unknown): string {
-  if (/(intern|internship|trainee|apprentice|co-?op)/i.test(title)) return 'Internship';
+  if (/\b(intern|internship|trainee|apprentice|co-?op)\b/i.test(title)) return 'Internship';
   return normalizeEmploymentType(raw);
 }
 

@@ -18,7 +18,7 @@ export function Cta() {
     <section
       id="cta"
       data-scroll-section="cta"
-      className={`relative min-h-[150vh] text-white ${isStatic ? 'bg-gradient-to-br from-[#2A1728] via-[#331C30] to-[#2A1728]' : ''}`}
+      className={`relative min-h-[220vh] text-white ${isStatic ? 'bg-gradient-to-br from-[#2A1728] via-[#331C30] to-[#2A1728]' : ''}`}
     >
       <div className="sticky top-0 min-h-screen flex items-center overflow-hidden py-16 lg:py-20">
         {isStatic && (
@@ -46,6 +46,7 @@ export function Cta() {
               <Link
                 className={`w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 rounded-full border border-white/30 hover:bg-white/10 text-white text-base font-semibold transition-colors ${FOCUS_DARK}`}
                 href={CONTACT_SALES_HREF}
+                data-plane-target
               >
                 Contact sales
               </Link>

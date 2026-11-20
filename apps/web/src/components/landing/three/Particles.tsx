@@ -31,7 +31,7 @@ void main() {
   if (aSeed.w < ${TRAIL_FRAC.toFixed(4)}) {
     int j = int(clamp(floor(aSeed.w / ${TRAIL_FRAC.toFixed(4)} * ${TRAIL_N}.0), 0.0, ${TRAIL_N - 1}.0));
     vec4 tp = uTrail[j];
-    vec3 off = vec3(sin(s * 91.0), cos(s * 57.0), sin(s * 33.0)) * 0.12;
+    vec3 off = vec3(sin(s * 91.0), cos(s * 57.0), sin(s * 33.0)) * 0.05;
     float ta = clamp(1.0 - tp.w / ${TRAIL_LIFE.toFixed(1)}, 0.0, 1.0) * 0.6;
     p = mix(p, tp.xyz + off, uTrailOn);
     a = mix(a, ta, uTrailOn);
@@ -106,7 +106,7 @@ export default function Particles({ shared }: { shared: React.MutableRefObject<S
     [geometry, material],
   );
 
-  const hist = useRef({ head: 0, acc: 0, pts: Array.from({ length: TRAIL_N }, () => ({ x: 0, y: 0, z: -99, age: 99 })) });
+  const hist = useRef({ head: 0, lx: 0, ly: 0, pts: Array.from({ length: TRAIL_N }, () => ({ x: 0, y: 0, z: -99, age: 99 })) });
 
   useFrame((_, dt) => {
     const sh = shared.current;
@@ -114,14 +114,21 @@ export default function Particles({ shared }: { shared: React.MutableRefObject<S
     u.uTime.value = sh.time;
     u.uDpr.value = dpr;
     u.uCta.value = sstep(0.82, 0.9, sh.p);
-    const on = sstep(0.9, 0.92, sh.p);
-    u.uTrailOn.value = on;
     const h = hist.current;
-    for (const q of h.pts) q.age += dt;
-    if (on > 0) {
-      h.acc += dt;
-      if (h.acc >= TRAIL_LIFE / TRAIL_N) {
-        h.acc = 0;
+    let alive = false;
+    for (const q of h.pts) {
+      q.age += dt;
+      if (q.age < TRAIL_LIFE) alive = true;
+    }
+    // Emit along the flight path by distance moved (scroll-driven, so no time-based emission), both directions.
+    const flying = sh.fly > 0.003 && sh.fly < 0.995;
+    const moved = Math.hypot(sh.worldPos.x - h.lx, sh.worldPos.y - h.ly);
+    const k = 1 - Math.exp(-dt * 6);
+    u.uTrailOn.value += ((alive || flying ? 1 : 0) - u.uTrailOn.value) * k;
+    if (flying && moved > 0.045) {
+      h.lx = sh.worldPos.x;
+      h.ly = sh.worldPos.y;
+      {
         const q = h.pts[h.head];
         q.x = sh.worldPos.x;
         q.y = sh.worldPos.y;
@@ -129,8 +136,10 @@ export default function Particles({ shared }: { shared: React.MutableRefObject<S
         q.age = 0;
         h.head = (h.head + 1) % TRAIL_N;
       }
-    } else {
-      for (const q of h.pts) q.age = 99;
+    }
+    if (!flying) {
+      h.lx = sh.worldPos.x;
+      h.ly = sh.worldPos.y;
     }
     const arr = u.uTrail.value as THREE.Vector4[];
     for (let i = 0; i < TRAIL_N; i++) {

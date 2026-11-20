@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { bez, headingOf } from '../flight';
 import { EASE, samplePose } from '../keyframes';
 import { scrollState } from '../scroll-state';
 import Particles from './Particles';
@@ -26,6 +27,16 @@ const sstep = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const AX_X = new THREE.Vector3(1, 0, 0);
+const AX_Y = new THREE.Vector3(0, 1, 0);
+const AX_Z = new THREE.Vector3(0, 0, 1);
+
+const _e = new THREE.Euler();
+const _qa = new THREE.Quaternion();
+const _qb = new THREE.Quaternion();
+const _o = [0, 0, 0, 0];
+const _o1 = [0, 0, 0, 0];
+const _o2 = [0, 0, 0, 0];
 
 type LayerKind = 'ats' | 'keywords' | 'bullets';
 const LAYER_KINDS: LayerKind[] = ['ats', 'keywords', 'bullets'];
@@ -74,6 +85,7 @@ export default function ResumeScene() {
     pose: samplePose(scrollState.progress),
     worldPos: new THREE.Vector3(),
     time: 0,
+    fly: 0,
   });
   const group = useRef<THREE.Group>(null);
   const mesh = useRef<THREE.Mesh>(null);
@@ -81,6 +93,7 @@ export default function ResumeScene() {
   const halo = useRef<THREE.Mesh>(null);
   const shadow = useRef<THREE.Mesh>(null);
   const ptr = useRef({ x: 0, y: 0, sx: 0, sy: 0 });
+  const targetEl = useRef<Element | null>(null);
 
   const res = useMemo(() => {
     const max = 8;
@@ -196,16 +209,63 @@ export default function ResumeScene() {
     const y = pose.pos[1] + pose.float * Math.sin(t * Math.PI * 2 * 0.25);
     const rz = pose.rot[2] + 1.5 * Math.sin(t * Math.PI * 2 * 0.17) * fl;
     const g = group.current;
+    const fly = pose.fly;
+    sh.fly = fly;
     if (g) {
-      g.position.set(px, y, pose.pos[2]);
-      g.rotation.set(
-        (pose.rot[0] + ptr.current.sy * 6) * D2R,
-        (pose.rot[1] + ptr.current.sx * 6) * D2R,
-        rz * D2R,
-        'XYZ',
-      );
-      g.scale.setScalar(S);
-      sh.worldPos.set(px, y, pose.pos[2]);
+      let gx = px;
+      let gy = y;
+      let gs = S;
+      // Roll about the nose axis: swings out wide while the sheet is folded in half (so the fin reads instead of
+      // being seen edge-on), then settles to a 3/4 view where the print on the wings and the fin both show.
+      const foldT = sstep(0.4, 0.95, pose.fold);
+      const bankBase = -0.35 * foldT - 0.75 * Math.sin(Math.PI * foldT) * Math.sin(Math.PI * foldT);
+      if (fly <= 1e-4) {
+        _e.set((pose.rot[0] + ptr.current.sy * 6) * D2R, (pose.rot[1] + ptr.current.sx * 6) * D2R, rz * D2R, 'XYZ');
+        g.quaternion.setFromEuler(_e);
+        g.quaternion.multiply(_qa.setFromAxisAngle(AX_Y, bankBase));
+      } else {
+        // Flight: cubic bezier in screen px from the slot to just right of the [data-plane-target] button.
+        // Up first, then a long sweep in from the right, so it never crosses the left text column.
+        const Wp = state.size.width;
+        const Hp = state.size.height;
+        const pxw = (2 * tanH * dist) / Hp; // world units per css px at the resume's depth
+        const lenPx = Math.min(170, Math.max(110, 0.16 * Hp));
+        const S1 = (lenPx * pxw) / RESUME_H;
+        if (!targetEl.current || !targetEl.current.isConnected) targetEl.current = document.querySelector('[data-plane-target]');
+        let tx = Wp * 0.4;
+        let ty = Hp * 0.7;
+        if (targetEl.current) {
+          const r = targetEl.current.getBoundingClientRect();
+          tx = r.right + 26 + lenPx * 0.48;
+          ty = r.top + r.height / 2 + 2;
+        }
+        tx = Math.min(tx, Wp - 12 - lenPx * 0.5);
+        const P0 = [Wp / 2 + px / pxw, Hp / 2 - y / pxw];
+        const P1 = [P0[0], P0[1] - 0.3 * Hp];
+        const P3 = [tx, ty];
+        const P2 = [tx + 0.28 * Wp, ty + 0.02 * Hp];
+        const u = fly;
+        bez(P0, P1, P2, P3, u, _o);
+        const th = headingOf(_o[2], _o[3]);
+        const u1 = Math.max(0, u - 0.03);
+        const u2 = Math.min(1, u + 0.03);
+        bez(P0, P1, P2, P3, u1, _o1);
+        bez(P0, P1, P2, P3, u2, _o2);
+        const rate = (headingOf(_o2[2], _o2[3]) - headingOf(_o1[2], _o1[3])) / Math.max(1e-4, u2 - u1);
+        const env = sstep(0, 0.12, u) * (1 - sstep(0.85, 1, u));
+        const land = sstep(0.96, 1, u);
+        const bank = bankBase - Math.min(0.45, Math.max(-0.45, rate * 0.2)) * env + 0.05 * Math.sin(t * 1.3) * land;
+        const tilt = (-20 - 8 * Math.sin(Math.PI * u) + 5 * sstep(0.7, 1, u)) * D2R;
+        g.quaternion.setFromAxisAngle(AX_Z, th);
+        g.quaternion.multiply(_qa.setFromAxisAngle(AX_X, tilt));
+        g.quaternion.multiply(_qb.setFromAxisAngle(AX_Y, bank));
+        gx = (_o[0] - Wp / 2) * pxw;
+        gy = -(_o[1] - Hp / 2) * pxw + 0.02 * land * Math.sin(t * 1.8);
+        gs = lerp(S, S1, sstep(0, 1, u));
+      }
+      g.position.set(gx, gy, pose.pos[2]);
+      g.scale.setScalar(gs);
+      sh.worldPos.set(gx, gy, pose.pos[2]);
     }
 
     const m = res.resumeMat.uniforms;

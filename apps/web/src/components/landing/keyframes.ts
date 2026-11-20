@@ -8,6 +8,7 @@ export interface ResumePose {
   fold: number;
   glow: number;
   float: number;
+  fly: number; // 0..1 along the paper-plane flight path (CTA)
 }
 
 export type EaseName = 'linear' | 'inOutSine' | 'inOutCubic' | 'outCubic' | 'inExpo';
@@ -24,6 +25,7 @@ export const EASE: Record<EaseName, (t: number) => number> = {
 type Row = [
   number, number, number, number, number, number, number,
   number, number, number, number, number, number, EaseName,
+  number?, // fly (optional, default 0)
 ];
 
 const ROWS: Row[] = [
@@ -44,9 +46,13 @@ const ROWS: Row[] = [
   [0.68, -2.85, -1.3, 0, 0, 360, 0, 0.54, 0, 0, 0, 0, 0.4, 'outCubic'],
   [0.78, -2.85, -1.3, 0, 0, 360, 0, 0.54, 0, 0, 0, 0, 1.0, 'linear'],
   [0.84, 1.5, 0.2, -0.5, 0, 360, 0, 0.85, 0, 0, 0, 0, 0.6, 'inOutCubic'],
-  [0.87, 1.5, 0.1, 0, -8, 360, 0, 0.85, 0, 0, 0, 0, 0.5, 'inOutCubic'],
-  [0.92, 1.5, 0.1, 0, -20, 360, 0, 0.8, 0, 0, 0, 1, 0.3, 'inExpo'],
-  [1.0, 4.5, 3, -4, -70, 385, -15, 0.6, 0, 0, 0, 1, 0, 'linear'],
+  // CTA: arrive in the right slot, fold into a dart (fold 0 -> 1, p .855 .. .905), then fly to the Contact sales
+  // button (fly 0 -> 1, p .905 .. .96) and settle with a glow (.96 .. 1). pos/rot/scale are constant from .905 on:
+  // the scene derives the flight path itself and only reads `fly`.
+  [0.855, 1.5, 0.1, 0, -8, 360, 0, 0.85, 0, 0, 0, 0, 0.5, 'linear'],
+  [0.905, 1.5, 0.1, 0, -20, 360, 0, 0.8, 0, 0, 0, 1, 0.3, 'inOutSine'],
+  [0.96, 1.5, 0.1, 0, -20, 360, 0, 0.8, 0, 0, 0, 1, 0.5, 'linear', 1],
+  [1.0, 1.5, 0.1, 0, -20, 360, 0, 0.8, 0, 0, 0, 1, 1.0, 'linear', 1],
 ];
 
 function toPose(r: Row): ResumePose {
@@ -60,6 +66,7 @@ function toPose(r: Row): ResumePose {
     fold: r[11],
     glow: r[12],
     float: 0,
+    fly: r[14] ?? 0,
   };
 }
 
@@ -102,6 +109,7 @@ export function samplePose(p: number): ResumePose {
     peel: lerp(A.peel, B.peel, t),
     fold,
     glow: lerp(A.glow, B.glow, t),
+    fly: lerp(A.fly, B.fly, t),
     float: (0.08 * (1 - smoothstep(0, 0.12, pp)) + 0.02) * (1 - fold),
   };
 }

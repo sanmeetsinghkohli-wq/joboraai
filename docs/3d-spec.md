@@ -199,7 +199,7 @@ Global rules:
 **CTA** (≥ 150 vh, sticky, plum):
 - H2: "Ready to make your next move?"
 - Sub: "Set your preferences, tailor your first CV and send it from your own inbox. Free to start."
-- The paper plane folds and flies top-right. Buttons: "Get started free" and "Contact sales". The current link to `/email-composer` is wrong, so flag it to the owner.
+- The paper plane folds into a classic dart (p .855 to .905: corners to the keel, edges to the keel, fold in half, wings out; four staged creases in the vertex shader, print stays on the wings), then flies (p .905 to .96, `pose.fly`) along a curved path to land just right of the "Contact sales" button (`data-plane-target`, rect read live and converted to world units) with a small glow, and trails particles. The CSS tier does a simplified 2D clip-path fold and a flat SVG dart on the same path (`flight.ts`). Section is `min-h-[220vh]` so the fly happens mostly while pinned. Buttons: "Get started free" and "Contact sales". The current link to `/email-composer` is wrong, so flag it to the owner.
 
 **Footer:** unchanged apart from the removed status line.
 

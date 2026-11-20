@@ -7,4 +7,5 @@ export interface SceneShared {
   pose: ResumePose;
   worldPos: THREE.Vector3; // resume centre in world space
   time: number;
+  fly: number; // 0..1 paper-plane flight progress
 }

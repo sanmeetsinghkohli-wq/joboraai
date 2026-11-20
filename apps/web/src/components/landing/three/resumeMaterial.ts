@@ -18,6 +18,7 @@ varying vec2 vUv;
 #define PI 3.14159265359
 const float W = ${RESUME_W.toFixed(2)};
 const float H = ${RESUME_H.toFixed(2)};
+const float SFIN = 0.25;
 
 vec3 rodrigues(vec3 p, vec3 a, vec3 d, float th) {
   vec3 v = p - a;
@@ -43,26 +44,56 @@ vec3 deform(vec3 p) {
     }
   }
 
-  // 1. Folds (paper space)
+  // 1. Folds (paper space): a classic dart, four sequential stages (uFold 0..1). Every stage works on the
+  //    point as left by the previous (completed) stage, so the creases are always where the paper really is.
+  //    Moving flaps go behind the sheet (-z) so the printed side stays on top of the finished wings.
+  //    z offsets keep stacked layers from z-fighting.
   if (uFold > 0.0) {
-    float f1 = smoothstep(0.0, 0.45, uFold);
-    float f2 = smoothstep(0.4, 1.0, uFold);
+    float f1 = smoothstep(0.0, 0.22, uFold);   // top corners to the centre line
+    float f2 = smoothstep(0.22, 0.44, uFold);  // new slanted edges to the centre line
+    float f3 = smoothstep(0.44, 0.68, uFold);  // fold in half along the keel (fin hangs below, print outside)
+    float f4 = smoothstep(0.68, 0.90, uFold);  // wings fold out from the fin, slight dihedral
     vec3 a = vec3(0.0, H * 0.5, 0.0);
     vec3 q = p;
-    if (p.x < 0.0 && p.y > p.x + H * 0.5) {
-      vec3 d = normalize(vec3(-1.0, -1.0, 0.0));
-      q = rodrigues(p, a, d, -PI * f1);
-      q.z += 0.003 * f1;
-    } else if (p.x > 0.0 && p.y > -p.x + H * 0.5) {
-      vec3 d = normalize(vec3(1.0, -1.0, 0.0));
-      q = rodrigues(p, a, d, PI * f1);
-      q.z += 0.003 * f1;
+    if (f1 > 0.0) {
+      if (p.x < 0.0 && p.y > p.x + H * 0.5 + 1e-4) {
+        q = rodrigues(p, a, normalize(vec3(-1.0, -1.0, 0.0)), PI * f1);
+        q.z -= 0.006 * f1;
+      } else if (p.x > 0.0 && p.y > -p.x + H * 0.5 + 1e-4) {
+        q = rodrigues(p, a, normalize(vec3(1.0, -1.0, 0.0)), -PI * f1);
+        q.z -= 0.006 * f1;
+      }
     }
-    // halves hinge toward +z (decided from the rest x sign)
-    float ang = -sign(p.x) * radians(70.0) * f2;
-    float c = cos(ang);
-    float s = sin(ang);
-    p = vec3(q.x * c + q.z * s, q.y, -q.x * s + q.z * c);
+    if (f2 > 0.0) {
+      // crease through the nose at 22.5 deg from the keel: the slanted edge lands exactly on the keel
+      float ca = 0.92388;
+      float sa = 0.38268;
+      vec2 r = q.xy - a.xy;
+      float dl = dot(r, vec2(-ca, sa));
+      float dr = dot(r, vec2(ca, sa));
+      if (dl > 1e-4) {
+        q = rodrigues(q, a, vec3(-sa, -ca, 0.0), PI * f2);
+        q.z -= 0.02 * f2;
+      } else if (dr > 1e-4) {
+        q = rodrigues(q, a, vec3(sa, -ca, 0.0), -PI * f2);
+        q.z -= 0.02 * f2;
+      }
+    }
+    if (f3 > 0.0) {
+      float sgn = q.x < 0.0 ? -1.0 : 1.0;
+      float u = abs(q.x);                          // distance from the keel
+      float al3 = -PI * 0.5 * f3;                  // fin direction angle (0 = flat outward, -90 = hanging down)
+      float m = min(u, SFIN);                      // fin part
+      float w = max(u - SFIN, 0.0);                // wing part
+      float alw = al3 + radians(100.0) * f4;       // wing direction (100 deg => 10 deg dihedral)
+      float alz = w > 0.0 ? alw : al3;
+      vec2 d3 = vec2(sgn * cos(al3), sin(al3));
+      vec2 dw = vec2(sgn * cos(alw), sin(alw));
+      vec2 nz = vec2(-sgn * sin(alz), cos(alz));
+      vec2 xz = m * d3 + w * dw + q.z * nz;
+      q = vec3(xz.x, q.y, xz.y);
+    }
+    p = q;
   }
 
   // 2. Bend (cylindrical, along x)

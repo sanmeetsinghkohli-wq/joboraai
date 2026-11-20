@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
 import { downgradeTier } from '../use-render-tier';
-import { subscribe } from '../scroll-state';
 import ResumeScene from './ResumeScene';
 
 interface Props {
@@ -37,46 +36,21 @@ function FpsWatch({ lowDpr, onLowFps }: { lowDpr: boolean; onLowFps: () => void 
 export default function ResumeCanvas({ onContextLost, onLowFps }: Props) {
   const [lowDpr, setLowDpr] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [done, setDone] = useState(false);
-  const doneRef = useRef(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lowFps = onLowFps ?? (() => downgradeTier('css'));
   const ctxLost = onContextLost ?? (() => downgradeTier('css'));
 
+  // The plane now stays on screen, parked beside the CTA button, so the loop keeps running (only hidden tabs pause).
   useEffect(() => {
     const onVis = () => setHidden(document.hidden);
     onVis();
     document.addEventListener('visibilitychange', onVis);
-    const unsub = subscribe((p) => {
-      const atEnd = p >= 0.999;
-      if (atEnd && !doneRef.current && !timer.current) {
-        timer.current = setTimeout(() => {
-          timer.current = null;
-          doneRef.current = true;
-          setDone(true);
-        }, 1500);
-      } else if (!atEnd) {
-        if (timer.current) {
-          clearTimeout(timer.current);
-          timer.current = null;
-        }
-        if (doneRef.current) {
-          doneRef.current = false;
-          setDone(false);
-        }
-      }
-    });
-    return () => {
-      document.removeEventListener('visibilitychange', onVis);
-      unsub();
-      if (timer.current) clearTimeout(timer.current);
-    };
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
   return (
     <Canvas
       aria-hidden="true"
-      frameloop={hidden || done ? 'never' : 'always'}
+      frameloop={hidden ? 'never' : 'always'}
       dpr={lowDpr ? 1 : [1, 1.75]}
       camera={{ fov: 30, position: [0, 0, 9], near: 0.1, far: 50 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
@@ -86,6 +60,9 @@ export default function ResumeCanvas({ onContextLost, onLowFps }: Props) {
         gl.domElement.addEventListener(
           'webglcontextlost',
           (e) => {
+            // r3f calls forceContextLoss() when the Canvas unmounts (React strict-mode double mount in dev):
+            // that is not a real loss, and the element is already detached by the time the event fires.
+            if (!gl.domElement.isConnected) return;
             e.preventDefault();
             ctxLost();
           },

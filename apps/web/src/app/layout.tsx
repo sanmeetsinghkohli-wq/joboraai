@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import 'lenis/dist/lenis.css';
 import './globals.css';
 import { Providers } from '@/components/providers';
 
@@ -24,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="motion-safe:scroll-smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

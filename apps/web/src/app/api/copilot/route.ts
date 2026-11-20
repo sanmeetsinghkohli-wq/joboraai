@@ -327,7 +327,7 @@ export async function POST(req: NextRequest) {
     if (groqKey && !approvalRequired && !simulateFailure) {
       try {
         const groqController = new AbortController();
-        const timeoutId = setTimeout(() => groqController.abort(), 6000);
+        const timeoutId = setTimeout(() => groqController.abort(), 15000);
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -336,7 +336,7 @@ export async function POST(req: NextRequest) {
           },
           signal: groqController.signal,
           body: JSON.stringify({
-            model: 'qwen/qwen3.8-27b',
+            model: 'openai/gpt-oss-120b',
             messages: [
               {
                 role: 'system',
@@ -358,7 +358,7 @@ export async function POST(req: NextRequest) {
             toolLogs.unshift({
               tool: 'groq.chat_completion',
               status: 'completed',
-              summary: 'Synthesized grounded response via Groq AI engine (qwen/qwen3.8-27b).',
+              summary: 'Synthesized grounded response via Groq AI engine (openai/gpt-oss-120b).',
             });
           }
         }
@@ -382,7 +382,7 @@ export async function POST(req: NextRequest) {
       approvalRequired,
       // Report only what actually produced this reply.
       providerMode: groqActive ? 'groq_ai' : 'deterministic_copilot_engine',
-      activeModel: groqActive ? 'qwen/qwen3.8-27b' : null,
+      activeModel: groqActive ? 'openai/gpt-oss-120b' : null,
       timestamp: new Date().toISOString(),
     };
 

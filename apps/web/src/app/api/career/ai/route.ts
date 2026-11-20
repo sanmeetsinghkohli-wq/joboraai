@@ -14,7 +14,7 @@ const Body = z.object({
   input: z.string().trim().min(1, 'Add some details first.').max(20000),
 });
 
-const MODEL = 'qwen/qwen3.8-27b';
+const MODEL = 'openai/gpt-oss-120b';
 
 function profileBlock(p: Record<string, any>) {
   const lines = [

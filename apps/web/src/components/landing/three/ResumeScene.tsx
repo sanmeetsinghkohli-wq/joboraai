@@ -168,19 +168,44 @@ export default function ResumeScene() {
     ptr.current.sy += (ptr.current.y * heroW - ptr.current.sy) * k;
 
     const fl = 1 - pose.fold;
+    // Responsive layout: derive world-space extents at the resume's depth from the live camera.
+    const cam = state.camera as THREE.PerspectiveCamera;
+    const tanH = Math.tan((cam.fov * D2R) / 2);
+    const aspect = state.size.width / Math.max(1, state.size.height);
+    const dist = Math.max(1, cam.position.z - pose.pos[2]);
+    const vw = 2 * tanH * dist * aspect; // visible width at the resume's depth
+    const respScale = Math.min(1, aspect / 1.6); // visible width relative to 1440x900
+    // peel amount (0..1) widens the left extent of the group
+    let peelAmt = 0;
+    for (let i = 0; i < 3; i++) peelAmt = Math.max(peelAmt, EASE.outCubic(clamp01((pose.peel - 0.15 * i) / 0.7)));
+    const leftExt = lerp(RESUME_W / 2, 1.71, peelAmt);
+    const rightExt = RESUME_W / 2;
+    let S = pose.scale * respScale;
+    let px: number;
+    if (pose.pos[0] > 0) {
+      // right-hand slot: 57%..95% of screen width (offsets from centre, as fractions of vw)
+      const slotL = 0.07 * vw;
+      const slotR = 0.45 * vw;
+      S = Math.min(S, (slotR - slotL) / (leftExt + rightExt));
+      const desired = (pose.pos[0] * 0.26) / 1.6 * vw;
+      px = Math.min(slotR - rightExt * S, Math.max(slotL + leftExt * S, desired));
+    } else {
+      // left-column pose (pricing): keep the same fraction of the visible width
+      px = (pose.pos[0] / (2 * tanH * dist * 1.6)) * vw;
+    }
     const y = pose.pos[1] + pose.float * Math.sin(t * Math.PI * 2 * 0.25);
     const rz = pose.rot[2] + 1.5 * Math.sin(t * Math.PI * 2 * 0.17) * fl;
     const g = group.current;
     if (g) {
-      g.position.set(pose.pos[0], y, pose.pos[2]);
+      g.position.set(px, y, pose.pos[2]);
       g.rotation.set(
         (pose.rot[0] + ptr.current.sy * 6) * D2R,
         (pose.rot[1] + ptr.current.sx * 6) * D2R,
         rz * D2R,
         'XYZ',
       );
-      g.scale.setScalar(pose.scale);
-      sh.worldPos.set(pose.pos[0], y, pose.pos[2]);
+      g.scale.setScalar(S);
+      sh.worldPos.set(px, y, pose.pos[2]);
     }
 
     const m = res.resumeMat.uniforms;
@@ -198,8 +223,9 @@ export default function ResumeScene() {
       lm.visible = li > 0.001;
       if (!lm.visible) continue;
       const restY = 0.9 - 0.9 * i;
+      lm.scale.setScalar(lerp(1, 0.8, li));
       lm.position.set(
-        lerp(0, -(1.1 + 0.15 * i), li),
+        lerp(0, -(0.75 + 0.1 * i), li),
         lerp(restY, 1.0 - 1.0 * i, li),
         lerp(0.002, 0.35 + 0.3 * i, li),
       );
@@ -221,8 +247,8 @@ export default function ResumeScene() {
       const o = 0.16 * (1 - pose.fold);
       shadow.current.visible = o > 0.003;
       res.shadowMat.opacity = o;
-      shadow.current.position.set(pose.pos[0], -1.9, pose.pos[2]);
-      shadow.current.scale.setScalar(pose.scale);
+      shadow.current.position.set(sh.worldPos.x, -1.9, pose.pos[2]);
+      shadow.current.scale.setScalar(group.current ? group.current.scale.x : pose.scale);
     }
   });
 

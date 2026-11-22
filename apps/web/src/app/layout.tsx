@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Newsreader, Plus_Jakarta_Sans } from 'next/font/google';
+import 'lenis/dist/lenis.css';
 import './globals.css';
 import { Providers } from '@/components/providers';
 
@@ -36,7 +37,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable} scroll-smooth`}>
+    <html lang="en" className={`${sans.variable} ${serif.variable} motion-safe:scroll-smooth`}>
       <body>
         <a
           href="#main"

@@ -44,11 +44,11 @@ export function Header() {
             Log in
           </Link>
           <Link
-            className={`inline-flex items-center justify-center gap-2 bg-[#2A1728] hover:bg-[#3D223B] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-200 hover:shadow-md ${FOCUS}`}
+            className={`inline-flex items-center justify-center gap-2 whitespace-nowrap bg-[#2A1728] hover:bg-[#3D223B] text-white text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-full transition-all duration-200 hover:shadow-md ${FOCUS}`}
             href="/auth?tab=signup"
           >
             <span>Get started</span>
-            <ArrowIcon />
+            <span className="hidden sm:inline-flex"><ArrowIcon /></span>
           </Link>
           <button
             type="button"

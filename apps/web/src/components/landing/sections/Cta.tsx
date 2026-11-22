@@ -18,9 +18,9 @@ export function Cta() {
     <section
       id="cta"
       data-scroll-section="cta"
-      className={`relative min-h-[220vh] text-white ${isStatic ? 'bg-gradient-to-br from-[#2A1728] via-[#331C30] to-[#2A1728]' : ''}`}
+      className={`relative text-white ${isStatic ? 'bg-gradient-to-br from-[#2A1728] via-[#331C30] to-[#2A1728]' : 'min-h-[220vh]'}`}
     >
-      <div className="sticky top-0 min-h-screen flex items-center overflow-hidden py-16 lg:py-20">
+      <div className={`flex items-center overflow-hidden py-16 lg:py-20 ${isStatic ? 'relative' : 'sticky top-0 min-h-screen'}`}>
         {isStatic && (
           <div className="absolute -right-24 -bottom-24 w-[28rem] h-[28rem] bg-[#E05347]/20 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
         )}

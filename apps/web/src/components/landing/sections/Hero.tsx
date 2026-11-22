@@ -12,10 +12,10 @@ export function Hero({ onWatchTour }: { onWatchTour?: () => void }) {
   const isStatic = useStaticLayout();
 
   return (
-    <section id="hero" data-scroll-section="hero" className="relative min-h-[100svh] flex flex-col overflow-hidden">
+    <section id="hero" data-scroll-section="hero" className="relative lg:min-h-[100svh] flex flex-col overflow-hidden">
       <div className="absolute inset-0 -z-10 peach-hero-glow" aria-hidden="true" />
       {!isStatic && <div className="lg:hidden h-[48svh]" aria-hidden="true" />}
-      <div className="flex-1 flex items-center max-w-7xl w-full mx-auto px-6 lg:px-10 pt-10 pb-24">
+      <div className="flex-1 flex items-center max-w-7xl w-full mx-auto px-6 lg:px-10 pt-10 pb-16 lg:pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center w-full">
           <div className="lg:col-span-6 space-y-7">
             <div className="lp-fade inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#EDE5E1] bg-white/60 backdrop-blur text-[#63555F] text-xs font-semibold tracking-[0.14em] uppercase">
@@ -71,7 +71,7 @@ export function Hero({ onWatchTour }: { onWatchTour?: () => void }) {
           </div>
         </div>
       </div>
-      <div className="lp-fade absolute bottom-6 left-0 right-0 flex flex-col items-center gap-2 text-xs font-medium tracking-wide text-[#63555F]" style={{ ['--d' as string]: '0.8s' }} data-scroll-cue>
+      <div className="lp-fade absolute bottom-6 left-0 right-0 hidden lg:flex flex-col items-center gap-2 text-xs font-medium tracking-wide text-[#63555F]" style={{ ['--d' as string]: '0.8s' }} data-scroll-cue>
         <span>Scroll to see your CV, decoded</span>
         <span className="lp-cue block w-px h-8 bg-gradient-to-b from-[#E05347] to-transparent" aria-hidden="true" />
       </div>

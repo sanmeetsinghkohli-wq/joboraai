@@ -28,6 +28,8 @@ function hasWebGL(): boolean {
 
 function compute(): RenderTier {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'static';
+  // Phones and tablets get the normal-flow layout: no fixed resume layer, no pinned 300vh scroll tracks.
+  if (window.innerWidth < 1024) return 'static';
   if (!hasWebGL()) return 'css';
   const nav = navigator as Navigator & {
     deviceMemory?: number;

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Menu, X } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { ArrowIcon, FOCUS } from './shared';
 
@@ -22,7 +23,7 @@ export function Header() {
         <Link aria-label="Jobora AI Home" className={`flex items-center gap-2.5 group rounded-full ${FOCUS}`} href="/">
           <Logo className="transition-transform group-hover:scale-[1.03] [&_svg]:h-9 [&_svg]:w-9" />
         </Link>
-        <nav aria-label="Primary" className="hidden md:flex items-center gap-8 text-[15px] font-medium text-[#574B53]">
+        <nav aria-label="Primary" className="hidden lg:flex items-center gap-6 xl:gap-8 text-[15px] font-medium text-[#574B53]">
           {NAV.map((n) =>
             n.hash ? (
               <a key={n.label} className={`hover:text-[#E05347] transition-colors rounded ${FOCUS}`} href={n.href}>
@@ -52,21 +53,19 @@ export function Header() {
           <button
             type="button"
             onClick={() => setOpen(!open)}
-            className={`md:hidden p-2 rounded-lg text-[#2A1728] hover:bg-[#EDE5E1] transition-colors ${FOCUS}`}
+            className={`lg:hidden p-2 rounded-lg text-[#2A1728] hover:bg-[#EDE5E1] transition-colors ${FOCUS}`}
             aria-label="Toggle mobile navigation"
             aria-expanded={open}
             aria-controls="mobile-nav"
           >
-            <span className="material-symbols-outlined text-[24px]" aria-hidden="true">
-              {open ? 'close' : 'menu'}
-            </span>
+            {open ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
           </button>
         </div>
       </div>
       {open && (
         <div
           id="mobile-nav"
-          className="md:hidden border-t border-[#EDE5E1] bg-[#FAF6F2] px-6 py-4 flex flex-col gap-3 text-sm font-medium text-[#2A1728]"
+          className="lg:hidden border-t border-[#EDE5E1] bg-[#FAF6F2] px-6 py-4 flex flex-col gap-3 text-sm font-medium text-[#2A1728]"
         >
           {NAV.filter((n) => n.label !== 'About').map((n) =>
             n.hash ? (

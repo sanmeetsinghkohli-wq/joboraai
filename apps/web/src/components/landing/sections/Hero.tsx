@@ -6,9 +6,9 @@ import { ArrowIcon, FOCUS, Line } from './shared';
 import { useStaticLayout } from '../use-render-tier';
 import { StaticResume } from '../ResumeCss';
 
-const FACTS = ['No credit card required', 'Upload PDF or DOCX', 'Send from Gmail or Outlook'];
+const FACTS = ['No credit card required', 'Upload PDF or DOCX', 'You press send, never Jobora'];
 
-export function Hero({ onWatchTour }: { onWatchTour: () => void }) {
+export function Hero({ onWatchTour }: { onWatchTour?: () => void }) {
   const isStatic = useStaticLayout();
 
   return (
@@ -29,7 +29,7 @@ export function Hero({ onWatchTour }: { onWatchTour: () => void }) {
               </Line>
             </h1>
             <p className="lp-fade text-lg md:text-xl text-[#63555F] leading-relaxed max-w-xl" style={{ ['--d' as string]: '0.35s' }}>
-              Jobora finds roles that fit you, tailors your CV and cover letter to each one, and sends the application from your own Gmail or Outlook.
+              Jobora finds roles that fit you, tailors your CV and cover letter to each one, and drafts the email in your own mail app so you press send.
             </p>
             <div className="lp-fade flex flex-wrap items-center gap-4" style={{ ['--d' as string]: '0.45s' }}>
               <Link
@@ -39,6 +39,7 @@ export function Hero({ onWatchTour }: { onWatchTour: () => void }) {
                 <span>Get started free</span>
                 <ArrowIcon />
               </Link>
+              {onWatchTour && (
               <button
                 onClick={onWatchTour}
                 className={`inline-flex items-center gap-2.5 bg-white/80 hover:bg-white text-[#2A1728] border border-[#EDE5E1] hover:border-[#E05347]/50 text-base font-semibold px-6 py-3.5 rounded-full transition-all duration-200 ${FOCUS}`}
@@ -51,6 +52,7 @@ export function Hero({ onWatchTour }: { onWatchTour: () => void }) {
                 </span>
                 <span>Watch the 30-second tour</span>
               </button>
+              )}
             </div>
             <ul className="lp-fade flex flex-wrap items-center gap-y-2 gap-x-6 text-xs sm:text-sm font-medium text-[#63555F]" style={{ ['--d' as string]: '0.55s' }}>
               {FACTS.map((f) => (

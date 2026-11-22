@@ -56,7 +56,7 @@ const CARDS: {
   {
     href: '/email-composer',
     title: 'Apply with Your Email',
-    body: 'Send applications directly from your connected Gmail or Outlook account so emails come straight from you.',
+    body: 'Each application email opens in your own mail app, written and ready. Nothing goes out until you press send.',
     icon: (
       <>
         <rect height="16" rx="2" width="20" x="2" y="4" />

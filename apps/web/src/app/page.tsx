@@ -12,6 +12,9 @@ import { Cta } from '@/components/landing/sections/Cta';
 import { Footer } from '@/components/landing/sections/Footer';
 import { VideoModal } from '@/components/landing/sections/VideoModal';
 
+// Shows the tour button once public/Jobora_AI_Official_30s_Commercial.mp4 is added to the repo.
+const TOUR_VIDEO_READY = false;
+
 export default function LandingPage() {
   const [showVideoModal, setShowVideoModal] = useState(false);
 
@@ -21,7 +24,7 @@ export default function LandingPage() {
       <ResumeStage />
       <Header />
       <main className="relative z-10">
-        <Hero onWatchTour={() => setShowVideoModal(true)} />
+        <Hero onWatchTour={TOUR_VIDEO_READY ? () => setShowVideoModal(true) : undefined} />
         <Features />
         <HowItWorks />
         <Pricing />

@@ -8,27 +8,27 @@ const COLS: { title: string; links: { label: string; href: string; hash?: boolea
     links: [
       { label: 'AI Job Search', href: '/jobs' },
       { label: 'CV Studio', href: '/cv-studio' },
-      { label: 'Email Dispatcher', href: '/email-composer' },
+      { label: 'Email Drafts', href: '/email-composer' },
       { label: 'Interview Prep', href: '/interview' },
-      { label: 'Pricing', href: '#pricing', hash: true },
+      { label: 'Pricing', href: '/#pricing', hash: true },
     ],
   },
   {
     title: 'Solutions',
     links: [
-      { label: 'For Students', href: '/onboarding' },
-      { label: 'For Universities', href: '/career-insights' },
-      { label: 'For Career Changers', href: '/career-insights' },
-      { label: 'Enterprise', href: '/settings/integrations' },
+      { label: 'For Students', href: '/students' },
+      { label: 'For Universities', href: '/universities' },
+      { label: 'For Career Changers', href: '/career-changers' },
+      { label: 'Enterprise', href: '/enterprise' },
     ],
   },
   {
     title: 'Legal & Help',
     links: [
-      { label: 'Privacy Policy', href: '/settings' },
-      { label: 'Terms of Service', href: '/settings' },
-      { label: 'Security', href: '/settings/integrations' },
-      { label: 'Contact Us', href: '/email-composer' },
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Security', href: '/security' },
+      { label: 'Contact Us', href: '/contact' },
     ],
   },
 ];
@@ -43,7 +43,7 @@ export function Footer() {
           <div className="col-span-2 space-y-4">
             <Logo />
             <p className="text-sm max-w-sm">The AI-powered career copilot that matches your potential with opportunities worldwide.</p>
-            <div className="pt-2 text-xs">© {new Date().getFullYear()} Jobora AI Inc. All rights reserved.</div>
+            <div className="pt-2 text-xs">© {new Date().getFullYear()} Jobora AI. All rights reserved.</div>
           </div>
           {COLS.map((c) => (
             <nav key={c.title} aria-label={c.title}>

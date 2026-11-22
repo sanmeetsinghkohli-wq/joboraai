@@ -8,7 +8,7 @@ import { ArrowIcon, FOCUS_DARK, Line } from './shared';
 // TODO(owner): "Contact sales" previously pointed at /email-composer (the in-app email tool), which is
 // the wrong destination. There is no sales inbox or contact page in the repo, so it links to pricing
 // until a real address or page exists. Replace this constant, e.g. 'mailto:sales@<your-domain>'.
-export const CONTACT_SALES_HREF = '#pricing';
+export const CONTACT_SALES_HREF = '/contact';
 
 export function Cta() {
   // In the webgl/css tiers the plum backdrop is painted by ResumeStage (behind the fixed resume layer,

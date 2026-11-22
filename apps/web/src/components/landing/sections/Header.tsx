@@ -7,12 +7,12 @@ import { Logo } from '@/components/ui/logo';
 import { ArrowIcon, FOCUS } from './shared';
 
 const NAV: { label: string; href: string; hash?: boolean }[] = [
-  { label: 'Features', href: '#features', hash: true },
-  { label: 'How It Works', href: '#how-it-works', hash: true },
-  { label: 'Pricing', href: '#pricing', hash: true },
-  { label: 'For Students', href: '/jobs' },
-  { label: 'For Universities', href: '/career-insights' },
-  { label: 'About', href: '/dashboard' },
+  { label: 'Features', href: '/#features', hash: true },
+  { label: 'How It Works', href: '/#how-it-works', hash: true },
+  { label: 'Pricing', href: '/#pricing', hash: true },
+  { label: 'For Students', href: '/students' },
+  { label: 'For Universities', href: '/universities' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 export function Header() {

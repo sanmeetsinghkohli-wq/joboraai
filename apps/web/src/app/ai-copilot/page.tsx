@@ -51,7 +51,8 @@ export default function CopilotPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: prompt,
-          context: { profile, jobs: jobs.slice(0, 15), savedJobIds, applications },
+          history: messages.slice(-6).map((m) => ({ role: m.role, content: m.content.slice(0, 4000) })),
+          context: { jobs: jobs.slice(0, 15) },
         }),
       });
       const data = await res.json().catch(() => null);
@@ -67,7 +68,7 @@ export default function CopilotPage() {
           role: 'assistant',
           content: data.reply,
           actions: Array.isArray(data.suggestedActions) ? data.suggestedActions : [],
-          usedModel: data.providerMode === 'groq_ai',
+          usedModel: data.providerMode === 'ai',
         },
       ]);
       logActivity('sparkles', 'Asked Copilot', prompt.slice(0, 60));

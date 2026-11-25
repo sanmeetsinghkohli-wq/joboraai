@@ -12,6 +12,7 @@ import {
   fetchWithTimeout,
   formatRelativeDate,
   inferEmploymentType,
+  isTechRole,
   isJobExpiredOrMalformed,
   normalizeLocationAndRegion,
   parseJobTimestamp,
@@ -66,8 +67,7 @@ const BOARDS: Board[] = [
   { ats: 'ashby', slug: 'clickhouse', company: 'ClickHouse', techOnly: true },
 ];
 
-const TECH_ROLE =
-  /\b(engineer|engineering|developer|software|data|machine learning|ml|ai|llm|python|backend|back-end|frontend|front-end|full.?stack|devops|sre|cloud|security|scientist|analytics|analyst|platform|mobile|ios|android|qa|test|architect|infrastructure|research|intern|internship|graduate)\b/i;
+const TECH_ROLE = { test: isTechRole };
 
 const PER_BOARD = 30;
 

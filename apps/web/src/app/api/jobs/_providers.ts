@@ -328,6 +328,15 @@ export function extractSkillsFromText(title: string, description: string, tags: 
   return combined.slice(0, 6);
 }
 
+/**
+ * True for software, data, AI and other computer-science roles. Words like
+ * "intern" or "graduate" say nothing about the field, so they are ignored.
+ */
+export function isTechRole(title: string): boolean {
+  const field = title.replace(/\b(intern|internship|trainee|graduate|apprentice|co-?op)\b/gi, ' ');
+  return /\b(engineer|engineering|developer|software|data|machine learning|ml|ai|llm|nlp|python|java|backend|back-end|frontend|front-end|full.?stack|devops|sre|cloud|security|cyber|scientist|analytics|platform|mobile|ios|android|qa|test automation|architect|infrastructure|research|computer|it support|network)\b/i.test(field);
+}
+
 /** Reads the job type from the title first: boards often label internships only there. */
 export function inferEmploymentType(title: string, raw: unknown): string {
   if (/\b(intern|internship|trainee|apprentice|co-?op)\b/i.test(title)) return 'Internship';

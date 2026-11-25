@@ -206,7 +206,8 @@ export async function fetchEmployerBoardJobs(): Promise<AdapterResult> {
         (r) =>
           r.title &&
           (TARGET_REGION.test(r.location) || r.remote || /\bremote\b/i.test(r.location)) &&
-          (!board.techOnly || TECH_ROLE.test(r.title))
+          // Jobora lists computer-science roles only, from every employer board.
+          TECH_ROLE.test(r.title)
       );
       // Internships and AI/ML roles first, then newest, so they survive the per-board cap.
       const rank = (r: RawRole) =>

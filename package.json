@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev apps/web",
-    "build": "next build apps/web",
+    "build": "node scripts/sync-public.mjs && next build apps/web",
     "start": "next start apps/web",
     "typecheck": "tsc --noEmit",
     "lint": "next lint apps/web"

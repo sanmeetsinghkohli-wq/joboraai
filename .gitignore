@@ -36,3 +36,8 @@ yarn-error.log*
 thumbnail_screenshot.png
 
 .vercel
+
+# Copied from apps/web/public at build time (scripts/sync-public.mjs)
+/public/brand/
+/public/favicon.svg
+/public/stitch-hero.png

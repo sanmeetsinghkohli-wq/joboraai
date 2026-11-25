@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -374,13 +375,14 @@ export default function DashboardPage() {
 }
 
 function Panel({ title, action, children }: { title: string; action?: { href: string; label: string }; children: React.ReactNode }) {
+  const t = useT();
   return (
     <section className="rounded-2xl border border-line bg-paper p-5 shadow-card sm:p-6" aria-label={title}>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="font-serif text-xl text-plum">{title}</h2>
+        <h2 className="font-serif text-xl text-plum">{t(title)}</h2>
         {action && (
           <Link href={action.href} className="text-sm font-semibold text-plum underline-offset-4 hover:underline">
-            {action.label}
+            {t(action.label)}
           </Link>
         )}
       </div>

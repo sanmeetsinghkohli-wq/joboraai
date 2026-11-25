@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Bell, BellPlus, X } from 'lucide-react';
@@ -42,6 +43,7 @@ export function JobAlertsBar({
   autoOpenId?: string;
 }) {
   const { addToast } = useToast();
+  const t = useT();
   const { data, loading, act } = useWorkspace();
   const all = useAllJobs();
   const alerts = useMemo(() => data.alerts ?? [], [data.alerts]);
@@ -102,7 +104,7 @@ export function JobAlertsBar({
       {!compact && alerts.length > 0 && (
         <span className="flex items-center gap-1.5 text-sm font-medium text-ink-muted">
           <Bell className="h-4 w-4" aria-hidden="true" />
-          Alerts
+          {t('Alerts')}
         </span>
       )}
       {alerts.map((a) => {
@@ -111,7 +113,7 @@ export function JobAlertsBar({
           <>
             <span className="max-w-[16rem] truncate">{a.name}</span>
             {n > 0 && (
-              <span className="rounded-full bg-coral-700 px-1.5 text-xs font-semibold leading-5 text-paper">{n} new</span>
+              <span className="rounded-full bg-coral-700 px-1.5 text-xs font-semibold leading-5 text-paper">{n} {t('new')}</span>
             )}
           </>
         );
@@ -143,7 +145,7 @@ export function JobAlertsBar({
           className="flex h-9 items-center gap-1.5 rounded-full border border-dashed border-plum-200 px-3.5 text-sm font-medium text-plum hover:bg-plum-50"
         >
           <BellPlus className="h-4 w-4" aria-hidden="true" />
-          Save as alert
+          {t('Save as alert')}
         </button>
       )}
     </div>

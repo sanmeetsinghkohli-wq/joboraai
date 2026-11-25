@@ -236,7 +236,8 @@ function writeLocal(key: string, value: unknown) {
 function clearLocal() {
   try {
     Object.keys(localStorage)
-      .filter((k) => k.startsWith('jobora_'))
+      // Theme and language are device preferences, not personal data.
+      .filter((k) => k.startsWith('jobora_') && k !== 'jobora_theme' && k !== 'jobora_locale')
       .forEach((k) => localStorage.removeItem(k));
   } catch {
     /* ignore */

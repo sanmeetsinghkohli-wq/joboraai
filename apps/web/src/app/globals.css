@@ -164,3 +164,12 @@
     padding: 0 !important;
   }
 }
+
+/* Arabic: letter-spacing breaks joined letters, and system Arabic fonts read better than the Latin display face. */
+html[lang='ar'] body,
+html[lang='ar'] .font-serif {
+  font-family: 'Segoe UI', Tahoma, 'Noto Sans Arabic', 'Geeza Pro', system-ui, sans-serif;
+}
+html[lang='ar'] * {
+  letter-spacing: normal !important;
+}

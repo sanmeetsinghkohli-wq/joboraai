@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useMemo } from 'react';
 import { Card } from '@/components/ui/primitives';
 import { cn } from '@/lib/cn';
@@ -8,6 +9,7 @@ import { useWorkspace } from '@/lib/workspace';
 /** Saved interview scores (out of 5) with a simple trend, newest first. */
 export function InterviewHistory() {
   const { data, loading, act } = useWorkspace();
+  const t = useT();
   const items = useMemo(() => data.interviews ?? [], [data.interviews]);
 
   const stats = useMemo(() => {
@@ -27,7 +29,7 @@ export function InterviewHistory() {
   return (
     <Card className="mt-6">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-serif text-xl text-plum">Your practice history</h2>
+        <h2 className="font-serif text-xl text-plum">{t('Your practice history')}</h2>
         {items.length > 0 && (
           <button
             type="button"
@@ -36,7 +38,7 @@ export function InterviewHistory() {
             }}
             className="text-sm text-ink-muted underline-offset-4 hover:underline"
           >
-            Clear history
+            {t('Clear history')}
           </button>
         )}
       </div>
@@ -47,15 +49,15 @@ export function InterviewHistory() {
         <>
           <dl className="mb-5 grid grid-cols-3 gap-3 text-center">
             <div className="rounded-xl bg-plum-50 p-3">
-              <dt className="text-xs text-ink-muted">Answers scored</dt>
+              <dt className="text-xs text-ink-muted">{t('Answers scored')}</dt>
               <dd className="font-serif text-2xl text-plum">{items.length}</dd>
             </div>
             <div className="rounded-xl bg-plum-50 p-3">
-              <dt className="text-xs text-ink-muted">Last 5 average</dt>
+              <dt className="text-xs text-ink-muted">{t('Last 5 average')}</dt>
               <dd className="font-serif text-2xl text-plum">{stats.recent.toFixed(1)}</dd>
             </div>
             <div className="rounded-xl bg-plum-50 p-3">
-              <dt className="text-xs text-ink-muted">Versus the 5 before</dt>
+              <dt className="text-xs text-ink-muted">{t('Versus the 5 before')}</dt>
               <dd className={cn('font-serif text-2xl', stats.change === null ? 'text-ink-muted' : stats.change >= 0 ? 'text-success' : 'text-danger')}>
                 {stats.change === null ? '—' : `${stats.change >= 0 ? '+' : ''}${stats.change.toFixed(1)}`}
               </dd>
@@ -85,7 +87,7 @@ export function InterviewHistory() {
                     {i.role || 'General'} · {new Date(i.at).toLocaleDateString()}
                   </p>
                 </div>
-                <span className="shrink-0 font-semibold tabular-nums text-plum">{i.score}/5</span>
+                <span dir="ltr" className="shrink-0 font-semibold tabular-nums text-plum">{i.score}/5</span>
               </li>
             ))}
           </ul>

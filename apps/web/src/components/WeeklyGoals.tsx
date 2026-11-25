@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { Pencil } from 'lucide-react';
 import { useToast } from '@/components/providers';
@@ -19,6 +20,7 @@ const ROWS: Array<{ key: Key; label: string; hint: string }> = [
 /** Weekly targets plus a short summary of what actually happened this week. */
 export function WeeklyGoals({ applications }: { applications: LiveApplication[] }) {
   const { addToast } = useToast();
+  const t = useT();
   const { data, loading, act } = useWorkspace();
   const [sentEmails, setSentEmails] = useState<string[]>([]);
   const [editing, setEditing] = useState(false);
@@ -64,7 +66,7 @@ export function WeeklyGoals({ applications }: { applications: LiveApplication[] 
         <div className="space-y-3">
           {ROWS.map((r) => (
             <label key={r.key} className="flex items-center justify-between gap-3 text-sm text-ink">
-              {r.label}
+              {t(r.label)}
               <input
                 type="number"
                 min={0}
@@ -77,9 +79,9 @@ export function WeeklyGoals({ applications }: { applications: LiveApplication[] 
           ))}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setEditing(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
-            <Button onClick={save}>Save goals</Button>
+            <Button onClick={save}>{t('Save goals')}</Button>
           </div>
         </div>
       ) : (
@@ -91,8 +93,8 @@ export function WeeklyGoals({ applications }: { applications: LiveApplication[] 
             return (
               <li key={r.key} title={r.hint}>
                 <div className="mb-1 flex justify-between text-sm">
-                  <span className="text-ink">{r.label}</span>
-                  <span className={cn('font-semibold tabular-nums', value >= target && target > 0 ? 'text-success' : 'text-ink-muted')}>
+                  <span className="text-ink">{t(r.label)}</span>
+                  <span dir="ltr" className={cn('font-semibold tabular-nums', value >= target && target > 0 ? 'text-success' : 'text-ink-muted')}>
                     {value} / {target}
                   </span>
                 </div>
@@ -121,7 +123,7 @@ export function WeeklyGoals({ applications }: { applications: LiveApplication[] 
           className="flex items-center gap-1.5 text-sm font-medium text-plum hover:underline"
         >
           <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-          Change goals
+          {t('Change goals')}
         </button>
       )}
     </div>

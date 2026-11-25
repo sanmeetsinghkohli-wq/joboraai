@@ -28,6 +28,7 @@ import {
 import { useAppData } from '@/context/AppDataContext';
 import { profileStrength } from '@/lib/profile';
 import { useWorkspaceTheme } from '@/lib/theme';
+import { LocaleProvider, useLocale, useT } from '@/lib/i18n';
 import { GlobalSearch } from './GlobalSearch';
 import { cn } from '@/lib/cn';
 import { Logo } from './ui/logo';
@@ -87,13 +88,14 @@ function isActive(pathname: string, item: NavItem) {
 }
 
 function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  const t = useT();
   return (
     <nav aria-label="Main" className="flex flex-col gap-5">
       {NAV.map((group, i) => (
         <div key={group.title || i}>
           {group.title && (
             <p className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">
-              {group.title}
+              {t(group.title)}
             </p>
           )}
           <ul className="flex flex-col gap-0.5">
@@ -114,7 +116,7 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
                     )}
                   >
                     <Icon className={cn('h-[18px] w-[18px] shrink-0', active && 'text-coral')} />
-                    {item.label}
+                    {t(item.label)}
                   </Link>
                 </li>
               );
@@ -160,6 +162,8 @@ function ProfileProgress({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function UserMenu({ theme }: { theme: ReturnType<typeof useWorkspaceTheme> }) {
+  const t = useT();
+  const { locale, setLocale } = useLocale();
   const router = useRouter();
   const { profile, signOut } = useAppData();
   const [open, setOpen] = useState(false);
@@ -195,7 +199,7 @@ function UserMenu({ theme }: { theme: ReturnType<typeof useWorkspaceTheme> }) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-11 items-center gap-2.5 rounded pl-1.5 pr-2 transition-colors hover:bg-sand"
+        className="flex h-11 items-center gap-2.5 rounded ps-1.5 pe-2 transition-colors hover:bg-sand"
       >
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-plum text-sm font-semibold text-paper">
           {initial}
@@ -206,7 +210,7 @@ function UserMenu({ theme }: { theme: ReturnType<typeof useWorkspaceTheme> }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-60 animate-fade-up rounded-lg border border-line bg-paper p-1.5 shadow-raised"
+          className="absolute end-0 top-full z-50 mt-2 w-60 animate-fade-up rounded-lg border border-line bg-paper p-1.5 shadow-raised"
         >
           <div className="border-b border-line px-3 pb-2.5 pt-2">
             <p className="truncate text-sm font-semibold text-ink">{name}</p>
@@ -214,26 +218,46 @@ function UserMenu({ theme }: { theme: ReturnType<typeof useWorkspaceTheme> }) {
           </div>
           <div className="pt-1.5">
             <MenuLink href="/settings" icon={Settings} onClick={() => setOpen(false)}>
-              Account settings
+              {t('Account settings')}
             </MenuLink>
             <MenuLink href="/notifications" icon={Activity} onClick={() => setOpen(false)}>
-              Activity
+              {t('Activity')}
             </MenuLink>
-            <div className="my-1 px-3 py-2" role="group" aria-label="Theme">
-              <p className="mb-1.5 text-xs font-medium text-ink-subtle">Theme</p>
-              <div className="grid grid-cols-3 gap-1 rounded-md bg-sand p-0.5">
-                {(['light', 'dark', 'system'] as const).map((t) => (
+            <div className="my-1 px-3 py-2" role="group" aria-label={t('Language')}>
+              <p className="mb-1.5 text-xs font-medium text-ink-subtle">{t('Language')}</p>
+              <div className="grid grid-cols-2 gap-1 rounded-md bg-sand p-0.5">
+                {([['en', 'English'], ['ar', 'العربية']] as const).map(([code, name]) => (
                   <button
-                    key={t}
+                    key={code}
                     type="button"
-                    aria-pressed={theme.pref === t}
-                    onClick={() => theme.choose(t)}
+                    lang={code}
+                    aria-pressed={locale === code}
+                    onClick={() => setLocale(code)}
                     className={cn(
-                      'h-8 rounded text-xs font-medium capitalize transition-colors',
-                      theme.pref === t ? 'bg-paper text-plum shadow-card' : 'text-ink-muted hover:text-plum'
+                      'h-8 rounded text-xs font-medium transition-colors',
+                      locale === code ? 'bg-paper text-plum shadow-card' : 'text-ink-muted hover:text-plum'
                     )}
                   >
-                    {t}
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="my-1 px-3 py-2" role="group" aria-label={t('Theme')}>
+              <p className="mb-1.5 text-xs font-medium text-ink-subtle">{t('Theme')}</p>
+              <div className="grid grid-cols-3 gap-1 rounded-md bg-sand p-0.5">
+                {(['light', 'dark', 'system'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={theme.pref === mode}
+                    onClick={() => theme.choose(mode)}
+                    className={cn(
+                      'h-8 rounded text-xs font-medium capitalize transition-colors',
+                      theme.pref === mode ? 'bg-paper text-plum shadow-card' : 'text-ink-muted hover:text-plum'
+                    )}
+                  >
+                    {t(mode)}
                   </button>
                 ))}
               </div>
@@ -245,7 +269,7 @@ function UserMenu({ theme }: { theme: ReturnType<typeof useWorkspaceTheme> }) {
               className="flex h-10 w-full items-center gap-3 rounded px-3 text-sm text-ink-muted hover:bg-sand hover:text-plum"
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
-              Log out
+              {t('Log out')}
             </button>
           </div>
         </div>
@@ -292,7 +316,16 @@ function ShellSkeleton() {
   );
 }
 
-export function AppShell({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+export function AppShell(props: { children: React.ReactNode; wide?: boolean }) {
+  return (
+    <LocaleProvider>
+      <ShellFrame {...props} />
+    </LocaleProvider>
+  );
+}
+
+function ShellFrame({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+  const t = useT();
   const pathname = usePathname() || '';
   const router = useRouter();
   const { authStatus } = useAppData();
@@ -315,7 +348,7 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
   return (
     <div className="min-h-screen bg-ivory">
       {/* Desktop sidebar */}
-      <aside className="no-print fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-line bg-ivory px-3 py-5 lg:flex">
+      <aside className="no-print fixed inset-y-0 start-0 z-40 hidden w-60 flex-col border-e border-line bg-ivory px-3 py-5 lg:flex">
         <Link href="/dashboard" className="mb-6 px-3" aria-label="Jobora home">
           <Logo />
         </Link>
@@ -335,11 +368,11 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
             role="dialog"
             aria-modal="true"
             aria-label="Navigation"
-            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-ivory px-3 py-4 shadow-float"
+            className="absolute inset-y-0 start-0 flex w-72 max-w-[85vw] flex-col bg-ivory px-3 py-4 shadow-float"
           >
             <div className="mb-5 flex items-center justify-between px-3">
               <Logo />
-              <IconButton label="Close menu" onClick={() => setDrawerOpen(false)} className="-mr-2">
+              <IconButton label={t('Close menu')} onClick={() => setDrawerOpen(false)} className="-me-2">
                 <X className="h-5 w-5" aria-hidden="true" />
               </IconButton>
             </div>
@@ -353,16 +386,16 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
         </div>
       )}
 
-      <div className="lg:pl-60">
+      <div className="lg:ps-60">
         <header className="no-print sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-ivory/90 px-3 backdrop-blur sm:px-6">
-          <IconButton label="Open menu" onClick={() => setDrawerOpen(true)} className="lg:hidden">
+          <IconButton label={t('Open menu')} onClick={() => setDrawerOpen(true)} className="lg:hidden">
             <Menu className="h-5 w-5" aria-hidden="true" />
           </IconButton>
           <GlobalSearch />
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ms-auto flex items-center gap-1">
             <Link
               href="/ai-copilot"
-              aria-label="Open Copilot"
+              aria-label={t('Open Copilot')}
               title="Copilot"
               className="hidden h-11 w-11 items-center justify-center rounded text-ink-muted hover:bg-sand hover:text-plum sm:inline-flex"
             >

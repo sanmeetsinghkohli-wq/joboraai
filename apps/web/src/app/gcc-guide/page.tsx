@@ -6,6 +6,7 @@ import { ExternalLink, Info } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { Card, PageHeader } from '@/components/ui/primitives';
 import { cn } from '@/lib/cn';
+import { useT } from '@/lib/i18n';
 
 type Country = {
   name: string;
@@ -101,21 +102,31 @@ const GRADUATE_SEARCHES = [
 ];
 
 export default function GccGuidePage() {
+  return (
+    <AppShell>
+      <GuideBody />
+    </AppShell>
+  );
+}
+
+function GuideBody() {
+  const t = useT();
   const [open, setOpen] = useState(COUNTRIES[0].name);
 
   return (
-    <AppShell>
+    <>
       <PageHeader
-        eyebrow="GCC career guide"
-        title="Working in the Gulf"
+        eyebrow={t('GCC career guide')}
+        title={t('Working in the Gulf')}
         description="Plain-English basics on work visas, local hiring rules and the terms recruiters use, with links to the official sources."
       />
 
       <div className="mb-6 flex gap-3 rounded-2xl border border-coral-100 bg-coral-50 p-4 text-sm text-ink">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-coral-700" aria-hidden="true" />
         <p>
-          This is general guidance, not legal or immigration advice. Rules change often and depend on your nationality, role and
-          employer. Always check the official site linked for each country, or ask your employer’s HR team, before you act.
+          {t(
+            'This is general guidance, not legal or immigration advice. Rules change often and depend on your nationality, role and employer. Always check the official site linked for each country, or ask your employer’s HR team, before you act.'
+          )}
         </p>
       </div>
 
@@ -129,7 +140,7 @@ export default function GccGuidePage() {
                   type="button"
                   onClick={() => setOpen(isOpen ? '' : c.name)}
                   aria-expanded={isOpen}
-                  className="flex w-full items-center justify-between px-5 py-4 text-left"
+                  className="flex w-full items-center justify-between px-5 py-4 text-start"
                 >
                   <span className="font-serif text-lg text-plum">{c.name}</span>
                   <span className={cn('text-ink-subtle transition-transform', isOpen && 'rotate-45')} aria-hidden="true">
@@ -138,17 +149,17 @@ export default function GccGuidePage() {
                 </button>
                 {isOpen && (
                   <div className="space-y-4 border-t border-line px-5 py-4 text-sm">
-                    <ul className="list-disc space-y-2 pl-5 text-ink">
+                    <ul className="list-disc space-y-2 ps-5 text-ink">
                       {c.points.map((p) => (
                         <li key={p}>{p}</li>
                       ))}
                     </ul>
                     <p className="text-ink-muted">
-                      <span className="font-medium text-ink">Local hiring: </span>
+                      <span className="font-medium text-ink">{t('Local hiring: ')}</span>
                       {c.localHiring}
                     </p>
                     <div>
-                      <p className="mb-2 font-medium text-ink">Official sources</p>
+                      <p className="mb-2 font-medium text-ink">{t('Official sources')}</p>
                       <ul className="space-y-1.5">
                         {c.links.map((l) => (
                           <li key={l.href}>
@@ -174,7 +185,7 @@ export default function GccGuidePage() {
 
         <div className="space-y-6">
           <Card>
-            <h2 className="mb-1 font-serif text-xl text-plum">Graduate and early-career roles</h2>
+            <h2 className="mb-1 font-serif text-xl text-plum">{t('Graduate and early-career roles')}</h2>
             <p className="mb-4 text-sm text-ink-muted">
               Many large Gulf employers, banks and government-linked companies run graduate and trainee programmes, usually opening
               once a year. Some are reserved for nationals, so read the eligibility line first.
@@ -193,7 +204,7 @@ export default function GccGuidePage() {
           </Card>
 
           <Card>
-            <h2 className="mb-3 font-serif text-xl text-plum">Terms you will hear</h2>
+            <h2 className="mb-3 font-serif text-xl text-plum">{t('Terms you will hear')}</h2>
             <dl className="space-y-3 text-sm">
               {TERMS.map(([term, def]) => (
                 <div key={term}>
@@ -205,6 +216,6 @@ export default function GccGuidePage() {
           </Card>
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }

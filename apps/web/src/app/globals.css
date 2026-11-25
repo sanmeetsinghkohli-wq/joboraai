@@ -3,6 +3,70 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --c-ivory: 248 245 240;
+    --c-paper: 255 255 255;
+    --c-sand: 241 235 228;
+    --c-line: 233 225 219;
+    --c-ink: 29 26 33;
+    --c-ink-muted: 95 82 91;
+    --c-ink-subtle: 124 112 121;
+    --c-plum: 53 27 50;
+    --c-plum-50: 247 241 246;
+    --c-plum-100: 237 226 235;
+    --c-plum-200: 217 196 213;
+    --c-plum-600: 74 42 70;
+    --c-plum-900: 38 18 36;
+    --c-coral: 231 111 114;
+    --c-coral-50: 254 244 243;
+    --c-coral-100: 251 228 227;
+    --c-coral-200: 246 198 197;
+    --c-coral-600: 212 88 91;
+    --c-coral-700: 169 60 65;
+    --c-success: 38 133 102;
+    --c-success-100: 221 241 234;
+    --c-success-700: 27 104 80;
+    --c-warn: 138 83 0;
+    --c-warn-100: 251 239 217;
+    --c-danger: 168 38 31;
+    --c-danger-100: 251 231 229;
+    --c-logo: 62 31 56;
+    --c-logo-text: 46 23 41;
+    color-scheme: light;
+  }
+
+  html[data-theme='dark'] {
+    --c-ivory: 20 16 22;
+    --c-paper: 29 22 31;
+    --c-sand: 39 32 41;
+    --c-line: 56 45 58;
+    --c-ink: 238 231 236;
+    --c-ink-muted: 187 175 184;
+    --c-ink-subtle: 151 139 149;
+    --c-plum: 240 227 238;
+    --c-plum-50: 42 31 43;
+    --c-plum-100: 54 40 55;
+    --c-plum-200: 87 67 84;
+    --c-plum-600: 255 255 255;
+    --c-plum-900: 13 9 14;
+    --c-coral: 236 126 129;
+    --c-coral-50: 46 27 30;
+    --c-coral-100: 60 34 38;
+    --c-coral-200: 94 50 55;
+    --c-coral-600: 242 148 151;
+    --c-coral-700: 246 167 169;
+    --c-success: 63 181 140;
+    --c-success-100: 21 48 42;
+    --c-success-700: 127 217 184;
+    --c-warn: 229 168 75;
+    --c-warn-100: 51 39 15;
+    --c-danger: 240 122 114;
+    --c-danger-100: 58 26 25;
+    --c-logo: 240 227 238;
+    --c-logo-text: 240 227 238;
+    color-scheme: dark;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
   }

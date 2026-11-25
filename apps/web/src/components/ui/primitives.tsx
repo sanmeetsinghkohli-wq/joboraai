@@ -167,7 +167,7 @@ export function Skeleton({ className }: { className?: string }) {
     <div
       aria-hidden="true"
       className={cn(
-        'animate-shimmer rounded bg-[linear-gradient(90deg,#F1EBE4_25%,#F8F5F0_50%,#F1EBE4_75%)] bg-[length:200%_100%]',
+        'animate-shimmer rounded bg-[linear-gradient(90deg,rgb(var(--c-sand))_25%,rgb(var(--c-ivory))_50%,rgb(var(--c-sand))_75%)] bg-[length:200%_100%]',
         className
       )}
     />

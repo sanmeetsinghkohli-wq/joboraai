@@ -7,49 +7,52 @@ import type { Config } from 'tailwindcss';
  * coral as the single accent, green for success only.
  * Coral (#E76F72) does not meet 4.5:1 on white, so text uses coral-700
  * and coral fills carry plum text.
+ *
+ * Colours are CSS variables (apps/web/src/app/globals.css) so the workspace
+ * can switch to dark mode: <html data-theme="dark">.
  */
 const config: Config = {
   content: ['./apps/web/src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        ivory: '#F8F5F0',
-        paper: '#FFFFFF',
-        sand: '#F1EBE4',
-        line: '#E9E1DB',
+        ivory: 'rgb(var(--c-ivory) / <alpha-value>)',
+        paper: 'rgb(var(--c-paper) / <alpha-value>)',
+        sand: 'rgb(var(--c-sand) / <alpha-value>)',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
         ink: {
-          DEFAULT: '#1D1A21',
-          muted: '#5F525B',
-          subtle: '#7C7079',
+          DEFAULT: 'rgb(var(--c-ink) / <alpha-value>)',
+          muted: 'rgb(var(--c-ink-muted) / <alpha-value>)',
+          subtle: 'rgb(var(--c-ink-subtle) / <alpha-value>)',
         },
         plum: {
-          DEFAULT: '#351B32',
-          50: '#F7F1F6',
-          100: '#EDE2EB',
-          200: '#D9C4D5',
-          600: '#4A2A46',
-          900: '#261224',
+          DEFAULT: 'rgb(var(--c-plum) / <alpha-value>)',
+          50: 'rgb(var(--c-plum-50) / <alpha-value>)',
+          100: 'rgb(var(--c-plum-100) / <alpha-value>)',
+          200: 'rgb(var(--c-plum-200) / <alpha-value>)',
+          600: 'rgb(var(--c-plum-600) / <alpha-value>)',
+          900: 'rgb(var(--c-plum-900) / <alpha-value>)',
         },
         coral: {
-          DEFAULT: '#E76F72',
-          50: '#FEF4F3',
-          100: '#FBE4E3',
-          200: '#F6C6C5',
-          600: '#D4585B',
-          700: '#A93C41',
+          DEFAULT: 'rgb(var(--c-coral) / <alpha-value>)',
+          50: 'rgb(var(--c-coral-50) / <alpha-value>)',
+          100: 'rgb(var(--c-coral-100) / <alpha-value>)',
+          200: 'rgb(var(--c-coral-200) / <alpha-value>)',
+          600: 'rgb(var(--c-coral-600) / <alpha-value>)',
+          700: 'rgb(var(--c-coral-700) / <alpha-value>)',
         },
         success: {
-          DEFAULT: '#268566',
-          100: '#DDF1EA',
-          700: '#1B6850',
+          DEFAULT: 'rgb(var(--c-success) / <alpha-value>)',
+          100: 'rgb(var(--c-success-100) / <alpha-value>)',
+          700: 'rgb(var(--c-success-700) / <alpha-value>)',
         },
         warn: {
-          DEFAULT: '#8A5300',
-          100: '#FBEFD9',
+          DEFAULT: 'rgb(var(--c-warn) / <alpha-value>)',
+          100: 'rgb(var(--c-warn-100) / <alpha-value>)',
         },
         danger: {
-          DEFAULT: '#A8261F',
-          100: '#FBE7E5',
+          DEFAULT: 'rgb(var(--c-danger) / <alpha-value>)',
+          100: 'rgb(var(--c-danger-100) / <alpha-value>)',
         },
       },
       fontFamily: {

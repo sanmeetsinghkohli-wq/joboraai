@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAppData } from '@/context/AppDataContext';
 import { profileStrength } from '@/lib/profile';
+import { useWorkspaceTheme } from '@/lib/theme';
 import { cn } from '@/lib/cn';
 import { Logo } from './ui/logo';
 import { IconButton } from './ui/button';
@@ -155,7 +156,7 @@ function ProfileProgress({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function UserMenu() {
+function UserMenu({ theme }: { theme: ReturnType<typeof useWorkspaceTheme> }) {
   const router = useRouter();
   const { profile, signOut } = useAppData();
   const [open, setOpen] = useState(false);
@@ -215,6 +216,25 @@ function UserMenu() {
             <MenuLink href="/notifications" icon={Activity} onClick={() => setOpen(false)}>
               Activity
             </MenuLink>
+            <div className="my-1 px-3 py-2" role="group" aria-label="Theme">
+              <p className="mb-1.5 text-xs font-medium text-ink-subtle">Theme</p>
+              <div className="grid grid-cols-3 gap-1 rounded-md bg-sand p-0.5">
+                {(['light', 'dark', 'system'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={theme.pref === t}
+                    onClick={() => theme.choose(t)}
+                    className={cn(
+                      'h-8 rounded text-xs font-medium capitalize transition-colors',
+                      theme.pref === t ? 'bg-paper text-plum shadow-card' : 'text-ink-muted hover:text-plum'
+                    )}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button
               type="button"
               role="menuitem"
@@ -273,6 +293,7 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
   const pathname = usePathname() || '';
   const router = useRouter();
   const { authStatus } = useAppData();
+  const theme = useWorkspaceTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -367,7 +388,7 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
             >
               <MessagesSquare className="h-5 w-5" />
             </Link>
-            <UserMenu />
+            <UserMenu theme={theme} />
           </div>
         </header>
 

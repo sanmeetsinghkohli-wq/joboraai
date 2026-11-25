@@ -22,8 +22,9 @@ import { Card, EmptyState, Notice, Skeleton } from '@/components/ui/primitives';
 import { useAppData } from '@/context/AppDataContext';
 import { cn } from '@/lib/cn';
 import { profileStrength } from '@/lib/profile';
+import { getReminders } from '@/lib/reminders';
 import { timeAgo } from '@/lib/format';
-import { APPLICATION_STATUSES, normalizeStatus } from '@/lib/status';
+import { APPLICATION_STATUSES, INTERVIEW_OR_BETTER, SENT_STATUSES, normalizeStatus } from '@/lib/status';
 
 interface NextStep {
   title: string;
@@ -33,10 +34,13 @@ interface NextStep {
 }
 
 const FUNNEL_TONE: Record<string, string> = {
-  Saved: 'bg-plum-200',
+  Interested: 'bg-plum-100',
+  Preparing: 'bg-plum-200',
   Applied: 'bg-plum',
+  Assessment: 'bg-coral/70',
   Interview: 'bg-coral',
-  Offer: 'bg-success',
+  Offer: 'bg-success/80',
+  Accepted: 'bg-success',
   Rejected: 'bg-line',
 };
 
@@ -60,18 +64,28 @@ export default function DashboardPage() {
   const counts = Object.fromEntries(
     APPLICATION_STATUSES.map((s) => [s, applications.filter((a) => normalizeStatus(a.status) === s).length])
   ) as Record<string, number>;
-  const sent = (counts.Applied ?? 0) + (counts.Interview ?? 0) + (counts.Offer ?? 0) + (counts.Rejected ?? 0);
-  const interviewsOrBetter = (counts.Interview ?? 0) + (counts.Offer ?? 0);
+  const sent = SENT_STATUSES.reduce((n, s) => n + (counts[s] ?? 0), 0);
+  const interviewsOrBetter = INTERVIEW_OR_BETTER.reduce((n, s) => n + (counts[s] ?? 0), 0);
   const interviewRate = sent > 0 ? Math.round((interviewsOrBetter / sent) * 100) : null;
   const funnelMax = Math.max(1, ...APPLICATION_STATUSES.map((s) => counts[s] ?? 0));
 
   const { score: profileScore, next: profileNext } = profileStrength(profile);
 
-  const interviews = applications.filter((a) => normalizeStatus(a.status) === 'Interview');
+  const interviews = applications.filter((a) => ['Interview', 'Assessment'].includes(normalizeStatus(a.status)));
   const savedNotApplied = savedJobIds.filter((id) => !applications.some((a) => a.jobId === id));
 
+  const reminders = getReminders(applications);
+  const urgent = reminders.find((r) => r.days <= 1);
+
   let nextStep: NextStep;
-  if (!profile.targetRole || !hasSkills) {
+  if (urgent) {
+    nextStep = {
+      title: urgent.title,
+      body: urgent.detail,
+      cta: urgent.kind === 'interview' ? 'Prepare now' : urgent.kind === 'followup' ? 'Draft follow-up' : 'Open application',
+      href: urgent.kind === 'interview' ? '/interview' : urgent.kind === 'followup' ? '/career-ops' : `/applications/${urgent.appId}`,
+    };
+  } else if (!profile.targetRole || !hasSkills) {
     nextStep = {
       title: 'Add your target role and skills',
       body: 'Every match, score and draft in Jobora is built from your profile. Upload your CV and it fills itself in.',
@@ -288,6 +302,32 @@ export default function DashboardPage() {
           </Link>
         </section>
 
+        <div className="space-y-6">
+        {/* Coming up */}
+        {reminders.length > 0 && (
+          <Card as="section" aria-labelledby="coming-up">
+            <h2 id="coming-up" className="mb-4 font-serif text-xl text-plum">
+              Coming up
+            </h2>
+            <ul className="space-y-3">
+              {reminders.slice(0, 4).map((r) => (
+                <li key={`${r.appId}-${r.kind}`}>
+                  <Link href={`/applications/${r.appId}`} className="flex gap-3 text-sm hover:text-plum">
+                    <span
+                      className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', r.days < 0 ? 'bg-danger' : r.days <= 1 ? 'bg-coral' : 'bg-plum-200')}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium text-ink">{r.title}</span>
+                      <span className="block truncate text-xs text-ink-subtle">{r.detail}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
         {/* Activity */}
         <Card as="section" aria-labelledby="recent">
           <div className="mb-4 flex items-center justify-between">
@@ -321,6 +361,7 @@ export default function DashboardPage() {
             </ul>
           )}
         </Card>
+        </div>
       </div>
     </AppShell>
   );

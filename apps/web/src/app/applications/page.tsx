@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Columns3, Download, List, Plus, Search, Send, Trash2 } from 'lucide-react';
+import { AlarmClock, CalendarClock, Download, Plus, Search, Send, Trash2 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { useToast } from '@/components/providers';
 import { Button, ButtonLink, IconButton } from '@/components/ui/button';
@@ -20,7 +20,8 @@ import {
 import { useAppData, type LiveApplication } from '@/context/AppDataContext';
 import { cn } from '@/lib/cn';
 import { csvCell, downloadFile } from '@/lib/format';
-import { APPLICATION_STATUSES, STATUS_TONE, normalizeStatus, type ApplicationStatus } from '@/lib/status';
+import { APPLICATION_STATUSES, STATUS_HINT, STATUS_TONE, normalizeStatus, type ApplicationStatus } from '@/lib/status';
+import { daysFromToday, formatDate, getReminders, relativeDay } from '@/lib/reminders';
 
 function StatusSelect({
   app,
@@ -66,6 +67,7 @@ export default function ApplicationsPage() {
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
   const [status, setStatus] = useState<ApplicationStatus>('Applied');
+  const [deadline, setDeadline] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -74,6 +76,8 @@ export default function ApplicationsPage() {
     if (!q) return applications;
     return applications.filter((a) => `${a.title} ${a.company} ${a.location}`.toLowerCase().includes(q));
   }, [applications, query]);
+
+  const reminders = useMemo(() => getReminders(applications), [applications]);
 
   const columns = APPLICATION_STATUSES.map((s) => ({
     status: s,
@@ -99,6 +103,7 @@ export default function ApplicationsPage() {
       company: company.trim(),
       location: location.trim(),
       status,
+      deadline,
     });
     setSaving(false);
     if (!created) {
@@ -110,6 +115,7 @@ export default function ApplicationsPage() {
     setCompany('');
     setLocation('');
     setStatus('Applied');
+    setDeadline('');
   };
 
   const confirmDelete = async () => {
@@ -121,9 +127,12 @@ export default function ApplicationsPage() {
   };
 
   const exportCsv = () => {
-    const header = ['Title', 'Company', 'Location', 'Stage', 'Added', 'Contact', 'Next step'];
+    const header = ['Title', 'Company', 'Location', 'Stage', 'Added', 'Applied on', 'Deadline', 'Interview', 'Follow up', 'Salary', 'Contact', 'Next step', 'Notes'];
     const rows = applications.map((a) =>
-      [a.title, a.company, a.location, normalizeStatus(a.status), a.appliedAt, a.recruiterEmail, a.nextAction]
+      [
+        a.title, a.company, a.location, normalizeStatus(a.status), a.appliedAt, a.appliedOn || '', a.deadline || '',
+        a.interviewAt || '', a.followUpAt || '', a.salary || '', a.recruiterEmail, a.nextAction, a.notes || '',
+      ]
         .map(csvCell)
         .join(',')
     );
@@ -170,6 +179,27 @@ export default function ApplicationsPage() {
         </Card>
       ) : (
         <>
+          {reminders.length > 0 && (
+            <section aria-label="Needs attention" className="mb-4 rounded-lg border border-coral-200 bg-coral-50 p-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-coral-700">
+                <AlarmClock className="h-4 w-4" aria-hidden="true" /> Needs attention
+              </h2>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {reminders.slice(0, 6).map((r) => (
+                  <li key={`${r.appId}-${r.kind}`}>
+                    <Link
+                      href={`/applications/${r.appId}`}
+                      className="inline-flex items-center gap-2 rounded-full border border-coral-200 bg-paper px-3 py-1.5 text-sm hover:border-coral"
+                    >
+                      <span className={cn('font-semibold', r.days < 0 ? 'text-danger' : 'text-coral-700')}>{r.title}</span>
+                      <span className="text-ink-muted">{r.detail}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative sm:w-72">
               <label htmlFor="app-search" className="sr-only">
@@ -213,7 +243,7 @@ export default function ApplicationsPage() {
             </Card>
           ) : view === 'board' ? (
             <div className="scrollbar-none -mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6">
-              <div className="grid min-w-[62rem] grid-cols-5 gap-4">
+              <div className="flex gap-3">
                 {columns.map(({ status: col, items }) => (
                   <section
                     key={col}
@@ -230,13 +260,16 @@ export default function ApplicationsPage() {
                       if (app) move(app, col);
                     }}
                     className={cn(
-                      'flex min-h-[14rem] flex-col rounded-lg border p-2.5 transition-colors',
+                      'flex min-h-[14rem] w-64 shrink-0 flex-col rounded-lg border p-2.5 transition-colors',
                       dragOver === col ? 'border-coral bg-coral-50' : 'border-line bg-sand/60'
                     )}
                   >
-                    <header className="flex items-center justify-between px-1.5 pb-2.5 pt-1">
-                      <Badge tone={STATUS_TONE[col]}>{col}</Badge>
-                      <span className="text-sm tabular-nums text-ink-subtle">{items.length}</span>
+                    <header className="px-1.5 pb-2.5 pt-1">
+                      <div className="flex items-center justify-between">
+                        <Badge tone={STATUS_TONE[col]}>{col}</Badge>
+                        <span className="text-sm tabular-nums text-ink-subtle">{items.length}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-ink-subtle">{STATUS_HINT[col]}</p>
                     </header>
                     <ul className="flex flex-1 flex-col gap-2">
                       {items.map((app) => (
@@ -259,6 +292,7 @@ export default function ApplicationsPage() {
                           <p className="mt-1 text-xs text-ink-subtle">
                             {[app.location, app.appliedAt].filter(Boolean).join(' · ')}
                           </p>
+                          <DateChips app={app} />
                           <StatusSelect app={app} onChange={(s) => move(app, s)} className="mt-2.5" />
                         </li>
                       ))}
@@ -283,6 +317,9 @@ export default function ApplicationsPage() {
                         Added
                       </th>
                       <th scope="col" className="px-3 py-3 font-semibold">
+                        Dates
+                      </th>
+                      <th scope="col" className="px-3 py-3 font-semibold">
                         Stage
                       </th>
                       <th scope="col" className="px-3 py-3">
@@ -301,6 +338,9 @@ export default function ApplicationsPage() {
                         </td>
                         <td className="px-3 py-3 text-ink-muted">{app.location || '—'}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-ink-muted">{app.appliedAt || '—'}</td>
+                        <td className="px-3 py-3">
+                          <DateChips app={app} />
+                        </td>
                         <td className="px-3 py-3">
                           <StatusSelect app={app} onChange={(s) => move(app, s)} className="w-36" />
                         </td>
@@ -345,6 +385,9 @@ export default function ApplicationsPage() {
           <Field label="Location" htmlFor="app-location" optional>
             <Input id="app-location" value={location} onChange={(e) => setLocation(e.target.value)} />
           </Field>
+          <Field label="Application deadline" htmlFor="app-deadline" optional>
+            <Input id="app-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          </Field>
           <Field label="Stage" htmlFor="app-stage">
             <Select id="app-stage" value={status} onChange={(e) => setStatus(e.target.value as ApplicationStatus)}>
               {APPLICATION_STATUSES.map((s) => (
@@ -377,5 +420,39 @@ export default function ApplicationsPage() {
         <p className="text-sm text-ink-muted">The role itself stays in the job list if it is still live.</p>
       </Modal>
     </AppShell>
+  );
+}
+
+/** Small date chips for a card: interview, deadline and follow-up. */
+function DateChips({ app }: { app: LiveApplication }) {
+  const chips: Array<{ key: string; label: string; urgent: boolean }> = [];
+  if (app.interviewAt) {
+    const d = daysFromToday(app.interviewAt);
+    if (d >= 0) chips.push({ key: 'i', label: `Interview ${formatDate(app.interviewAt, true)}`, urgent: d <= 2 });
+  }
+  if (app.deadline && ['Interested', 'Preparing'].includes(normalizeStatus(app.status))) {
+    const d = daysFromToday(app.deadline);
+    chips.push({ key: 'd', label: d < 0 ? 'Deadline passed' : `Closes ${relativeDay(d)}`, urgent: d <= 3 });
+  }
+  if (app.followUpAt && ['Applied', 'Assessment'].includes(normalizeStatus(app.status))) {
+    const d = daysFromToday(app.followUpAt);
+    chips.push({ key: 'f', label: d <= 0 ? 'Follow up now' : `Follow up ${formatDate(app.followUpAt)}`, urgent: d <= 0 });
+  }
+  if (chips.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {chips.map((c) => (
+        <span
+          key={c.key}
+          className={cn(
+            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+            c.urgent ? 'bg-coral-100 text-coral-700' : 'bg-plum-50 text-plum'
+          )}
+        >
+          <CalendarClock className="h-3 w-3" aria-hidden="true" />
+          {c.label}
+        </span>
+      ))}
+    </div>
   );
 }

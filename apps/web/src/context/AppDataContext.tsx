@@ -57,6 +57,16 @@ export interface LiveApplication {
   appliedAt: string;
   timeline: Array<{ title: string; timestamp: string; description: string }>;
   attachments: Array<{ name: string; size: string; badge: string }>;
+  /** ISO date (YYYY-MM-DD) the application was sent. */
+  appliedOn?: string;
+  /** ISO date the application closes. */
+  deadline?: string;
+  /** ISO date-time of the next interview. */
+  interviewAt?: string;
+  /** ISO date to follow up. */
+  followUpAt?: string;
+  salary?: string;
+  notes?: string;
 }
 
 export interface LiveUserProfile {

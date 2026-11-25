@@ -38,6 +38,7 @@ import {
 import { TagInput } from '@/components/ui/tag-input';
 import { useAppData, type LiveJob } from '@/context/AppDataContext';
 import { cn } from '@/lib/cn';
+import { isTechRole } from '@/lib/jobFields';
 import { isHttpUrl, timeAgo } from '@/lib/format';
 
 const REGIONS = [
@@ -403,6 +404,7 @@ function JobsContent() {
   const [query, setQuery] = useState(initialQuery);
   const [region, setRegion] = useState('');
   const [jobType, setJobType] = useState<string>('');
+  const [techOnly, setTechOnly] = useState(false);
   const [view, setView] = useState<'all' | 'saved'>(params?.get('view') === 'saved' ? 'saved' : 'all');
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [showDetailOnSmall, setShowDetailOnSmall] = useState(false);
@@ -436,9 +438,9 @@ function JobsContent() {
   const list = useMemo(
     () =>
       (view === 'saved' ? jobs.filter((j) => savedJobIds.includes(j.id)) : jobs).filter(
-        (j) => !jobType || j.employmentType === jobType
+        (j) => (!jobType || j.employmentType === jobType) && (!techOnly || isTechRole(j.title))
       ),
-    [view, jobs, savedJobIds, jobType]
+    [view, jobs, savedJobIds, jobType, techOnly]
   );
   const shown = list.slice(0, visible);
   const current = selectedJob && list.some((j) => j.id === selectedJob.id) ? selectedJob : null;
@@ -562,6 +564,22 @@ function JobsContent() {
                   {t.label}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setTechOnly((v) => !v);
+                  setVisible(PAGE_SIZE);
+                }}
+                aria-pressed={techOnly}
+                className={cn(
+                  'h-9 rounded-full border px-3.5 text-sm font-medium transition-colors',
+                  techOnly
+                    ? 'border-coral-700 bg-coral-50 text-coral-700'
+                    : 'border-line bg-paper text-ink-muted hover:border-plum-200 hover:text-plum'
+                )}
+              >
+                Tech &amp; CS only
+              </button>
             </div>
             <Segmented
               label="Show"

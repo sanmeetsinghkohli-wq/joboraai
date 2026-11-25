@@ -54,25 +54,25 @@ const BOARDS: Board[] = [
   { ats: 'ashby', slug: 'leantech', company: 'Lean Technologies' },
   { ats: 'ashby', slug: 'thndr', company: 'Thndr' },
   { ats: 'ashby', slug: 'ziina', company: 'Ziina' },
-  { ats: 'workable', slug: 'foodics', company: 'Foodics', techOnly: true },
-  { ats: 'workable', slug: 'lucidya', company: 'Lucidya', ai: true, techOnly: true },
-  { ats: 'workable', slug: 'salla', company: 'Salla', techOnly: true },
+  { ats: 'workable', slug: 'foodics', company: 'Foodics' },
+  { ats: 'workable', slug: 'lucidya', company: 'Lucidya', ai: true },
+  { ats: 'workable', slug: 'salla', company: 'Salla' },
   { ats: 'workable', slug: 'alpheya', company: 'Alpheya' },
-  { ats: 'greenhouse', slug: 'bybit', company: 'Bybit', techOnly: true },
-  { ats: 'greenhouse', slug: 'gitlab', company: 'GitLab', techOnly: true },
+  { ats: 'greenhouse', slug: 'bybit', company: 'Bybit' },
+  { ats: 'greenhouse', slug: 'gitlab', company: 'GitLab' },
   // Remote-friendly boards that post CS internships
-  { ats: 'ashby', slug: 'ramp', company: 'Ramp', techOnly: true },
-  { ats: 'ashby', slug: 'notion', company: 'Notion', techOnly: true },
-  { ats: 'ashby', slug: 'perplexity', company: 'Perplexity', ai: true, techOnly: true },
-  { ats: 'ashby', slug: 'clickhouse', company: 'ClickHouse', techOnly: true },
+  { ats: 'ashby', slug: 'ramp', company: 'Ramp' },
+  { ats: 'ashby', slug: 'notion', company: 'Notion' },
+  { ats: 'ashby', slug: 'perplexity', company: 'Perplexity', ai: true },
+  { ats: 'ashby', slug: 'clickhouse', company: 'ClickHouse' },
   // Cybersecurity employers hiring in India, MENA or remote
-  { ats: 'greenhouse', slug: 'zscaler', company: 'Zscaler', techOnly: true },
-  { ats: 'greenhouse', slug: 'okta', company: 'Okta', techOnly: true },
-  { ats: 'ashby', slug: 'sophos', company: 'Sophos', techOnly: true },
-  { ats: 'greenhouse', slug: 'chainguard', company: 'Chainguard', techOnly: true },
-  { ats: 'greenhouse', slug: 'wizinc', company: 'Wiz', techOnly: true },
-  { ats: 'greenhouse', slug: 'tailscale', company: 'Tailscale', techOnly: true },
-  { ats: 'greenhouse', slug: 'huntress', company: 'Huntress', techOnly: true },
+  { ats: 'greenhouse', slug: 'zscaler', company: 'Zscaler' },
+  { ats: 'greenhouse', slug: 'okta', company: 'Okta' },
+  { ats: 'ashby', slug: 'sophos', company: 'Sophos' },
+  { ats: 'greenhouse', slug: 'chainguard', company: 'Chainguard' },
+  { ats: 'greenhouse', slug: 'wizinc', company: 'Wiz' },
+  { ats: 'greenhouse', slug: 'tailscale', company: 'Tailscale' },
+  { ats: 'greenhouse', slug: 'huntress', company: 'Huntress' },
 ];
 
 const TECH_ROLE = { test: isTechRole };
@@ -206,8 +206,7 @@ export async function fetchEmployerBoardJobs(): Promise<AdapterResult> {
         (r) =>
           r.title &&
           (TARGET_REGION.test(r.location) || r.remote || /\bremote\b/i.test(r.location)) &&
-          // Jobora lists computer-science roles only, from every employer board.
-          TECH_ROLE.test(r.title)
+          (!board.techOnly || TECH_ROLE.test(r.title))
       );
       // Internships and AI/ML roles first, then newest, so they survive the per-board cap.
       const rank = (r: RawRole) =>

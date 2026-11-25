@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Mail, Mic, Send, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, Mail, Mic, Send, Trash2 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { CompanyInitial } from '@/components/JobRow';
 import { useToast } from '@/components/providers';
@@ -12,6 +12,8 @@ import { Modal } from '@/components/ui/modal';
 import { Badge, Card, CardTitle, EmptyState, Field, Input, Select, Textarea } from '@/components/ui/primitives';
 import { useAppData } from '@/context/AppDataContext';
 import { APPLICATION_STATUSES, STATUS_TONE, normalizeStatus, type ApplicationStatus } from '@/lib/status';
+import { downloadFile } from '@/lib/format';
+import { formatDate } from '@/lib/reminders';
 
 export default function ApplicationDetailPage() {
   const params = useParams();
@@ -27,6 +29,12 @@ export default function ApplicationDetailPage() {
   const [nextAction, setNextAction] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
+  const [appliedOn, setAppliedOn] = useState('');
+  const [deadline, setDeadline] = useState('');
+  const [interviewAt, setInterviewAt] = useState('');
+  const [followUpAt, setFollowUpAt] = useState('');
+  const [salary, setSalary] = useState('');
+  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -35,6 +43,12 @@ export default function ApplicationDetailPage() {
     setNextAction(app.nextAction || '');
     setContactName(app.recruiterName || '');
     setContactEmail(app.recruiterEmail || '');
+    setAppliedOn(app.appliedOn || '');
+    setDeadline(app.deadline || '');
+    setInterviewAt((app.interviewAt || '').slice(0, 16));
+    setFollowUpAt(app.followUpAt || '');
+    setSalary(app.salary || '');
+    setNotes(app.notes || '');
     // Reset the form only when a different application is opened.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app?.id]);
@@ -59,7 +73,13 @@ export default function ApplicationDetailPage() {
   const dirty =
     nextAction !== (app.nextAction || '') ||
     contactName !== (app.recruiterName || '') ||
-    contactEmail !== (app.recruiterEmail || '');
+    contactEmail !== (app.recruiterEmail || '') ||
+    appliedOn !== (app.appliedOn || '') ||
+    deadline !== (app.deadline || '') ||
+    interviewAt !== (app.interviewAt || '').slice(0, 16) ||
+    followUpAt !== (app.followUpAt || '') ||
+    salary !== (app.salary || '') ||
+    notes !== (app.notes || '');
 
   const saveNotes = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +88,12 @@ export default function ApplicationDetailPage() {
       nextAction: nextAction.trim(),
       recruiterName: contactName.trim(),
       recruiterEmail: contactEmail.trim(),
+      appliedOn,
+      deadline,
+      interviewAt,
+      followUpAt,
+      salary: salary.trim(),
+      notes,
     });
     setSaving(false);
     addToast({ title: 'Saved' });
@@ -78,6 +104,34 @@ export default function ApplicationDetailPage() {
     await deleteApplication(app.id);
     addToast({ title: 'Application removed', description: `${app.title} at ${app.company}` });
     router.push('/applications');
+  };
+
+  const addInterviewToCalendar = () => {
+    if (!app.interviewAt) return;
+    const start = new Date(app.interviewAt);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const esc = (t: string) => t.replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Jobora AI//Tracker//EN',
+      'BEGIN:VEVENT',
+      `UID:${app.id}-interview@jobora`,
+      `DTSTAMP:${stamp(new Date())}`,
+      `DTSTART:${stamp(start)}`,
+      `DTEND:${stamp(end)}`,
+      `SUMMARY:${esc(`Interview: ${app.title} at ${app.company}`)}`,
+      `DESCRIPTION:${esc(app.nextAction || 'Prepare with Jobora interview practice.')}`,
+      'BEGIN:VALARM',
+      'TRIGGER:-PT60M',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Interview in 1 hour',
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    downloadFile(`interview-${app.company.replace(/\W+/g, '-').toLowerCase()}.ics`, ics, 'text/calendar;charset=utf-8');
   };
 
   const useJob = () => {
@@ -128,8 +182,25 @@ export default function ApplicationDetailPage() {
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-6">
           <Card as="section">
-            <CardTitle>Notes and contact</CardTitle>
+            <CardTitle>Details</CardTitle>
             <form onSubmit={saveNotes} className="mt-4 flex flex-col gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Applied on" htmlFor="detail-applied" optional hint="Filled in when you move it to Applied.">
+                  <Input id="detail-applied" type="date" value={appliedOn} onChange={(e) => setAppliedOn(e.target.value)} />
+                </Field>
+                <Field label="Application deadline" htmlFor="detail-deadline" optional>
+                  <Input id="detail-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+                </Field>
+                <Field label="Interview" htmlFor="detail-interview" optional>
+                  <Input id="detail-interview" type="datetime-local" value={interviewAt} onChange={(e) => setInterviewAt(e.target.value)} />
+                </Field>
+                <Field label="Follow up on" htmlFor="detail-follow" optional hint="We suggest 7 business days after applying.">
+                  <Input id="detail-follow" type="date" value={followUpAt} onChange={(e) => setFollowUpAt(e.target.value)} />
+                </Field>
+              </div>
+              <Field label="Salary or offer details" htmlFor="detail-salary" optional hint="Private to you.">
+                <Input id="detail-salary" value={salary} onChange={(e) => setSalary(e.target.value)} placeholder="e.g. AED 14,000 / month + housing" />
+              </Field>
               <Field label="Next step" htmlFor="detail-next" optional hint="For example: follow up on Monday, or send portfolio.">
                 <Textarea
                   id="detail-next"
@@ -152,6 +223,9 @@ export default function ApplicationDetailPage() {
                   />
                 </Field>
               </div>
+              <Field label="Notes" htmlFor="detail-notes" optional>
+                <Textarea id="detail-notes" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </Field>
               <div>
                 <Button type="submit" loading={saving} disabled={!dirty}>
                   Save changes
@@ -194,6 +268,12 @@ export default function ApplicationDetailPage() {
                 <Mail className="h-4 w-4" aria-hidden="true" />
                 Draft a follow-up email
               </ButtonLink>
+              {app.interviewAt && (
+                <Button variant="secondary" onClick={addInterviewToCalendar}>
+                  <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+                  Add interview to calendar ({formatDate(app.interviewAt, true)})
+                </Button>
+              )}
               <ButtonLink href="/interview" variant="secondary" onClick={useJob}>
                 <Mic className="h-4 w-4" aria-hidden="true" />
                 Practise for interview

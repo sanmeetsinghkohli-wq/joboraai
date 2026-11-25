@@ -17,7 +17,7 @@ import {
   sanitizeExternalUrl,
 } from './_providers';
 import { fetchEmployerBoardJobs } from './_employerBoards';
-import { inferEmploymentType, isTechRole } from './_providers';
+import { inferEmploymentType } from './_providers';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -228,9 +228,7 @@ async function GET_handler(req: NextRequest) {
     ...himalayasRes.jobs,
     ...adzunaRes.jobs,
   ]
-    .map((job) => ({ ...job, employmentType: inferEmploymentType(job.title, job.employmentType) }))
-    // Internships are listed only when they are computer-science roles.
-    .filter((job) => job.employmentType !== 'Internship' || isTechRole(job.title));
+    .map((job) => ({ ...job, employmentType: inferEmploymentType(job.title, job.employmentType) }));
 
   const fallbackActive = liveProviderJobs.length === 0;
   // When every provider is unreachable the list is simply empty; the client

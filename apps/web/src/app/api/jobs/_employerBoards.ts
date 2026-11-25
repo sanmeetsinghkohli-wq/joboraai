@@ -65,6 +65,14 @@ const BOARDS: Board[] = [
   { ats: 'ashby', slug: 'notion', company: 'Notion', techOnly: true },
   { ats: 'ashby', slug: 'perplexity', company: 'Perplexity', ai: true, techOnly: true },
   { ats: 'ashby', slug: 'clickhouse', company: 'ClickHouse', techOnly: true },
+  // Cybersecurity employers hiring in India, MENA or remote
+  { ats: 'greenhouse', slug: 'zscaler', company: 'Zscaler', techOnly: true },
+  { ats: 'greenhouse', slug: 'okta', company: 'Okta', techOnly: true },
+  { ats: 'ashby', slug: 'sophos', company: 'Sophos', techOnly: true },
+  { ats: 'greenhouse', slug: 'chainguard', company: 'Chainguard', techOnly: true },
+  { ats: 'greenhouse', slug: 'wizinc', company: 'Wiz', techOnly: true },
+  { ats: 'greenhouse', slug: 'tailscale', company: 'Tailscale', techOnly: true },
+  { ats: 'greenhouse', slug: 'huntress', company: 'Huntress', techOnly: true },
 ];
 
 const TECH_ROLE = { test: isTechRole };

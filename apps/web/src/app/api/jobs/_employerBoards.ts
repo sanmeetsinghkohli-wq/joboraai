@@ -59,6 +59,11 @@ const BOARDS: Board[] = [
   { ats: 'workable', slug: 'alpheya', company: 'Alpheya' },
   { ats: 'greenhouse', slug: 'bybit', company: 'Bybit', techOnly: true },
   { ats: 'greenhouse', slug: 'gitlab', company: 'GitLab', techOnly: true },
+  // Remote-friendly boards that post CS internships
+  { ats: 'ashby', slug: 'ramp', company: 'Ramp', techOnly: true },
+  { ats: 'ashby', slug: 'notion', company: 'Notion', techOnly: true },
+  { ats: 'ashby', slug: 'perplexity', company: 'Perplexity', ai: true, techOnly: true },
+  { ats: 'ashby', slug: 'clickhouse', company: 'ClickHouse', techOnly: true },
 ];
 
 const TECH_ROLE =

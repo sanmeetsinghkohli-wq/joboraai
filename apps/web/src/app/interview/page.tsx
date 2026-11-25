@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Mic, Square, Trash2, Volume2 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
+import { AnswerTools } from '@/components/AnswerTools';
+import { Markdown } from '@/components/Markdown';
 import { JobPicker } from '@/components/JobPicker';
 import { useToast } from '@/components/providers';
 import { Button, IconButton } from '@/components/ui/button';
@@ -57,7 +59,7 @@ const STAR = [
 ];
 
 export default function InterviewPage() {
-  const { selectedJob, logActivity } = useAppData();
+  const { selectedJob, logActivity, profile } = useAppData();
   const { addToast } = useToast();
 
   const questions = useMemo(() => questionsFor(selectedJob), [selectedJob]);
@@ -66,6 +68,9 @@ export default function InterviewPage() {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState<SavedAnswer[]>([]);
   const [speaking, setSpeaking] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState('');
   const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   useEffect(() => {
@@ -89,8 +94,27 @@ export default function InterviewPage() {
   const words = answer.trim() ? answer.trim().split(/\s+/).length : 0;
   const roleLabel = selectedJob ? `${selectedJob.title} — ${selectedJob.company}` : 'General';
 
+  const getFeedback = async () => {
+    setFeedbackLoading(true);
+    setFeedbackError('');
+    const res = await fetch('/api/career/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'mock-feedback',
+        input: `Role: ${roleLabel}\nQuestion: ${question.text}\nAnswer: ${answer}`,
+        profile,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setFeedbackLoading(false);
+    if (res.ok && data.text) setFeedback(data.text);
+    else setFeedbackError(data?.error?.message || 'Feedback is not available right now.');
+  };
+
   const pick = (id: string) => {
     setQid(id);
+    setFeedback('');
     setAnswer('');
     setChecked({});
     if (canSpeak) window.speechSynthesis.cancel();
@@ -198,6 +222,7 @@ export default function InterviewPage() {
               rows={10}
               className="mt-1.5"
             />
+            <AnswerTools value={answer} onChange={setAnswer} />
             <div className="mt-2 flex items-center justify-between text-xs text-ink-subtle">
               <span>{words} words</span>
               <span>Spoken answers usually run 150–300 words.</span>
@@ -228,7 +253,23 @@ export default function InterviewPage() {
                 );
               })}
             </div>
-            <p className="mt-2 text-xs text-ink-subtle">Tick each part your answer covers. This is your own check — nothing is scored.</p>
+            <p className="mt-2 text-xs text-ink-subtle">Tick each part your answer covers. This is your own check.</p>
+
+            <div className="mt-5 rounded-lg border border-line bg-ivory p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-plum">AI feedback</p>
+                <Button size="sm" variant="secondary" onClick={getFeedback} disabled={feedbackLoading || words < 15}>
+                  {feedbackLoading ? 'Reviewing…' : 'Score my answer'}
+                </Button>
+              </div>
+              {words < 15 && <p className="mt-1 text-xs text-ink-subtle">Write or speak at least a few sentences first.</p>}
+              {feedbackError && <p className="mt-2 text-sm text-danger">{feedbackError}</p>}
+              {feedback && (
+                <div className="mt-3">
+                  <Markdown text={feedback} />
+                </div>
+              )}
+            </div>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Button onClick={save} disabled={!answer.trim()}>

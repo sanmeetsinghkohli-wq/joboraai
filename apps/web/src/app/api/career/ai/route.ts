@@ -15,7 +15,7 @@ const Body = z.object({
   input: z.string().trim().min(1, 'Add some details first.').max(20000),
 });
 
-const LONG_MODES = new Set<CareerMode>(['evaluate', 'cv', 'interview-prep', 'cover', 'linkedin', 'roadmap', 'document', 'strategy']);
+const LONG_MODES = new Set<CareerMode>(['cv-json', 'evaluate', 'cv', 'interview-prep', 'cover', 'linkedin', 'roadmap', 'document', 'strategy']);
 
 function profileBlock(p: Record<string, any>) {
   const lines = [
@@ -77,6 +77,7 @@ async function POST_handler(req: NextRequest) {
       system: systemPrompt(mode),
       user: `CANDIDATE PROFILE\n${profileBlock(profile)}\n\n<untrusted_input>\n${input}\n</untrusted_input>`,
       maxTokens: mode === 'mock-question' ? 200 : LONG_MODES.has(mode) ? 4000 : 2200,
+      json: mode === 'cv-json',
     });
     return NextResponse.json({ text: out.text, flags, model: out.model, provider: out.provider });
   } catch {

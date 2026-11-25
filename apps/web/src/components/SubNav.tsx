@@ -6,6 +6,7 @@ import { cn } from '@/lib/cn';
 
 export const DOCUMENT_TABS = [
   { href: '/cv-studio', label: 'CV' },
+  { href: '/resume-studio', label: 'Resume Studio' },
   { href: '/cover-letters', label: 'Cover letters' },
   { href: '/document-studio', label: 'Other documents' },
 ];

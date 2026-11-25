@@ -136,6 +136,17 @@ Supported types and rules:
 - Recruiter follow-up email: under 120 words, one clear ask.
 Mark every detail you could not take from the input as [add …] rather than inventing it. Output only the document plus, after a line, "## To make this stronger" with up to 3 questions.`,
 
+  'cv-json': `Tailor the candidate's CV to this job. Reorder and reword only facts already in the profile; never add employers, titles, dates, metrics or skills they did not give.
+Return ONLY a JSON object:
+{
+ "summary": "a 3-line summary for this job",
+ "experience": "the experience rewritten in the same plain-text format as the profile: each role a heading line (title at company (dates)) followed by bullet lines starting with '- ', roles separated by a blank line, most relevant bullets first",
+ "skills": ["the candidate's own skills, the job's key terms first"],
+ "keywords": ["15-25 keywords from the job, only those a true profile fact supports"],
+ "changes": [{"what": "short description of a change", "why": "how it improves relevance for this job"}],
+ "untraceable": ["anything you wanted to add but could not trace to the profile, phrased as a question to the candidate"]
+}`,
+
   strategy: `Prepare an application strategy for this job.
 ## Readiness
 A checklist (CV tailored, keywords covered, cover letter, portfolio link, referral sought, application questions drafted, follow-up date set) with ✅ / ❌ / ⚠️ from what the input shows, then an overall verdict: Ready / Nearly ready / Not ready, and the single most important next step.

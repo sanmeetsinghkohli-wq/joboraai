@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { AlertTriangle, ClipboardCheck, Copy, Loader2 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
+import { AnswerTools } from '@/components/AnswerTools';
 import { Markdown } from '@/components/Markdown';
 import { useToast } from '@/components/providers';
 import { Button } from '@/components/ui/button';
@@ -550,6 +551,7 @@ function MockInterview() {
             <Field label="Your answer" htmlFor="mock-answer" className="mt-4">
               <Textarea id="mock-answer" rows={7} value={answer} onChange={(e) => setAnswer(e.target.value)} />
             </Field>
+            <AnswerTools value={answer} onChange={setAnswer} />
             <Button
               className="mt-4"
               disabled={loading || !answer.trim()}

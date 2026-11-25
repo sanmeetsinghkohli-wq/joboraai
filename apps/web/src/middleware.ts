@@ -39,5 +39,7 @@ export const config = {
     '/settings/:path*',
     '/profile/:path*',
     '/outbox/:path*',
+    '/analytics/:path*',
+    '/resume-studio/:path*',
   ],
 };

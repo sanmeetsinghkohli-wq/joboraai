@@ -13,6 +13,7 @@ import { downloadFile, slug } from '@/lib/format';
 import { hasSkill } from '@/lib/match';
 
 import { SubNav, DOCUMENT_TABS } from '@/components/SubNav';
+import { buildCvDocx, saveBlob } from '@/lib/cvExport';
 interface CvForm {
   fullName: string;
   targetRole: string;
@@ -137,6 +138,16 @@ export default function CvPage() {
               <Button variant="secondary" onClick={() => downloadFile(`${slug(cv.fullName || 'cv')}_CV.txt`, toPlainText(cv), 'text/plain;charset=utf-8')}>
                 <Download className="h-4 w-4" aria-hidden="true" />
                 Plain text
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  const blob = await buildCvDocx({ ...profile, ...cv });
+                  saveBlob(blob, `${slug(cv.fullName || 'cv')}_CV.docx`);
+                }}
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                Word
               </Button>
               <Button variant="secondary" onClick={() => window.print()}>
                 <Printer className="h-4 w-4" aria-hidden="true" />

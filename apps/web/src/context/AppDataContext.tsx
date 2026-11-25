@@ -104,6 +104,19 @@ export interface LiveUserProfile {
   workModes: string[];
   salaryExpectation: string;
   careerGoals: string;
+  /** Saved CV variants for different roles (Resume Studio). */
+  cvVersions: CvVersion[];
+}
+
+export interface CvVersion {
+  id: string;
+  name: string;
+  createdAt: string;
+  /** The job this version was tailored for, if any. */
+  forRole?: string;
+  summary: string;
+  experience: string;
+  skills: string[];
 }
 
 export interface ProfileProject {
@@ -191,6 +204,7 @@ const DEFAULT_EMPTY_PROFILE: LiveUserProfile = {
   workModes: [],
   salaryExpectation: '',
   careerGoals: '',
+  cvVersions: [],
 };
 
 const KEYS = {

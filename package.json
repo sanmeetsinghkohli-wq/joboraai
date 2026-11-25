@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev apps/web",
     "build": "node scripts/sync-public.mjs && next build apps/web",
+    "test": "vitest run",
     "start": "next start apps/web",
     "typecheck": "tsc --noEmit",
     "lint": "next lint apps/web"
@@ -43,6 +44,7 @@
     "@types/uuid": "^9.0.8",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.5",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.9"
   }
 }

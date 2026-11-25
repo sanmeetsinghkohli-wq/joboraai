@@ -7,6 +7,7 @@
  */
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '@/app/api/auth/_lib';
 
 export const GMAIL_SCOPES = ['openid', 'email', 'https://www.googleapis.com/auth/gmail.send'];
 
@@ -38,7 +39,7 @@ export function decryptSecret(token: string): string {
   return Buffer.concat([decipher.update(enc), decipher.final()]).toString('utf8');
 }
 
-const stateSecret = () => `${process.env.JWT_SECRET || 'jobora-dev-secret-change-in-production'}:gmail-oauth`;
+const stateSecret = () => `${JWT_SECRET}:gmail-oauth`;
 
 export function signState(userId: string): string {
   return jwt.sign({ sub: userId, n: crypto.randomBytes(8).toString('hex') }, stateSecret(), { expiresIn: '10m' });

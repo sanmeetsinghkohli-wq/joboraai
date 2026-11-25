@@ -5,12 +5,20 @@ import { PersistentMap, flushPersistence } from '@/lib/db/kv';
 import type { User, EmailConnection } from '@jobora/types';
 
 export const isProduction = process.env.NODE_ENV === 'production';
-const DEFAULT_SECRET = 'jobora-dev-secret-change-in-production';
-export const JWT_SECRET = process.env.JWT_SECRET || DEFAULT_SECRET;
+const DEV_ONLY_SECRET = 'jobora-local-development-only';
 
-if (isProduction && JWT_SECRET === DEFAULT_SECRET) {
-  console.warn('[SECURITY WARNING] Jobora AI is running in production with the default development JWT_SECRET. Set JWT_SECRET in environment variables to secure user sessions.');
-}
+/**
+ * Session signing key. Production refuses to run without a real secret:
+ * falling back to a known default would let anyone forge a login.
+ */
+export const JWT_SECRET = (() => {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return secret;
+  if (isProduction && process.env.NEXT_PHASE !== 'phase-production-build') {
+    throw new Error('JWT_SECRET must be set in production.');
+  }
+  return secret || DEV_ONLY_SECRET;
+})();
 
 export interface StoredUser extends User {
   passwordHash: string;

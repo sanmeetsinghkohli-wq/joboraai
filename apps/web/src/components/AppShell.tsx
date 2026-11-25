@@ -12,13 +12,13 @@ import {
   Menu,
   MessagesSquare,
   Mic,
-  PenLine,
   Search,
   Send,
   Settings,
   Sparkles,
-  Target,
   Briefcase,
+  IdCard,
+  TrendingUp,
   X,
 } from 'lucide-react';
 import { useAppData } from '@/context/AppDataContext';
@@ -38,23 +38,33 @@ interface NavItem {
 const NAV: Array<{ title?: string; items: NavItem[] }> = [
   { items: [{ href: '/dashboard', label: 'Home', icon: LayoutDashboard }] },
   {
-    title: 'Search',
+    title: 'Find',
     items: [
       { href: '/jobs', label: 'Jobs', icon: Search, also: ['/saved-jobs'] },
       { href: '/applications', label: 'Applications', icon: Send, also: ['/email-composer'] },
     ],
   },
   {
-    title: 'Prepare',
+    title: 'Apply',
     items: [
-      { href: '/cv-studio', label: 'CV', icon: FileText, also: ['/documents'] },
-      { href: '/cover-letters', label: 'Cover letters', icon: PenLine },
-      { href: '/interview', label: 'Interview practice', icon: Mic },
-      { href: '/career-insights', label: 'Skill gaps', icon: Target },
+      {
+        href: '/cv-studio',
+        label: 'CV & documents',
+        icon: FileText,
+        also: ['/documents', '/cover-letters', '/document-studio'],
+      },
       { href: '/career-ops', label: 'Career Ops', icon: Briefcase },
     ],
   },
-  { title: 'Assistant', items: [{ href: '/ai-copilot', label: 'Copilot', icon: Sparkles }] },
+  {
+    title: 'Grow',
+    items: [
+      { href: '/interview', label: 'Interview practice', icon: Mic },
+      { href: '/career-growth', label: 'Learning roadmap', icon: TrendingUp, also: ['/career-insights'] },
+      { href: '/linkedin', label: 'LinkedIn', icon: IdCard },
+      { href: '/ai-copilot', label: 'Copilot', icon: Sparkles },
+    ],
+  },
 ];
 
 function isActive(pathname: string, item: NavItem) {

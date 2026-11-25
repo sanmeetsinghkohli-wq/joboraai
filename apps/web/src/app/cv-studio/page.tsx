@@ -12,6 +12,7 @@ import { useAppData } from '@/context/AppDataContext';
 import { downloadFile, slug } from '@/lib/format';
 import { hasSkill } from '@/lib/match';
 
+import { SubNav, DOCUMENT_TABS } from '@/components/SubNav';
 interface CvForm {
   fullName: string;
   targetRole: string;
@@ -127,6 +128,7 @@ export default function CvPage() {
   return (
     <AppShell wide>
       <div className="no-print">
+        <SubNav items={DOCUMENT_TABS} label="CV and documents" />
         <PageHeader
           title="CV"
           description="Your CV is built only from what you enter here. Edit on the left and the page on the right updates as you type."

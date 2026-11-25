@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: ['/', '/students', '/universities', '/career-changers', '/enterprise', '/privacy', '/terms', '/security', '/contact'],
-      disallow: ['/api/', '/dashboard', '/jobs', '/applications', '/cv-studio', '/cover-letters', '/interview', '/career-insights', '/career-ops', '/ai-copilot', '/settings', '/onboarding', '/notifications'],
+      disallow: ['/api/', '/dashboard', '/jobs', '/applications', '/cv-studio', '/cover-letters', '/interview', '/career-insights', '/career-ops', '/career-growth', '/linkedin', '/document-studio', '/ai-copilot', '/settings', '/onboarding', '/notifications'],
     },
   };
 }

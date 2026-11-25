@@ -15,7 +15,7 @@ const Body = z.object({
 });
 
 const MODEL = 'openai/gpt-oss-120b';
-const LONG_MODES = new Set<CareerMode>(['evaluate', 'cv', 'interview-prep', 'cover']);
+const LONG_MODES = new Set<CareerMode>(['evaluate', 'cv', 'interview-prep', 'cover', 'linkedin', 'roadmap', 'document', 'strategy']);
 
 function profileBlock(p: Record<string, any>) {
   const lines = [

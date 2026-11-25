@@ -11,6 +11,7 @@ import { useAppData } from '@/context/AppDataContext';
 import { cn } from '@/lib/cn';
 import { hasSkill, skillDemand } from '@/lib/match';
 
+import { SubNav, GROWTH_TABS } from '@/components/SubNav';
 const TOP = 15;
 
 export default function SkillGapsPage() {
@@ -38,6 +39,7 @@ export default function SkillGapsPage() {
 
   return (
     <AppShell>
+      <SubNav items={GROWTH_TABS} label="Career growth" />
       <PageHeader
         title="Skill gaps"
         description="Which skills come up most in the roles you care about, and which of them are already on your profile. Counted directly from the listings."

@@ -12,6 +12,7 @@ import { cn } from '@/lib/cn';
 
 type Tab =
   | 'evaluate'
+  | 'strategy'
   | 'triage'
   | 'cv'
   | 'ats'
@@ -25,6 +26,7 @@ type Tab =
 
 const TABS: Array<{ value: Tab; label: string }> = [
   { value: 'evaluate', label: 'Fit report' },
+  { value: 'strategy', label: 'Application strategy' },
   { value: 'triage', label: 'Triage' },
   { value: 'cv', label: 'Tailor CV' },
   { value: 'ats', label: 'ATS check' },
@@ -70,6 +72,19 @@ export default function CareerOpsPage() {
       />
       <Segmented label="Tool" options={TABS} value={tab} onChange={setTab} className="mb-6 overflow-x-auto" />
       {tab === 'evaluate' && <Evaluate />}
+      {tab === 'strategy' && (
+        <JobTool
+          key="strategy"
+          mode="strategy"
+          title="Plan this application"
+          description="A readiness checklist, how to position yourself, which experience to lead with, honest answers to weak spots and drafted answers to application questions."
+          inputLabel="Application questions or notes"
+          placeholder="Paste any application questions from the form, or notes about the role"
+          button="Build my strategy"
+          withJob
+          optionalInput
+        />
+      )}
       {tab === 'triage' && (
         <JobTool
           key="triage"
@@ -616,7 +631,7 @@ function JobTool({
   placeholder,
   optionalInput = false,
 }: {
-  mode: 'triage' | 'cv' | 'cover' | 'interview-prep' | 'upskill';
+  mode: 'triage' | 'cv' | 'cover' | 'interview-prep' | 'upskill' | 'strategy';
   title: string;
   description: string;
   button: string;

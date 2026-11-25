@@ -11,6 +11,7 @@ import { Card, CardTitle, EmptyState, Notice, PageHeader, Textarea } from '@/com
 import { useAppData, type LiveJob, type LiveUserProfile } from '@/context/AppDataContext';
 import { downloadFile, slug, timeAgo } from '@/lib/format';
 
+import { SubNav, DOCUMENT_TABS } from '@/components/SubNav';
 interface LetterDraft {
   id: string;
   jobId: string;
@@ -161,6 +162,7 @@ export default function CoverLettersPage() {
   return (
     <AppShell>
       <div className="no-print">
+        <SubNav items={DOCUMENT_TABS} label="CV and documents" />
         <PageHeader
           title="Cover letters"
           description="Start from a draft built from your profile and the role, then make it yours. Nothing is added that you did not enter."

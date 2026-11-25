@@ -94,6 +94,61 @@ The gaps that recur across the target roles, ranked by how often they appear, ea
 Rewrite the answer using only facts from the candidate's answer and profile, in STAR+R form (Situation, Task, Action, Result, Reflection). Where a metric is missing, write [add your number] instead of inventing one.`,
 
   offer: `Weigh these job offers. Produce a table across: base pay, total pay, location and work model, role growth and learning, stability signals, start date, and anything the candidate said matters. Then a ranked recommendation with the deciding factor, negotiation levers (base pay, start date, signing bonus, title, review timing, learning budget), and a short negotiation message for the top offer. Use only figures the candidate gave; do not estimate market rates. End with: "Not financial or legal advice."`,
+
+  linkedin: `Optimise the candidate's LinkedIn profile for their target role, using their pasted LinkedIn sections and Jobora profile.
+## Profile score
+A completeness checklist (photo, headline, about, experience, projects, skills, featured, education, certifications) marked ✅ / ❌ from what was provided — no numeric score unless every item can be judged.
+## Headline
+3 options, each under 220 characters, using the target role's real keywords.
+## About
+One rewritten About section (150–250 words), first person, built only from true facts.
+## Experience
+Rewrite each provided role as 3–5 achievement bullets; write [add your number] where a metric is missing.
+## Skills to list
+Top 15 skills in order, only ones the profile supports, plus the keywords recruiters search for this role.
+## Featured and projects
+What to pin, chosen from the candidate's real projects.
+## Get noticed by recruiters
+5 concrete actions (open-to-work settings, location, posting ideas) and 2 connection-request messages under 300 characters.`,
+
+  roadmap: `Build a personalised learning roadmap from the candidate's profile to their target role.
+## Where you stand
+Table: Skill | Level now (Strong / Intermediate / Beginner / Missing — judged only from profile evidence; say "unknown" if there is none) | Needed for the role.
+## Your N-week plan
+Use the number of weeks and hours per week given (default 8 weeks, 8 hours). One section per week: goal, what to learn, a hands-on task, and how to know it is done.
+## Portfolio projects
+2–3 projects that prove the missing skills, each with scope, stack and what to show recruiters.
+## Resources
+Prefer free, well-known official sources (official documentation, the course provider's own name). Never invent URLs, prices or course titles you are not sure exist.
+## Certifications worth it
+Only widely recognised ones relevant to the role, with why each matters; say when none is needed.
+## Ready to apply when
+A short checklist of signals that the candidate is ready to apply.`,
+
+  document: `Write the career document requested (its type is given first in the input) using only facts from the profile and the details provided.
+Supported types and rules:
+- Statement of purpose / personal statement: 600–900 words, specific programme fit, a real story, no clichés.
+- Professional bio: a 3-sentence short version and a 120-word long version, third person.
+- Internship application letter: under 300 words, specific to the company and role.
+- Recommendation letter draft: written for the recommender to edit, with [recommender: add …] placeholders for anything only they know.
+- Resignation letter: short, gracious, with notice period and handover offer.
+- Thank-you email after an interview: under 150 words, one specific moment from the interview.
+- Recruiter follow-up email: under 120 words, one clear ask.
+Mark every detail you could not take from the input as [add …] rather than inventing it. Output only the document plus, after a line, "## To make this stronger" with up to 3 questions.`,
+
+  strategy: `Prepare an application strategy for this job.
+## Readiness
+A checklist (CV tailored, keywords covered, cover letter, portfolio link, referral sought, application questions drafted, follow-up date set) with ✅ / ❌ / ⚠️ from what the input shows, then an overall verdict: Ready / Nearly ready / Not ready, and the single most important next step.
+## Strategy
+How to position the candidate for this role in 3–5 bullets, using true profile facts.
+## CV emphasis
+Which experience and projects to lead with, and which to cut, for this role.
+## Weak spots
+Likely weaknesses a recruiter will see, each with an honest way to address it.
+## Application questions
+If the posting or input includes application questions, draft answers from profile facts; otherwise list the 3 questions most likely to be asked and draft those.
+## Timeline
+When to apply, when to follow up (about 7 business days later), and who to reach out to (roles, not invented names).`,
 } as const;
 
 export type CareerMode = keyof typeof MODES;

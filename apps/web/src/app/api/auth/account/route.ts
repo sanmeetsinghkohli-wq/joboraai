@@ -5,6 +5,8 @@ import {
   comparePassword,
   emailConnectionsStore,
   getAuthenticatedUserId,
+  gmailTokensStore,
+  outboxStore,
   profilesStore,
   resumesStore,
   revokeSessions,
@@ -14,6 +16,7 @@ import {
   withUserData,
 } from '../_lib';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
+import { decryptSecret, revokeToken } from '@/lib/gmail';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +39,16 @@ async function DELETE_handler(req: NextRequest) {
 
   // End every session first, then remove each record.
   revokeSessions(userId);
+  const gmail = gmailTokensStore.get(userId);
+  if (gmail?.enc) {
+    try {
+      await revokeToken(decryptSecret(gmail.enc));
+    } catch {
+      /* the stored token is deleted below either way */
+    }
+  }
+  gmailTokensStore.delete(userId);
+  outboxStore.delete(userId);
   for (const [id, resume] of [...resumesStore.entries()]) {
     if (resume?.userId === userId) resumesStore.delete(id);
   }

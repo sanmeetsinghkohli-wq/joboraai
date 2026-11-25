@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Copy, Download, Mail, RotateCcw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Copy, Download, Mail, RotateCcw, Send } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { JobPicker } from '@/components/JobPicker';
 import { useToast } from '@/components/providers';
@@ -52,7 +53,9 @@ function buildBody(kind: Kind, profile: LiveUserProfile, job: LiveJob | null, co
 }
 
 export default function EmailPage() {
-  const { profile, selectedJob, logActivity } = useAppData();
+  const { profile, selectedJob, logActivity, applications } = useAppData();
+  const router = useRouter();
+  const [queueing, setQueueing] = useState(false);
   const { addToast } = useToast();
 
   const [kind, setKind] = useState<Kind>('application');
@@ -91,6 +94,25 @@ export default function EmailPage() {
     logActivity('mail', 'Opened an email draft', selectedJob ? selectedJob.company : subject);
   };
 
+  const addToOutbox = async () => {
+    setQueueing(true);
+    const linked = selectedJob ? applications.find((a) => a.jobId === selectedJob.id) : undefined;
+    const res = await fetch('/api/outbox', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: to.trim(), subject, body, kind, applicationId: linked?.id }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setQueueing(false);
+    if (!res.ok) {
+      addToast({ type: 'error', title: 'Could not add to outbox', description: data?.error?.message });
+      return;
+    }
+    logActivity('mail', 'Added an email to your outbox', selectedJob ? selectedJob.company : subject);
+    addToast({ type: 'success', title: 'Added to your outbox', description: 'Review it and press Approve & send.' });
+    router.push('/outbox');
+  };
+
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
@@ -104,7 +126,7 @@ export default function EmailPage() {
     <AppShell>
       <PageHeader
         title="Email"
-        description="Draft an application or follow-up email, then open it in your own mail app to attach your CV and send. Jobora does not send email for you."
+        description="Draft an application or follow-up email. Add it to your outbox to send from your connected Gmail after you approve it, or open it in your own mail app."
       />
 
       <div className="mx-auto max-w-3xl space-y-5">
@@ -166,7 +188,7 @@ export default function EmailPage() {
             {!profile.summary && (
               <>
                 {' '}
-                <Link href="/settings" className="font-semibold text-plum underline underline-offset-4">
+                <Link href="/profile#summary" className="font-semibold text-plum underline underline-offset-4">
                   Add a summary
                 </Link>{' '}
                 to your profile to fill the middle paragraph.
@@ -176,7 +198,11 @@ export default function EmailPage() {
         )}
 
         <div className="flex flex-wrap gap-2">
-          <Button onClick={openMail} disabled={!validTo || !body.trim()}>
+          <Button onClick={addToOutbox} loading={queueing} disabled={!validTo || !body.trim()}>
+            <Send className="h-4 w-4" aria-hidden="true" />
+            Add to outbox
+          </Button>
+          <Button variant="secondary" onClick={openMail} disabled={!validTo || !body.trim()}>
             <Mail className="h-4 w-4" aria-hidden="true" />
             Open in mail app
           </Button>

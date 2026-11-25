@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { GmailConnectionCard } from '@/components/GmailConnectionCard';
 import { useRouter } from 'next/navigation';
 import { Download, LogOut, Trash2, UserX } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
@@ -80,6 +81,9 @@ export default function SettingsPage() {
               <dd className="font-medium text-ink">{profile.email || '—'}</dd>
             </dl>
           </Card>
+          <Suspense fallback={null}>
+            <GmailConnectionCard />
+          </Suspense>
           <Card as="section">
             <CardTitle>Your career profile</CardTitle>
             <p className="mt-1 text-sm text-ink-muted">

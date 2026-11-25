@@ -65,10 +65,8 @@ function getStore(): Map<string, StoredApplication[]> {
 function getUserApplications(userId: string): StoredApplication[] {
   const store = getStore();
   const existing = store.get(userId);
-  if (Array.isArray(existing)) return existing;
-  const fresh: StoredApplication[] = [];
-  store.set(userId, fresh);
-  return fresh;
+  // Reading never writes: a new list is only saved when something is added to it.
+  return Array.isArray(existing) ? existing : [];
 }
 
 async function GET_handler(req: NextRequest) {

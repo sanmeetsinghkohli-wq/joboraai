@@ -38,5 +38,6 @@ export const config = {
     '/notifications/:path*',
     '/settings/:path*',
     '/profile/:path*',
+    '/outbox/:path*',
   ],
 };

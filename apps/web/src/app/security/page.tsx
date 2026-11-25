@@ -35,7 +35,7 @@ export default function SecurityPage() {
         <Bullets
           items={[
             'Submit applications on your behalf.',
-            'Send email from your accounts.',
+            'Send an email you have not approved. Connected Gmail is send-only, and each email needs your Approve & send.',
             'Ask for your email or job-board passwords.',
           ]}
         />

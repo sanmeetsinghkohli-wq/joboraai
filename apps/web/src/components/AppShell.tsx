@@ -18,6 +18,7 @@ import {
   Sparkles,
   Briefcase,
   IdCard,
+  Inbox,
   TrendingUp,
   UserRound,
   X,
@@ -48,7 +49,8 @@ const NAV: Array<{ title?: string; items: NavItem[] }> = [
     title: 'Find',
     items: [
       { href: '/jobs', label: 'Jobs', icon: Search, also: ['/saved-jobs'] },
-      { href: '/applications', label: 'Applications', icon: Send, also: ['/email-composer'] },
+      { href: '/applications', label: 'Applications', icon: Send },
+      { href: '/outbox', label: 'Outbox', icon: Inbox, also: ['/email-composer'] },
     ],
   },
   {

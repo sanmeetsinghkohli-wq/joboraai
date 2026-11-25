@@ -6,7 +6,7 @@ import { ArrowIcon, FOCUS, Line } from './shared';
 import { useStaticLayout } from '../use-render-tier';
 import { StaticResume } from '../ResumeCss';
 
-const FACTS = ['No credit card required', 'Upload PDF or DOCX', 'You press send, never Jobora'];
+const FACTS = ['No credit card required', 'Upload PDF or DOCX', 'Nothing sends without your OK'];
 
 export function Hero({ onWatchTour }: { onWatchTour?: () => void }) {
   const isStatic = useStaticLayout();
@@ -29,7 +29,7 @@ export function Hero({ onWatchTour }: { onWatchTour?: () => void }) {
               </Line>
             </h1>
             <p className="lp-fade text-lg md:text-xl text-[#63555F] leading-relaxed max-w-xl" style={{ ['--d' as string]: '0.35s' }}>
-              Jobora finds roles that fit you, tailors your CV and cover letter to each one, and drafts the email in your own mail app so you press send.
+              Jobora finds roles that fit you, tailors your CV and cover letter to each one, and sends it from your own Gmail once you approve it.
             </p>
             <div className="lp-fade flex flex-wrap items-center gap-4" style={{ ['--d' as string]: '0.45s' }}>
               <Link

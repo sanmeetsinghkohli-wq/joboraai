@@ -75,6 +75,24 @@ export const applicationsStore = persistent<any[]>('__jobora_applications', 'app
 export const resumesStore = persistent<any>('__jobora_resumes', 'resume');
 export const savedJobsStore = persistent<any[]>('__jobora_saved_jobs', 'saved');
 export const userJobsStore = persistent<any[]>('__jobora_user_jobs', 'userjobs');
+/** Encrypted Gmail refresh tokens. Never returned to the browser. */
+export const gmailTokensStore = persistent<{ enc: string; email: string; connectedAt: string }>('__jobora_gmail_tokens', 'gmailtoken');
+/** Emails waiting for the user's approval, and their send history. */
+export const outboxStore = persistent<OutboxItem[]>('__jobora_outbox', 'outbox');
+
+export interface OutboxItem {
+  id: string;
+  to: string;
+  subject: string;
+  body: string;
+  /** Optional link to a tracked application. */
+  applicationId?: string;
+  kind: 'application' | 'outreach' | 'followup' | 'other';
+  status: 'pending' | 'sent' | 'failed';
+  createdAt: string;
+  sentAt?: string;
+  error?: string;
+}
 export { flushPersistence };
 
 /** Load everything stored for one user in a handful of parallel queries. */
@@ -86,6 +104,8 @@ export async function loadUserData(userId: string): Promise<void> {
     applicationsStore.load(userId),
     savedJobsStore.load(userId),
     userJobsStore.load(userId),
+    gmailTokensStore.load(userId),
+    outboxStore.load(userId),
     resumesStore.loadWhere('userId', userId),
   ]);
 }

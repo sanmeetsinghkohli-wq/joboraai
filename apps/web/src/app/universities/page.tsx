@@ -23,7 +23,7 @@ export default function UniversitiesPage() {
         <Bullets
           items={[
             'Drafts never invent experience or qualifications.',
-            'Nothing is sent or submitted without the student pressing send.',
+            'Nothing is sent or submitted without the student approving it first.',
             'Job postings are scanned for scam signs and hidden instructions.',
           ]}
         />

@@ -35,7 +35,8 @@ export default function PrivacyPage() {
       <Section title="AI features">
         <p>
           When you use Copilot or a Career Ops tool (fit report, outreach, follow-ups, mock interview, offers), the text
-          you submit and the relevant parts of your profile are sent to our AI provider, Groq, to generate the reply.
+          you submit and the relevant parts of your profile are sent to our AI provider, Groq (or Google Gemini as a
+          backup when Groq is unavailable), to generate the reply.
           We only send what that request needs. The ATS check and red-flag scan run on our own server without AI.
         </p>
       </Section>
@@ -43,8 +44,19 @@ export default function PrivacyPage() {
         <p>
           Job listings come from public job boards and employers&apos; own career pages. Searching does not send your
           personal details to those sites. When you apply, you do so on the employer&apos;s own site or from your own
-          mail app; Jobora never submits applications or sends email for you.
+          mail app, or from your connected Gmail after you approve that specific email. Jobora never submits
+          applications or sends email on its own.
         </p>
+      </Section>
+      <Section title="Gmail connection (optional)">
+        <Bullets
+          items={[
+            'If you connect Gmail, Jobora asks Google only for permission to send email as you. It cannot read, search or delete your inbox.',
+            'An email is sent only when you press Approve & send on that email in your outbox. At most 20 a day.',
+            'The access token Google gives us is encrypted before it is stored, and is never shown in your browser.',
+            'You can disconnect at any time in Settings, or in your Google account under third-party access. Deleting your account also revokes it.',
+          ]}
+        />
       </Section>
       <Section title="What we do not do">
         <Bullets

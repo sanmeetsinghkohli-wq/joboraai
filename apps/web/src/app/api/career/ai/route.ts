@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAuthenticatedUserId } from '../../auth/_lib';
+import { getAuthenticatedUserId, withUserData } from '../../auth/_lib';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { MODES, systemPrompt, type CareerMode } from '@/lib/career-ops/prompts';
 import { scanPosting } from '@/lib/career-ops/safety';
@@ -32,7 +32,7 @@ function profileBlock(p: Record<string, any>) {
     : '(The candidate has not filled in a profile yet.)';
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return NextResponse.json({ error: { message: 'Please log in.' } }, { status: 401 });
   if (!checkRateLimit(`career:${userId}:${getClientIp(req)}`, 20, 60000).allowed) {
@@ -95,3 +95,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export const POST = withUserData(POST_handler);

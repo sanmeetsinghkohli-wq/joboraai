@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAuthenticatedUserId } from '../../auth/_lib';
+import { getAuthenticatedUserId, withUserData } from '../../auth/_lib';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { auditAts } from '@/lib/career-ops/verify-ats.mjs';
 import { cvToHtml, textToHtml } from '@/lib/career-ops/cvHtml';
@@ -15,7 +15,7 @@ const Body = z.object({
   keywords: z.string().max(2000).optional(),
 });
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return NextResponse.json({ error: { message: 'Please log in.' } }, { status: 401 });
   if (!checkRateLimit(`ats:${userId}:${getClientIp(req)}`, 30, 60000).allowed) {
@@ -34,3 +34,5 @@ export async function POST(req: NextRequest) {
   const result = auditAts(html, { keywords: keywords || undefined });
   return NextResponse.json(result);
 }
+
+export const POST = withUserData(POST_handler);

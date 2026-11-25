@@ -1,24 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getDatabaseStatus, checkDatabaseReadiness } from '@/lib/db';
+import { kvPing } from '@/lib/db/kv';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Public health check for uptime monitors. Reports only whether the app and its
+ * database answer; no configuration, provider or setup details.
+ */
 export async function GET() {
-  const dbStatus = getDatabaseStatus();
-  const readiness = checkDatabaseReadiness();
-
-  return NextResponse.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    database: {
-      isConfigured: dbStatus.isConfigured,
-      provider: dbStatus.provider,
-      storageEngine: dbStatus.storageEngine,
-      requireDurableStorage: dbStatus.requireDurableStorage,
-      storageBucket: dbStatus.storageBucket,
-      statusMessage: dbStatus.statusMessage,
-      nextAction: readiness.nextAction,
-    },
-    version: '1.0.0-phase5',
-  });
+  const database = await kvPing();
+  const healthy = database === 'ok';
+  return NextResponse.json(
+    { status: healthy ? 'healthy' : 'degraded', database, timestamp: new Date().toISOString() },
+    { status: healthy ? 200 : 503, headers: { 'Cache-Control': 'no-store' } }
+  );
 }

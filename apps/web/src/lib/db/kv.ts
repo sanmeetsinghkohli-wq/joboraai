@@ -45,6 +45,17 @@ async function kvFetch(query: string): Promise<Array<{ key: string; value: unkno
   return res.json();
 }
 
+/** One cheap read to confirm the database answers. Used by /api/status for uptime checks. */
+export async function kvPing(): Promise<'ok' | 'unavailable' | 'not_configured'> {
+  if (!kvEnabled) return 'not_configured';
+  try {
+    await kvFetch('limit=1');
+    return 'ok';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 async function kvUpsert(key: string, value: unknown): Promise<void> {
   const res = await fetch(`${URL_}/rest/v1/jobora_kv?on_conflict=key`, {
     method: 'POST',

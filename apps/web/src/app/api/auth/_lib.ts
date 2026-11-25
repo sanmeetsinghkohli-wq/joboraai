@@ -17,6 +17,8 @@ export interface StoredUser extends User {
   verificationToken?: string | null;
   resetToken?: string | null;
   resetTokenExpires?: number | null;
+  /** Bumped on logout; tokens carrying an older version are rejected. */
+  tokenVersion?: number;
 }
 
 export interface StoredProfileRecord {
@@ -59,7 +61,10 @@ declare global {
 // `await flushPersistence()` before responding after a write.
 const persistent = <V,>(name: string, ns: string): PersistentMap<V> => {
   const g = global as unknown as Record<string, unknown>;
-  if (!(g[name] instanceof PersistentMap)) g[name] = new PersistentMap<V>(ns);
+  // Each route bundle gets its own copy of the PersistentMap class, so `instanceof`
+  // fails across routes; check the shape instead so all routes share one cache.
+  const existing = g[name] as { load?: unknown } | undefined;
+  if (typeof existing?.load !== 'function') g[name] = new PersistentMap<V>(ns);
   return g[name] as PersistentMap<V>;
 };
 
@@ -115,26 +120,46 @@ export function generateToken(
   emailVerified: boolean,
   expiresIn: string = '7d'
 ): string {
+  // Login loads the user by email, other routes by id; either record carries the version.
+  const ver = (usersStore.get(userId) ?? usersStore.get(email.toLowerCase()))?.tokenVersion ?? 0;
   return jwt.sign(
-    { sub: userId, firstName, email, emailVerified },
+    { sub: userId, firstName, email, emailVerified, ver },
     JWT_SECRET,
     { expiresIn: expiresIn as any }
   );
 }
 
+/**
+ * Verifies the signature and expiry, then rejects tokens issued before the
+ * user's last logout (their tokenVersion moved on). The user record must be
+ * loaded first; handlers wrapped in withUserData always have it.
+ */
 export function verifyToken(token: string) {
   try {
-    return jwt.verify(token, JWT_SECRET) as {
+    const payload = jwt.verify(token, JWT_SECRET) as {
       sub: string;
       firstName: string;
       email: string;
       emailVerified: boolean;
+      ver?: number;
       iat: number;
       exp: number;
     };
+    const user = usersStore.get(payload.sub);
+    if (user && (user.tokenVersion ?? 0) !== (payload.ver ?? 0)) return null;
+    return payload;
   } catch {
     return null;
   }
+}
+
+/** Ends every session for this user, on all devices, by moving their token version on. */
+export function revokeSessions(userId: string): void {
+  const user = usersStore.get(userId);
+  if (!user) return;
+  const updated = { ...user, tokenVersion: (user.tokenVersion ?? 0) + 1 };
+  usersStore.set(user.id, updated);
+  usersStore.set(user.email, updated);
 }
 
 export function getAuthenticatedUserId(req: Request): string | null {

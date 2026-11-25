@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuthenticatedUserId, withUserData } from '../../auth/_lib';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,7 +89,15 @@ function computeDeterministicExplanation(
   };
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
+  // Signed-in users only, and rate-limited: this route can call a paid AI API.
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: 'Please log in.' }, { status: 401 });
+  }
+  if (!checkRateLimit(`match:${userId}:${getClientIp(req)}`, 30, 60000).allowed) {
+    return NextResponse.json({ error: 'Too many requests. Wait a moment.' }, { status: 429 });
+  }
   try {
     const body = await req.json();
     const job = body?.job || {};
@@ -196,3 +206,5 @@ Summary: ${String(profile.summary || '').slice(0, 300)}`;
     return NextResponse.json({ error: 'Invalid match request payload' }, { status: 400 });
   }
 }
+
+export const POST = withUserData(POST_handler);

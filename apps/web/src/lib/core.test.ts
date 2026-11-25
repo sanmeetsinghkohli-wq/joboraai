@@ -140,3 +140,41 @@ describe('gmail security', () => {
     expect(verifyState('forged.state.value')).toBeNull();
   });
 });
+
+import { alertMatches, newMatches } from './jobAlerts';
+import { inThisWeek, weekStart } from './workspace';
+
+describe('job alerts', () => {
+  const job = (id: string, title: string, location: string, employmentType = 'Full-Time') => ({
+    id, title, company: 'Acme', description: '', location, skills: ['python'], employmentType,
+  });
+  const jobs = [job('1', 'Data Analyst', 'Dubai'), job('2', 'ML Intern', 'Bengaluru, India', 'Internship'), job('3', 'Sales Lead', 'Dubai')];
+
+  it('matches on query, region, type and tech filter', () => {
+    expect(jobs.filter((j) => alertMatches(j, { query: 'python', region: 'Dubai', jobType: '', techOnly: true })).map((j) => j.id)).toEqual(['1']);
+    expect(jobs.filter((j) => alertMatches(j, { query: '', region: '', jobType: 'Internship', techOnly: false })).map((j) => j.id)).toEqual(['2']);
+  });
+
+  it('counts only unseen matches', () => {
+    expect(newMatches(jobs, { query: '', region: 'Dubai', jobType: '', techOnly: false, seenIds: ['1'] }).map((j) => j.id)).toEqual(['3']);
+  });
+});
+
+describe('weekly goals', () => {
+  it('starts weeks on Monday', () => {
+    expect(weekStart(new Date(2026, 10, 26))).toBe('2026-11-23');
+    expect(weekStart(new Date(2026, 10, 23))).toBe('2026-11-23');
+    expect(inThisWeek('2026-11-22', new Date(2026, 10, 26))).toBe(false);
+    expect(inThisWeek('2026-11-29', new Date(2026, 10, 26))).toBe(true);
+  });
+});
+
+import { isAdminEmail } from './admin';
+
+describe('admin allowlist', () => {
+  it('allows only listed emails and nobody when the list is empty', () => {
+    expect(isAdminEmail('Boss@Jobora.app', 'a@x.test, boss@jobora.app')).toBe(true);
+    expect(isAdminEmail('other@jobora.app', 'boss@jobora.app')).toBe(false);
+    expect(isAdminEmail('boss@jobora.app', '')).toBe(false);
+  });
+});

@@ -1,5 +1,7 @@
 'use client';
 
+import { InterviewHistory } from '@/components/InterviewHistory';
+import { recordInterview, scoreFromFeedback } from '@/lib/workspace';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Mic, Square, Trash2, Volume2 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
@@ -108,7 +110,11 @@ export default function InterviewPage() {
     });
     const data = await res.json().catch(() => ({}));
     setFeedbackLoading(false);
-    if (res.ok && data.text) setFeedback(data.text);
+    if (res.ok && data.text) {
+      setFeedback(data.text);
+      const score = scoreFromFeedback(data.text);
+      if (score !== null) recordInterview({ role: roleLabel, question: question.text, score, source: 'practice' });
+    }
     else setFeedbackError(data?.error?.message || 'Feedback is not available right now.');
   };
 
@@ -320,6 +326,7 @@ export default function InterviewPage() {
           </Card>
         </div>
       </div>
+      <InterviewHistory />
     </AppShell>
   );
 }

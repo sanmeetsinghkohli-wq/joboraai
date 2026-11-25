@@ -41,5 +41,7 @@ export const config = {
     '/outbox/:path*',
     '/analytics/:path*',
     '/resume-studio/:path*',
+    '/gcc-guide/:path*',
+    '/admin/:path*',
   ],
 };

@@ -7,6 +7,7 @@ import {
   getAuthenticatedUserId,
   gmailTokensStore,
   outboxStore,
+  extrasStore,
   profilesStore,
   resumesStore,
   revokeSessions,
@@ -49,6 +50,7 @@ async function DELETE_handler(req: NextRequest) {
   }
   gmailTokensStore.delete(userId);
   outboxStore.delete(userId);
+  extrasStore.delete(userId);
   for (const [id, resume] of [...resumesStore.entries()]) {
     if (resume?.userId === userId) resumesStore.delete(id);
   }

@@ -88,6 +88,38 @@ export const gmailTokensStore = persistent<{ enc: string; email: string; connect
 /** Emails waiting for the user's approval, and their send history. */
 export const outboxStore = persistent<OutboxItem[]>('__jobora_outbox', 'outbox');
 
+export interface JobAlert {
+  id: string;
+  name: string;
+  query: string;
+  region: string;
+  jobType: string;
+  techOnly: boolean;
+  /** Job ids the user has already seen for this alert (newest 1000). */
+  seenIds: string[];
+  createdAt: string;
+}
+export interface InterviewRecord {
+  id: string;
+  at: string;
+  role: string;
+  question: string;
+  score: number;
+  source: 'practice' | 'career-ops';
+}
+export interface WeeklyGoals {
+  weekOf: string;
+  applications: number;
+  outreach: number;
+  practice: number;
+}
+export interface UserExtras {
+  alerts?: JobAlert[];
+  goals?: WeeklyGoals;
+  interviews?: InterviewRecord[];
+}
+export const extrasStore = persistent<UserExtras>('__jobora_extras', 'extras');
+
 export interface OutboxItem {
   id: string;
   to: string;
@@ -114,6 +146,7 @@ export async function loadUserData(userId: string): Promise<void> {
     userJobsStore.load(userId),
     gmailTokensStore.load(userId),
     outboxStore.load(userId),
+    extrasStore.load(userId),
     resumesStore.loadWhere('userId', userId),
   ]);
 }

@@ -63,11 +63,15 @@ export function kvSetShared(key: string, value: unknown): void {
   track(kvUpsert(key, value)).catch((e) => console.error('[persistence]', e.message));
 }
 
-/** List documents whose key starts with a prefix (admin aggregates only). */
-export async function kvList<T>(prefix: string, limit = 5000): Promise<Array<{ key: string; value: T; updated_at: string }>> {
+/**
+ * List documents whose key starts with a prefix, selecting only the JSON fields
+ * given (e.g. `createdAt:value->>createdAt`) so secrets are never fetched.
+ * Admin aggregates only.
+ */
+export async function kvList<T = Record<string, unknown>>(prefix: string, select: string, limit = 10000): Promise<Array<T & { key: string }>> {
   if (!kvEnabled) return [];
   const res = await fetch(
-    `${URL_}/rest/v1/jobora_kv?select=key,value,updated_at&key=like.${encodeURIComponent(`${prefix}*`)}&limit=${limit}`,
+    `${URL_}/rest/v1/jobora_kv?select=key,${select}&key=like.${encodeURIComponent(`${prefix}*`)}&limit=${limit}`,
     { headers: headers(), cache: 'no-store' }
   );
   return res.ok ? res.json() : [];

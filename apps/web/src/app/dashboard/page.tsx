@@ -24,6 +24,8 @@ import {
   Wand2,
 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
+import { JobAlertsBar } from '@/components/JobAlertsBar';
+import { WeeklyGoals } from '@/components/WeeklyGoals';
 import { ButtonLink } from '@/components/ui/button';
 import { Notice, Skeleton } from '@/components/ui/primitives';
 import { useAppData, type LiveApplication } from '@/context/AppDataContext';
@@ -280,6 +282,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-6">
+          <Panel title="This week">
+            <WeeklyGoals applications={applications} />
+          </Panel>
+
+          <Panel title="Job alerts" action={{ href: '/jobs', label: 'Manage' }}>
+            <JobAlertsBar compact />
+          </Panel>
+
           {/* Matched jobs */}
           <Panel title={profile.skills.length ? 'Matched for you' : 'Latest roles'} action={{ href: '/jobs', label: 'All jobs' }}>
             {jobsError ? (

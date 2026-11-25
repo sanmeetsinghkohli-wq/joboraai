@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { recordInterview, scoreFromFeedback } from '@/lib/workspace';
 import { AlertTriangle, ClipboardCheck, Copy, Loader2 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { AnswerTools } from '@/components/AnswerTools';
@@ -557,7 +558,10 @@ function MockInterview() {
               disabled={loading || !answer.trim()}
               onClick={async () => {
                 setLoading(true);
-                setFeedback(await callAi('mock-feedback', `Role: ${role}\nQuestion: ${question}\nAnswer: ${answer}`, profile));
+                const r = await callAi('mock-feedback', `Role: ${role}\nQuestion: ${question}\nAnswer: ${answer}`, profile);
+                setFeedback(r);
+                const score = scoreFromFeedback(r.text);
+                if (score !== null) recordInterview({ role, question, score, source: 'career-ops' });
                 setLoading(false);
               }}
             >

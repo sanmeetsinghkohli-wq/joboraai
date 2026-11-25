@@ -17,6 +17,7 @@ import {
   X as XIcon,
 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
+import { JobAlertsBar } from '@/components/JobAlertsBar';
 import { CompanyInitial, JobRow } from '@/components/JobRow';
 import { MatchMeter } from '@/components/MatchMeter';
 import { useToast } from '@/components/providers';
@@ -594,6 +595,19 @@ function JobsContent() {
               ]}
             />
           </div>
+          <JobAlertsBar
+            filters={{ query: query.trim(), region, jobType, techOnly }}
+            autoOpenId={params?.get('alert') || undefined}
+            onApply={(a) => {
+              setQuery(a.query);
+              setRegion(a.region);
+              setJobType(a.jobType);
+              setTechOnly(a.techOnly);
+              setView('all');
+              setVisible(PAGE_SIZE);
+              refreshJobs(a.query, a.region);
+            }}
+          />
         </Card>
       </div>
 

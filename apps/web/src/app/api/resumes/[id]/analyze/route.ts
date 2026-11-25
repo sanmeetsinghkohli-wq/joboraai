@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUserId, resumesStore } from '../../../auth/_lib';
+import { getAuthenticatedUserId, resumesStore, withUserData } from '../../../auth/_lib';
 import { extractCandidateProfile } from '@jobora/backend';
 import type { CVExtractionInput } from '@jobora/backend';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(
+async function POST_handler(
   request: NextRequest,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
@@ -62,3 +62,5 @@ export async function POST(
     );
   }
 }
+
+export const POST = withUserData(POST_handler);

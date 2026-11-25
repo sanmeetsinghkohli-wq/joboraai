@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { usersStore, getAuthenticatedUserId } from '../_lib';
+import { usersStore, getAuthenticatedUserId, withUserData } from '../_lib';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const token = body?.token;
@@ -33,3 +33,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export const POST = withUserData(POST_handler);

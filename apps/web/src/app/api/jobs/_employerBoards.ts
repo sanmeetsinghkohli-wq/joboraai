@@ -19,13 +19,15 @@ import {
   stripHtml,
 } from './_providers';
 
-type Ats = 'greenhouse' | 'lever' | 'ashby';
+type Ats = 'greenhouse' | 'lever' | 'ashby' | 'workable';
 
 interface Board {
   ats: Ats;
   slug: string;
   company: string;
   ai?: boolean;
+  /** Keep only software, data, AI and other CS roles (for boards with many non-tech jobs). */
+  techOnly?: boolean;
 }
 
 const BOARDS: Board[] = [
@@ -47,12 +49,25 @@ const BOARDS: Board[] = [
   { ats: 'ashby', slug: 'elevenlabs', company: 'ElevenLabs', ai: true },
   { ats: 'greenhouse', slug: 'scaleai', company: 'Scale AI', ai: true },
   { ats: 'greenhouse', slug: 'xai', company: 'xAI', ai: true },
+  // MENA tech employers (Gulf, Saudi Arabia, Egypt)
+  { ats: 'ashby', slug: 'leantech', company: 'Lean Technologies' },
+  { ats: 'ashby', slug: 'thndr', company: 'Thndr' },
+  { ats: 'ashby', slug: 'ziina', company: 'Ziina' },
+  { ats: 'workable', slug: 'foodics', company: 'Foodics', techOnly: true },
+  { ats: 'workable', slug: 'lucidya', company: 'Lucidya', ai: true, techOnly: true },
+  { ats: 'workable', slug: 'salla', company: 'Salla', techOnly: true },
+  { ats: 'workable', slug: 'alpheya', company: 'Alpheya' },
+  { ats: 'greenhouse', slug: 'bybit', company: 'Bybit', techOnly: true },
+  { ats: 'greenhouse', slug: 'gitlab', company: 'GitLab', techOnly: true },
 ];
+
+const TECH_ROLE =
+  /\b(engineer|engineering|developer|software|data|machine learning|ml|ai|llm|python|backend|back-end|frontend|front-end|full.?stack|devops|sre|cloud|security|scientist|analytics|analyst|platform|mobile|ios|android|qa|test|architect|infrastructure|research|intern|internship|graduate)\b/i;
 
 const PER_BOARD = 30;
 
 const TARGET_REGION =
-  /\b(india|bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|delhi|noida|chennai|kolkata|ahmedabad|lucknow|jaipur|kochi|indore|coimbatore|chandigarh|dubai|abu dhabi|sharjah|uae|united arab emirates|riyadh|jeddah|saudi arabia|doha|qatar)\b/i;
+  /\b(india|bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|delhi|noida|chennai|kolkata|ahmedabad|lucknow|jaipur|kochi|indore|coimbatore|chandigarh|dubai|abu dhabi|sharjah|uae|united arab emirates|riyadh|jeddah|dammam|khobar|saudi arabia|ksa|doha|qatar|kuwait|bahrain|manama|muscat|oman|cairo|giza|alexandria|egypt|amman|jordan|beirut|lebanon|casablanca|rabat|morocco|tunis|tunisia|mena|gcc|middle east)\b/i;
 
 interface RawRole {
   id: string;
@@ -97,6 +112,21 @@ async function readBoard(board: Board): Promise<RawRole[]> {
       updated: j.createdAt,
       type: j.categories?.commitment,
       remote: String(j.workplaceType || '').toLowerCase() === 'remote',
+    }));
+  }
+  if (board.ats === 'workable') {
+    const res = await fetchWithTimeout(`https://apply.workable.com/api/v1/widget/accounts/${board.slug}`, { timeoutMs: 9000 });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (Array.isArray(data?.jobs) ? data.jobs : []).map((j: any) => ({
+      id: String(j.shortcode),
+      title: String(j.title || ''),
+      location: [j.city, j.state, j.country].filter(Boolean).join(', '),
+      description: [j.department, j.function, j.experience, j.education].filter(Boolean).join(' · '),
+      url: j.url,
+      updated: j.published_on || j.created_at,
+      type: j.employment_type,
+      remote: j.telecommuting === true || j.telecommuting === 'true',
     }));
   }
   const res = await fetchWithTimeout(`https://api.ashbyhq.com/posting-api/job-board/${board.slug}`, { timeoutMs: 9000 });
@@ -160,7 +190,10 @@ export async function fetchEmployerBoardJobs(): Promise<AdapterResult> {
   const settled = await Promise.allSettled(
     BOARDS.map(async (board) => {
       const roles = (await readBoard(board)).filter(
-        (r) => r.title && (TARGET_REGION.test(r.location) || r.remote || /\bremote\b/i.test(r.location))
+        (r) =>
+          r.title &&
+          (TARGET_REGION.test(r.location) || r.remote || /\bremote\b/i.test(r.location)) &&
+          (!board.techOnly || TECH_ROLE.test(r.title))
       );
       // Internships and AI/ML roles first, then newest, so they survive the per-board cap.
       const rank = (r: RawRole) =>

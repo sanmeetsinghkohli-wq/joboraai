@@ -168,6 +168,11 @@ export function normalizeLocationAndRegion(
       regionTag: 'Saudi Arabia',
     };
   }
+  const eastern = combined.match(/\b(dammam|khobar|al khobar|dhahran)\b/);
+  if (eastern) {
+    const city = { dammam: 'Dammam', khobar: 'Al Khobar', 'al khobar': 'Al Khobar', dhahran: 'Dhahran' }[eastern[1]] || 'Dammam';
+    return { location: `${city}, Saudi Arabia`, city, country: 'Saudi Arabia', regionTag: 'Saudi Arabia' };
+  }
   if (/\b(saudi arabia|saudi|ksa)\b/.test(combined)) {
     return {
       location: 'Riyadh, Saudi Arabia',
@@ -215,6 +220,19 @@ export function normalizeLocationAndRegion(
       country: 'Jordan',
       regionTag: 'GCC / MENA',
     };
+  }
+  const wider: Array<[RegExp, string, string]> = [
+    [/\b(cairo|giza|alexandria|egypt)\b/, 'Cairo', 'Egypt'],
+    [/\b(beirut|lebanon)\b/, 'Beirut', 'Lebanon'],
+    [/\b(casablanca|rabat|morocco)\b/, 'Casablanca', 'Morocco'],
+    [/\b(tunis|tunisia)\b/, 'Tunis', 'Tunisia'],
+  ];
+  for (const [re, defaultCity, country] of wider) {
+    const m = combined.match(re);
+    if (m) {
+      const named = m[1] === country.toLowerCase() ? defaultCity : m[1].charAt(0).toUpperCase() + m[1].slice(1);
+      return { location: `${named}, ${country}`, city: named, country, regionTag: 'GCC / MENA' };
+    }
   }
   if (/\b(mena|gcc)\b/.test(combined)) {
     return {

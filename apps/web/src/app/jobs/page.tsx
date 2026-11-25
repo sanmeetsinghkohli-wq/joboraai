@@ -47,6 +47,8 @@ const REGIONS = [
   { label: 'Abu Dhabi', value: 'Abu Dhabi' },
   { label: 'Saudi Arabia', value: 'Saudi Arabia' },
   { label: 'Qatar', value: 'Qatar' },
+  { label: 'All MENA', value: 'MENA' },
+  { label: 'Egypt', value: 'Egypt' },
   { label: 'India', value: 'India' },
   { label: 'Bengaluru', value: 'Bengaluru' },
   { label: 'Delhi NCR', value: 'Delhi NCR' },

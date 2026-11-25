@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { PersistentMap, flushPersistence } from '@/lib/db/kv';
 import type { User, EmailConnection } from '@jobora/types';
 
 export const isProduction = process.env.NODE_ENV === 'production';
@@ -53,19 +54,59 @@ declare global {
   var __jobora_saved_jobs: Map<string, any[]> | undefined;
 }
 
-export const usersStore: Map<string, StoredUser> =
-  global.__jobora_users || (global.__jobora_users = new Map<string, StoredUser>());
-export const emailConnectionsStore: Map<string, EmailConnection[]> =
-  global.__jobora_email_connections ||
-  (global.__jobora_email_connections = new Map<string, EmailConnection[]>());
-export const profilesStore: Map<string, StoredProfileRecord> =
-  global.__jobora_profiles || (global.__jobora_profiles = new Map<string, StoredProfileRecord>());
-export const applicationsStore: Map<string, any[]> =
-  global.__jobora_applications || (global.__jobora_applications = new Map<string, any[]>());
-export const resumesStore: Map<string, any> =
-  global.__jobora_resumes || (global.__jobora_resumes = new Map<string, any>());
-export const savedJobsStore: Map<string, any[]> =
-  global.__jobora_saved_jobs || (global.__jobora_saved_jobs = new Map<string, any[]>());
+// Each store is cached in memory and persisted to Supabase when it is configured
+// (see lib/db/kv.ts). Handlers must `await store.load(...)` before reading and
+// `await flushPersistence()` before responding after a write.
+const persistent = <V,>(name: string, ns: string): PersistentMap<V> => {
+  const g = global as unknown as Record<string, unknown>;
+  if (!(g[name] instanceof PersistentMap)) g[name] = new PersistentMap<V>(ns);
+  return g[name] as PersistentMap<V>;
+};
+
+export const usersStore = persistent<StoredUser>('__jobora_users', 'user');
+export const emailConnectionsStore = persistent<EmailConnection[]>('__jobora_email_connections', 'email');
+export const profilesStore = persistent<StoredProfileRecord>('__jobora_profiles', 'profile');
+export const applicationsStore = persistent<any[]>('__jobora_applications', 'apps');
+export const resumesStore = persistent<any>('__jobora_resumes', 'resume');
+export const savedJobsStore = persistent<any[]>('__jobora_saved_jobs', 'saved');
+export const userJobsStore = persistent<any[]>('__jobora_user_jobs', 'userjobs');
+export { flushPersistence };
+
+/** Load everything stored for one user in a handful of parallel queries. */
+export async function loadUserData(userId: string): Promise<void> {
+  await Promise.all([
+    usersStore.load(userId),
+    profilesStore.load(userId),
+    emailConnectionsStore.load(userId),
+    applicationsStore.load(userId),
+    savedJobsStore.load(userId),
+    userJobsStore.load(userId),
+    resumesStore.loadWhere('userId', userId),
+  ]);
+}
+
+/**
+ * Wraps a route handler so the signed-in user's data is loaded from Supabase
+ * before it runs, and every write it made is saved before the response goes out.
+ */
+export function withUserData<A extends [Request, ...any[]]>(handler: (...args: A) => Promise<Response>) {
+  return async (...args: A): Promise<Response> => {
+    const userId = getAuthenticatedUserId(args[0]);
+    if (userId) {
+      try {
+        await loadUserData(userId);
+      } catch (e) {
+        console.error('[persistence] load failed', e instanceof Error ? e.message : e);
+      }
+    }
+    try {
+      return await handler(...args);
+    } finally {
+      await flushPersistence();
+    }
+  };
+}
+
 
 export function generateToken(
   userId: string,

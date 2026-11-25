@@ -6,11 +6,12 @@ import {
   getCookie,
   verifyToken,
   clearCookie,
+  withUserData,
 } from '../_lib';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   try {
     const token = getCookie(req, 'access_token') || getCookie(req, 'session');
     if (!token) {
@@ -51,3 +52,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: { message: 'Internal server error' } }, { status: 500 });
   }
 }
+
+export const GET = withUserData(GET_handler);

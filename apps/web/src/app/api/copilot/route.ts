@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUserId, profilesStore, applicationsStore } from '../auth/_lib';
+import { getAuthenticatedUserId, profilesStore, applicationsStore, withUserData } from '../auth/_lib';
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rateLimit';
 import { z } from 'zod';
 import fs from 'fs';
@@ -84,7 +84,7 @@ const CopilotOutputSchema = z.object({
   timestamp: z.string(),
 });
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
@@ -402,3 +402,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export const POST = withUserData(POST_handler);

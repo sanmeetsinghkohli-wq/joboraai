@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCookie, setCookie, verifyToken, comparePassword, generateToken, usersStore } from '../_lib';
+import { getCookie, setCookie, verifyToken, comparePassword, generateToken, usersStore, withUserData } from '../_lib';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest) {
+async function POST_handler(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = String(email).toLowerCase().trim();
+    await usersStore.load(normalizedEmail);
     const userData =
       usersStore.get(normalizedEmail) ||
       Array.from(usersStore.values()).find((u) => u.email === normalizedEmail);
@@ -80,3 +81,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withUserData(POST_handler);

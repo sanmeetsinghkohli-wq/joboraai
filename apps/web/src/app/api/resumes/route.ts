@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
-import { getAuthenticatedUserId, resumesStore } from '../auth/_lib';
+import { getAuthenticatedUserId, resumesStore, withUserData } from '../auth/_lib';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,7 +107,7 @@ function validateFileBuffer(
   return { valid: true };
 }
 
-export async function POST(request: NextRequest) {
+async function POST_handler(request: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(request);
     if (!userId) {
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+async function GET_handler(request: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(request);
     if (!userId) {
@@ -330,3 +330,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const POST = withUserData(POST_handler);
+export const GET = withUserData(GET_handler);

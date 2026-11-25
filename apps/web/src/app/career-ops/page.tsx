@@ -10,11 +10,27 @@ import { Badge, Card, CardTitle, Field, Input, Notice, PageHeader, Segmented, Se
 import { useAppData } from '@/context/AppDataContext';
 import { cn } from '@/lib/cn';
 
-type Tab = 'evaluate' | 'ats' | 'outreach' | 'followup' | 'mock' | 'offer';
+type Tab =
+  | 'evaluate'
+  | 'triage'
+  | 'cv'
+  | 'ats'
+  | 'cover'
+  | 'interview-prep'
+  | 'upskill'
+  | 'outreach'
+  | 'followup'
+  | 'mock'
+  | 'offer';
 
 const TABS: Array<{ value: Tab; label: string }> = [
   { value: 'evaluate', label: 'Fit report' },
+  { value: 'triage', label: 'Triage' },
+  { value: 'cv', label: 'Tailor CV' },
   { value: 'ats', label: 'ATS check' },
+  { value: 'cover', label: 'Cover letter' },
+  { value: 'interview-prep', label: 'Interview prep' },
+  { value: 'upskill', label: 'Skill plan' },
   { value: 'outreach', label: 'Outreach' },
   { value: 'followup', label: 'Follow-ups' },
   { value: 'mock', label: 'Mock interview' },
@@ -54,6 +70,61 @@ export default function CareerOpsPage() {
       />
       <Segmented label="Tool" options={TABS} value={tab} onChange={setTab} className="mb-6 overflow-x-auto" />
       {tab === 'evaluate' && <Evaluate />}
+      {tab === 'triage' && (
+        <JobTool
+          key="triage"
+          mode="triage"
+          title="Quick go / no-go on several roles"
+          description="Paste two or more postings, separated by a line with three dashes (---). You get one line per role with a score estimate and a verdict."
+          inputLabel="Job postings"
+          placeholder={'First job description…\n---\nSecond job description…'}
+          button="Triage roles"
+        />
+      )}
+      {tab === 'cv' && (
+        <JobTool
+          key="cv"
+          mode="cv"
+          title="Tailor your CV to one role"
+          description="Reorders and rewords your own profile around the job's keywords, keeps it ATS-safe, and lists anything it could not trace back to your profile."
+          button="Tailor my CV"
+          withJob
+        />
+      )}
+      {tab === 'cover' && (
+        <JobTool
+          key="cover"
+          mode="cover"
+          title="Cover letter, 300–420 words"
+          description="Answer the questions below in a few words each for a much stronger letter. You review it before using it anywhere."
+          inputLabel="Your answers (optional)"
+          placeholder={'Why this company or role?\nWhat problem would you help them solve?\nWhat would you do first?\nTone: direct, conversational or formal?'}
+          button="Draft cover letter"
+          withJob
+          optionalInput
+        />
+      )}
+      {tab === 'interview-prep' && (
+        <JobTool
+          key="interview-prep"
+          mode="interview-prep"
+          title="Prepare for the interview"
+          description="Likely questions, STAR+R stories built only from your profile, questions to ask them, and honest answers to your weak spots."
+          button="Build interview prep"
+          withJob
+        />
+      )}
+      {tab === 'upskill' && (
+        <JobTool
+          key="upskill"
+          mode="upskill"
+          title="Close your skill gaps"
+          description="Ranks the gaps that recur across your target roles with the fastest credible way to close each, and suggests other job titles worth searching."
+          inputLabel="Target roles or postings"
+          placeholder="e.g. AI engineer, ML engineer, data scientist — or paste a few postings"
+          button="Build my skill plan"
+        />
+      )}
       {tab === 'ats' && <AtsCheck />}
       {tab === 'outreach' && <SimpleDraft mode="outreach" />}
       {tab === 'followup' && <FollowUps />}
@@ -162,8 +233,8 @@ function Evaluate() {
       <Card>
         <CardTitle>Is this role worth applying for?</CardTitle>
         <p className="mb-4 mt-1 text-sm text-ink-muted">
-          Every requirement is checked against your profile, with the evidence quoted. You get a verdict, not a made-up
-          percentage.
+          Career-ops&apos; method: every requirement is checked against your profile with the evidence quoted, then one
+          overall score out of 5. Below 4.0 it will tell you honestly not to apply.
         </p>
         <JobInput id="fit-job" value={job} onChange={setJob} />
         <Button
@@ -527,6 +598,75 @@ function Offers() {
           }}
         >
           Compare offers
+        </Button>
+      </Card>
+      <Output result={result} loading={loading} />
+    </div>
+  );
+}
+
+/** One career-ops mode: an optional job posting plus an optional free-text field, then a draft. */
+function JobTool({
+  mode,
+  title,
+  description,
+  button,
+  withJob = false,
+  inputLabel,
+  placeholder,
+  optionalInput = false,
+}: {
+  mode: 'triage' | 'cv' | 'cover' | 'interview-prep' | 'upskill';
+  title: string;
+  description: string;
+  button: string;
+  withJob?: boolean;
+  inputLabel?: string;
+  placeholder?: string;
+  optionalInput?: boolean;
+}) {
+  const { profile } = useAppData();
+  const [job, setJob] = useState('');
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<AiResult | null>(null);
+
+  const ready = (!withJob || job.trim()) && (!inputLabel || optionalInput || text.trim());
+
+  const run = async () => {
+    setLoading(true);
+    const parts = [
+      withJob && `JOB POSTING:\n${job}`,
+      inputLabel && text.trim() && `${inputLabel.toUpperCase()}:\n${text}`,
+    ].filter(Boolean);
+    setResult(await callAi(mode, parts.join('\n\n'), profile));
+    setLoading(false);
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_1.3fr]">
+      <Card>
+        <CardTitle>{title}</CardTitle>
+        <p className="mb-4 mt-1 text-sm text-ink-muted">{description}</p>
+        {withJob && <JobInput id={`${mode}-job`} value={job} onChange={setJob} />}
+        {inputLabel && (
+          <Field
+            label={inputLabel}
+            htmlFor={`${mode}-text`}
+            optional={optionalInput}
+            className={withJob ? 'mt-4' : undefined}
+          >
+            <Textarea
+              id={`${mode}-text`}
+              rows={mode === 'triage' ? 12 : 5}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={placeholder}
+            />
+          </Field>
+        )}
+        <Button className="mt-4" disabled={loading || !ready} onClick={run}>
+          <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> {button}
         </Button>
       </Card>
       <Output result={result} loading={loading} />

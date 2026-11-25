@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUserId } from '../auth/_lib';
+import { applicationsStore, getAuthenticatedUserId, withUserData } from '../auth/_lib';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,10 +22,7 @@ export interface StoredApplication {
 }
 
 function getStore(): Map<string, StoredApplication[]> {
-  if (!global.__jobora_applications || !(global.__jobora_applications instanceof Map)) {
-    global.__jobora_applications = new Map<string, StoredApplication[]>();
-  }
-  return global.__jobora_applications as Map<string, StoredApplication[]>;
+  return applicationsStore as unknown as Map<string, StoredApplication[]>;
 }
 
 function getUserApplications(userId: string): StoredApplication[] {
@@ -37,7 +34,7 @@ function getUserApplications(userId: string): StoredApplication[] {
   return fresh;
 }
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return NextResponse.json(
@@ -49,7 +46,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ applications: apps });
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
@@ -130,7 +127,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PATCH(req: NextRequest) {
+async function PATCH_handler(req: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
@@ -179,7 +176,7 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-export async function DELETE(req: NextRequest) {
+async function DELETE_handler(req: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
@@ -215,3 +212,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete application' }, { status: 400 });
   }
 }
+
+export const GET = withUserData(GET_handler);
+export const POST = withUserData(POST_handler);
+export const PATCH = withUserData(PATCH_handler);
+export const DELETE = withUserData(DELETE_handler);

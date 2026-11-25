@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { setCookie, generateToken, hashPassword, usersStore } from '../_lib';
+import { setCookie, generateToken, hashPassword, usersStore, withUserData } from '../_lib';
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest) {
+async function POST_handler(request: NextRequest) {
   try {
     const ip = getClientIp(request);
     const rateCheck = checkRateLimit(`signup:${ip}`, 15, 60000);
@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = String(email).toLowerCase().trim();
 
     // Prevent duplicate registration
+    await usersStore.load(normalizedEmail);
     const existing =
       usersStore.get(normalizedEmail) ||
       Array.from(usersStore.values()).find((u) => u.email === normalizedEmail);
@@ -119,3 +120,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withUserData(POST_handler);

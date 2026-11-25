@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { profilesStore, getAuthenticatedUserId } from '../auth/_lib';
+import { profilesStore, getAuthenticatedUserId, withUserData } from '../auth/_lib';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(req) || 'local_workspace';
     const profile = profilesStore.get(userId) || null;
@@ -49,3 +49,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ profile: null });
   }
 }
+
+export const POST = withUserData(POST_handler);
+export const GET = withUserData(GET_handler);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUserId } from '../auth/_lib';
+import { getAuthenticatedUserId, userJobsStore as sharedUserJobsStore, withUserData } from '../auth/_lib';
 import {
   type NormalizedJobRecord,
   type ProviderHealthDetail,
@@ -38,10 +38,7 @@ declare global {
 }
 
 /** Roles a user adds themselves are private to that user. */
-const userJobsStore: Map<string, LiveJobRecord[]> =
-  global.__jobora_user_jobs instanceof Map
-    ? global.__jobora_user_jobs
-    : (global.__jobora_user_jobs = new Map<string, LiveJobRecord[]>());
+const userJobsStore = sharedUserJobsStore as unknown as Map<string, LiveJobRecord[]>;
 
 function matchesQuery(job: LiveJobRecord, query: string): boolean {
   if (!query) return true;
@@ -143,7 +140,7 @@ function matchesLocationFilter(job: LiveJobRecord, locationFilter: string): bool
   );
 }
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const query = (searchParams.get('q') || '').toLowerCase().trim();
   const locationFilter = (searchParams.get('location') || '').toLowerCase().trim();
@@ -262,7 +259,7 @@ export async function GET(req: NextRequest) {
   });
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
@@ -326,3 +323,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid job payload' }, { status: 400 });
   }
 }
+
+export const GET = withUserData(GET_handler);
+export const POST = withUserData(POST_handler);

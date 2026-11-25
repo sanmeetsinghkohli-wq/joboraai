@@ -15,6 +15,7 @@ const Body = z.object({
 });
 
 const MODEL = 'openai/gpt-oss-120b';
+const LONG_MODES = new Set<CareerMode>(['evaluate', 'cv', 'interview-prep', 'cover']);
 
 function profileBlock(p: Record<string, any>) {
   const lines = [
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.3,
-        max_tokens: mode === 'mock-question' ? 200 : 2200,
+        max_tokens: mode === 'mock-question' ? 200 : LONG_MODES.has(mode) ? 4000 : 2200,
         messages: [
           { role: 'system', content: systemPrompt(mode) },
           {

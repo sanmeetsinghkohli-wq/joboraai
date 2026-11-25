@@ -1,39 +1,39 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  AlarmClock,
   ArrowRight,
-  Briefcase,
+  ArrowUpRight,
+  BarChart3,
+  Bookmark,
+  CalendarClock,
+  CheckCircle2,
   ClipboardCheck,
   FileText,
   Inbox,
+  MailCheck,
   Mic,
   Search,
   Send,
   Sparkles,
   TrendingUp,
   UserRound,
+  Wand2,
 } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
-import { JobRow } from '@/components/JobRow';
 import { ButtonLink } from '@/components/ui/button';
-import { Card, EmptyState, Notice, Skeleton } from '@/components/ui/primitives';
-import { useAppData } from '@/context/AppDataContext';
+import { Notice, Skeleton } from '@/components/ui/primitives';
+import { useAppData, type LiveApplication } from '@/context/AppDataContext';
 import { cn } from '@/lib/cn';
-import { profileStrength } from '@/lib/profile';
-import { getReminders } from '@/lib/reminders';
 import { timeAgo } from '@/lib/format';
+import { profileStrength } from '@/lib/profile';
+import { getReminders, type Reminder } from '@/lib/reminders';
 import { APPLICATION_STATUSES, INTERVIEW_OR_BETTER, SENT_STATUSES, normalizeStatus } from '@/lib/status';
 
-interface NextStep {
-  title: string;
-  body: string;
-  cta: string;
-  href: string;
-}
-
-const FUNNEL_TONE: Record<string, string> = {
+const STAGE_COLOR: Record<string, string> = {
   Interested: 'bg-plum-100',
   Preparing: 'bg-plum-200',
   Applied: 'bg-plum',
@@ -45,357 +45,415 @@ const FUNNEL_TONE: Record<string, string> = {
 };
 
 const TOOLS = [
-  { href: '/career-ops', label: 'Fit report', body: 'Score a job against your CV', icon: ClipboardCheck },
-  { href: '/cv-studio', label: 'CV & documents', body: 'Build, tailor and export', icon: FileText },
-  { href: '/interview', label: 'Interview practice', body: 'Questions for your target role', icon: Mic },
-  { href: '/career-growth', label: 'Learning roadmap', body: 'Close your skill gaps', icon: TrendingUp },
+  { href: '/career-ops', label: 'Fit report', icon: ClipboardCheck },
+  { href: '/resume-studio', label: 'Tailor CV', icon: Wand2 },
+  { href: '/interview', label: 'Practise', icon: Mic },
+  { href: '/career-growth', label: 'Roadmap', icon: TrendingUp },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/ai-copilot', label: 'Copilot', icon: Sparkles },
 ];
+
+interface Task {
+  key: string;
+  title: string;
+  detail: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  urgent?: boolean;
+}
+
+function sentDate(a: LiveApplication): Date | null {
+  const raw = a.appliedOn || a.appliedAt;
+  if (!raw) return null;
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T12:00:00`) : new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+const REMINDER_ICON: Record<Reminder['kind'], Task['icon']> = {
+  interview: CalendarClock,
+  deadline: AlarmClock,
+  followup: MailCheck,
+};
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { profile, jobs, loadingJobs, jobsError, savedJobIds, toggleSavedJob, setSelectedJob, applications, activities } =
-    useAppData();
+  const { profile, jobs, loadingJobs, jobsError, savedJobIds, setSelectedJob, applications, activities } = useAppData();
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const hasSkills = profile.skills.length > 0;
+  const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  const strength = profileStrength(profile);
 
-  // Every number below comes from the user's own tracker and profile.
-  const counts = Object.fromEntries(
-    APPLICATION_STATUSES.map((s) => [s, applications.filter((a) => normalizeStatus(a.status) === s).length])
-  ) as Record<string, number>;
-  const sent = SENT_STATUSES.reduce((n, s) => n + (counts[s] ?? 0), 0);
-  const interviewsOrBetter = INTERVIEW_OR_BETTER.reduce((n, s) => n + (counts[s] ?? 0), 0);
-  const interviewRate = sent > 0 ? Math.round((interviewsOrBetter / sent) * 100) : null;
-  const funnelMax = Math.max(1, ...APPLICATION_STATUSES.map((s) => counts[s] ?? 0));
+  const stats = useMemo(() => {
+    const stage = (a: LiveApplication) => normalizeStatus(a.status);
+    const counts = Object.fromEntries(APPLICATION_STATUSES.map((s) => [s, applications.filter((a) => stage(a) === s).length]));
+    const sent = applications.filter((a) => SENT_STATUSES.includes(stage(a)));
+    const interviews = sent.filter((a) => INTERVIEW_OR_BETTER.includes(stage(a))).length;
+    // Applications sent per week, last 6 weeks (oldest first) for the trend line.
+    const weeks = Array.from({ length: 6 }, (_, i) => {
+      const end = new Date();
+      end.setDate(end.getDate() - (5 - i) * 7);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 7);
+      return sent.filter((a) => {
+        const d = sentDate(a);
+        return d && d > start && d <= end;
+      }).length;
+    });
+    return {
+      counts,
+      sent: sent.length,
+      interviews,
+      rate: sent.length ? Math.round((interviews / sent.length) * 100) : null,
+      weeks,
+    };
+  }, [applications]);
 
-  const { score: profileScore, next: profileNext } = profileStrength(profile);
+  const reminders = useMemo(() => getReminders(applications), [applications]);
 
-  const interviews = applications.filter((a) => ['Interview', 'Assessment'].includes(normalizeStatus(a.status)));
-  const savedNotApplied = savedJobIds.filter((id) => !applications.some((a) => a.jobId === id));
+  const tasks: Task[] = useMemo(() => {
+    const list: Task[] = reminders.slice(0, 4).map((r) => ({
+      key: `${r.appId}-${r.kind}`,
+      title: r.title,
+      detail: r.detail,
+      href: r.kind === 'interview' ? '/interview' : `/applications/${r.appId}`,
+      icon: REMINDER_ICON[r.kind],
+      urgent: r.days <= 1,
+    }));
+    if (strength.next) {
+      list.push({
+        key: 'profile',
+        title: `Add your ${strength.next.label.toLowerCase()}`,
+        detail: `Profile ${strength.score}% complete`,
+        href: `/profile#${strength.next.anchor}`,
+        icon: UserRound,
+      });
+    }
+    const savedNotApplied = savedJobIds.filter((id) => !applications.some((a) => a.jobId === id)).length;
+    if (savedNotApplied > 0) {
+      list.push({
+        key: 'saved',
+        title: `Review ${savedNotApplied} saved role${savedNotApplied === 1 ? '' : 's'}`,
+        detail: 'Check your fit and apply while they are open',
+        href: '/jobs?view=saved',
+        icon: Bookmark,
+      });
+    }
+    if (stats.sent === 0 && applications.length === 0) {
+      list.push({ key: 'first', title: 'Find your first roles', detail: 'Browse live jobs that match your skills', href: '/jobs', icon: Search });
+    }
+    return list.slice(0, 5);
+  }, [reminders, strength, savedJobIds, applications, stats.sent]);
 
-  const reminders = getReminders(applications);
-  const urgent = reminders.find((r) => r.days <= 1);
-
-  let nextStep: NextStep;
-  if (urgent) {
-    nextStep = {
-      title: urgent.title,
-      body: urgent.detail,
-      cta: urgent.kind === 'interview' ? 'Prepare now' : urgent.kind === 'followup' ? 'Draft follow-up' : 'Open application',
-      href: urgent.kind === 'interview' ? '/interview' : urgent.kind === 'followup' ? '/career-ops' : `/applications/${urgent.appId}`,
-    };
-  } else if (!profile.targetRole || !hasSkills) {
-    nextStep = {
-      title: 'Add your target role and skills',
-      body: 'Every match, score and draft in Jobora is built from your profile. Upload your CV and it fills itself in.',
-      cta: 'Set up my profile',
-      href: '/profile',
-    };
-  } else if (interviews.length > 0) {
-    nextStep = {
-      title: `Prepare for ${interviews[0].company}`,
-      body: `${interviews[0].title} is at interview stage. Practise questions built around that role.`,
-      cta: 'Practise now',
-      href: '/interview',
-    };
-  } else if (savedNotApplied.length > 0) {
-    nextStep = {
-      title: `${savedNotApplied.length} saved role${savedNotApplied.length === 1 ? '' : 's'} waiting`,
-      body: 'Check your fit, tailor your CV and apply while the listings are still open.',
-      cta: 'Review saved roles',
-      href: '/jobs?view=saved',
-    };
-  } else if (applications.length === 0) {
-    nextStep = {
-      title: 'Find your first roles',
-      body: 'Browse live roles that match your skills, save the good ones and track each application.',
-      cta: 'Browse jobs',
-      href: '/jobs',
-    };
-  } else {
-    nextStep = {
-      title: 'Keep your pipeline moving',
-      body: 'Update anything that changed, follow up on older applications, then look for new roles.',
-      cta: 'Open applications',
-      href: '/applications',
-    };
-  }
-
-  const topJobs = jobs.slice(0, 4);
-  const openJob = (id: string) => {
-    const job = jobs.find((j) => j.id === id);
-    if (job) setSelectedJob(job);
-    router.push(`/jobs?selected=${encodeURIComponent(id)}`);
-  };
+  const next = tasks[0];
+  const topJobs = jobs.slice(0, 5);
+  const totalTracked = applications.length;
 
   return (
     <AppShell>
-      {/* Greeting + next step */}
-      <section className="mb-8 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
-        <div>
-          <h1 className="font-serif text-3xl text-plum">
-            {greeting}
-            {profile.firstName ? `, ${profile.firstName}` : ''}
-          </h1>
-          <p className="mt-1.5 text-sm text-ink-muted">
-            {profile.targetRole
-              ? `Looking for ${profile.targetRole}${profile.location ? ` · ${profile.location}` : ''}`
-              : 'Tell us the role you want and this page tailors itself.'}
-          </p>
-        </div>
-      </section>
-
-      <Card
-        as="section"
-        className="mb-8 flex flex-col gap-4 overflow-hidden border-0 bg-plum text-paper sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-coral">Your next step</p>
-          <h2 className="mt-1.5 font-serif text-2xl">{nextStep.title}</h2>
-          <p className="mt-1 max-w-xl text-sm text-plum-100">{nextStep.body}</p>
-        </div>
-        <ButtonLink href={nextStep.href} variant="accent" className="shrink-0 self-start sm:self-auto">
-          {nextStep.cta}
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </ButtonLink>
-      </Card>
-
-      {/* Key numbers */}
-      <section aria-label="Your numbers" className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Metric label="Applications sent" value={sent} icon={Send} />
-        <Metric label="Interviews" value={interviewsOrBetter} icon={Mic} />
-        <Metric
-          label="Interview rate"
-          value={interviewRate === null ? '—' : `${interviewRate}%`}
-          hint={interviewRate === null ? 'Shows once you apply' : `${interviewsOrBetter} of ${sent} sent`}
-          icon={TrendingUp}
-        />
-        <Metric
-          label="Profile strength"
-          value={`${profileScore}%`}
-          hint={profileNext ? `Next: ${profileNext.label.toLowerCase()}` : 'All set'}
-          icon={UserRound}
-          href={profileNext ? `/profile#${profileNext.anchor}` : '/profile'}
-        />
-      </section>
-
-      <div className="mb-8 grid gap-6 lg:grid-cols-[1fr_1.5fr]">
-        {/* Funnel */}
-        <Card as="section" aria-labelledby="funnel">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 id="funnel" className="font-serif text-xl text-plum">
-              Application funnel
-            </h2>
-            <Link href="/applications" className="text-sm font-semibold text-plum underline-offset-4 hover:underline">
-              Manage
-            </Link>
-          </div>
-          {applications.length === 0 ? (
-            <p className="text-sm text-ink-muted">
-              Nothing tracked yet. Save or apply to a role and your funnel appears here.
+      {/* Hero band: greeting, next step, profile ring */}
+      <section className="relative mb-6 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#2A1728_0%,#3E1F38_55%,#4A2A46_100%)] p-6 text-[#F8F5F0] shadow-raised sm:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-[#E05347]/25 blur-3xl" />
+        <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="min-w-0">
+            <p className="text-sm text-[#EDE2EB]">{today}</p>
+            <h1 className="mt-1 font-serif text-3xl sm:text-4xl">
+              {greeting}
+              {profile.firstName ? `, ${profile.firstName}` : ''}
+            </h1>
+            <p className="mt-1 text-sm text-[#D9C4D5]">
+              {profile.targetRole
+                ? `Looking for ${profile.targetRole}${profile.location ? ` in ${profile.location}` : ''}`
+                : 'Set your target role and Jobora tailors everything to it.'}
             </p>
-          ) : (
-            <ul className="space-y-3.5">
-              {APPLICATION_STATUSES.map((status) => {
-                const n = counts[status] ?? 0;
-                return (
-                  <li key={status}>
-                    <div className="mb-1 flex justify-between text-sm">
-                      <span className="text-ink-muted">{status}</span>
-                      <span className="font-semibold tabular-nums text-ink">{n}</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-sand">
-                      <div
-                        className={cn('h-full rounded-full transition-[width] duration-500', FUNNEL_TONE[status] ?? 'bg-plum')}
-                        style={{ width: `${(n / funnelMax) * 100}%` }}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
-
-        {/* Roles */}
-        <section aria-labelledby="top-roles">
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <h2 id="top-roles" className="font-serif text-xl text-plum">
-              {hasSkills ? 'Closest to your skills' : 'Latest roles'}
-            </h2>
-            <Link href="/jobs" className="shrink-0 text-sm font-semibold text-plum underline-offset-4 hover:underline">
-              All jobs
-            </Link>
-          </div>
-          {jobsError ? (
-            <Notice tone="error" title="Jobs could not be loaded">
-              {jobsError}
-            </Notice>
-          ) : loadingJobs && jobs.length === 0 ? (
-            <div className="space-y-3">
-              <Skeleton className="h-24" />
-              <Skeleton className="h-24" />
-              <Skeleton className="h-24" />
-            </div>
-          ) : topJobs.length === 0 ? (
-            <Card padded={false}>
-              <EmptyState
-                icon={<Search className="h-6 w-6" />}
-                title="No live roles right now"
-                action={<ButtonLink href="/jobs">Open job search</ButtonLink>}
+            {next && (
+              <Link
+                href={next.href}
+                className="group mt-5 inline-flex max-w-full items-center gap-3 rounded-xl bg-[#F8F5F0]/10 px-4 py-3 ring-1 ring-[#F8F5F0]/15 transition-colors hover:bg-[#F8F5F0]/15"
               >
-                The job feeds returned nothing. Try again shortly.
-              </EmptyState>
-            </Card>
-          ) : (
-            <ul className="space-y-3">
-              {topJobs.map((job) => (
-                <JobRow
-                  key={job.id}
-                  job={job}
-                  saved={savedJobIds.includes(job.id)}
-                  hasProfileSkills={hasSkills}
-                  onSelect={() => openJob(job.id)}
-                  onToggleSave={() => toggleSavedJob(job.id)}
-                />
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        {/* Quick tools */}
-        <section aria-labelledby="tools">
-          <h2 id="tools" className="mb-3 font-serif text-xl text-plum">
-            Tools
-          </h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {TOOLS.map(({ href, label, body, icon: Icon }) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className="group flex h-full items-center gap-4 rounded-lg border border-line bg-paper p-4 shadow-card transition-shadow hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-plum"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-plum-50 text-plum">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-semibold text-plum">{label}</span>
-                    <span className="block text-sm text-ink-muted">{body}</span>
-                  </span>
-                  <ArrowRight
-                    className="ml-auto h-4 w-4 shrink-0 text-ink-subtle transition-transform group-hover:translate-x-0.5"
-                    aria-hidden="true"
-                  />
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <Link
-            href="/ai-copilot"
-            className="mt-3 flex items-center gap-3 rounded-lg border border-dashed border-plum-200 px-4 py-3 text-sm text-plum hover:bg-plum-50"
-          >
-            <Sparkles className="h-4 w-4 text-coral" aria-hidden="true" />
-            Not sure what to do next? Ask Copilot about your search.
-          </Link>
-        </section>
-
-        <div className="space-y-6">
-        {/* Coming up */}
-        {reminders.length > 0 && (
-          <Card as="section" aria-labelledby="coming-up">
-            <h2 id="coming-up" className="mb-4 font-serif text-xl text-plum">
-              Coming up
-            </h2>
-            <ul className="space-y-3">
-              {reminders.slice(0, 4).map((r) => (
-                <li key={`${r.appId}-${r.kind}`}>
-                  <Link href={`/applications/${r.appId}`} className="flex gap-3 text-sm hover:text-plum">
-                    <span
-                      className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', r.days < 0 ? 'bg-danger' : r.days <= 1 ? 'bg-coral' : 'bg-plum-200')}
-                      aria-hidden="true"
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-medium text-ink">{r.title}</span>
-                      <span className="block truncate text-xs text-ink-subtle">{r.detail}</span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        {/* Activity */}
-        <Card as="section" aria-labelledby="recent">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 id="recent" className="font-serif text-xl text-plum">
-              Recent activity
-            </h2>
-            {activities.length > 0 && (
-              <Link href="/notifications" className="text-sm font-semibold text-plum underline-offset-4 hover:underline">
-                All
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E05347] text-white">
+                  <next.icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#F6C6C5]">Next step</span>
+                  <span className="block truncate font-medium">{next.title}</span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
             )}
           </div>
-          {activities.length === 0 ? (
-            <div className="flex items-center gap-3 text-sm text-ink-muted">
-              <Inbox className="h-5 w-5 shrink-0 text-ink-subtle" aria-hidden="true" />
-              Your saves, applications and drafts will appear here.
+          <Link href="/profile" className="flex items-center gap-4 md:flex-col md:gap-2" aria-label={`Profile ${strength.score}% complete`}>
+            <ProgressRing value={strength.score} />
+            <span className="text-sm text-[#EDE2EB] md:text-center">
+              Profile strength
+              {strength.next && <span className="block text-xs text-[#D9C4D5]">Next: {strength.next.label.toLowerCase()}</span>}
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      {/* Key numbers */}
+      <section aria-label="Your numbers" className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <Kpi label="Applications sent" value={stats.sent} icon={Send}>
+          <Sparkline values={stats.weeks} />
+        </Kpi>
+        <Kpi label="Interviews" value={stats.interviews} icon={Mic} hint={stats.interviews ? 'Including offers' : 'None yet'} />
+        <Kpi label="Interview rate" value={stats.rate === null ? '—' : `${stats.rate}%`} icon={TrendingUp} hint={stats.rate === null ? 'Shows once you apply' : `${stats.interviews} of ${stats.sent} sent`} />
+        <Kpi label="Saved roles" value={savedJobIds.length} icon={Bookmark} hint={`${jobs.length} live roles to explore`} href="/jobs?view=saved" />
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="space-y-6">
+          {/* Today */}
+          <Panel title="Today" action={reminders.length ? { href: '/notifications', label: 'All reminders' } : undefined}>
+            {tasks.length === 0 ? (
+              <p className="flex items-center gap-2 text-sm text-ink-muted">
+                <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" /> You are all caught up.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {tasks.map((t) => (
+                  <li key={t.key}>
+                    <Link href={t.href} className="group flex items-center gap-3 py-3">
+                      <span
+                        className={cn(
+                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                          t.urgent ? 'bg-coral-100 text-coral-700' : 'bg-plum-50 text-plum'
+                        )}
+                      >
+                        <t.icon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-ink group-hover:text-plum">{t.title}</span>
+                        <span className="block truncate text-xs text-ink-subtle">{t.detail}</span>
+                      </span>
+                      {t.urgent && <span className="rounded-full bg-coral-100 px-2 py-0.5 text-[11px] font-semibold text-coral-700">Due</span>}
+                      <ArrowRight className="h-4 w-4 shrink-0 text-ink-subtle transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          {/* Pipeline */}
+          <Panel title="Pipeline" action={{ href: '/applications', label: 'Open board' }}>
+            {totalTracked === 0 ? (
+              <p className="text-sm text-ink-muted">Nothing tracked yet. Save or apply to a role and your pipeline appears here.</p>
+            ) : (
+              <>
+                <div className="flex h-3 overflow-hidden rounded-full bg-sand" role="img" aria-label={APPLICATION_STATUSES.map((s) => `${s} ${stats.counts[s]}`).join(', ')}>
+                  {APPLICATION_STATUSES.filter((s) => stats.counts[s]).map((s) => (
+                    <div key={s} className={cn('h-full', STAGE_COLOR[s])} style={{ width: `${(stats.counts[s] / totalTracked) * 100}%` }} />
+                  ))}
+                </div>
+                <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
+                  {APPLICATION_STATUSES.map((s) => (
+                    <li key={s} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="flex items-center gap-2 text-ink-muted">
+                        <span className={cn('h-2.5 w-2.5 rounded-full', STAGE_COLOR[s])} aria-hidden="true" />
+                        {s}
+                      </span>
+                      <span className="font-semibold tabular-nums text-ink">{stats.counts[s]}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </Panel>
+
+          {/* Tools */}
+          <section aria-label="Tools" className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {TOOLS.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex flex-col items-center gap-2 rounded-xl border border-line bg-paper px-2 py-4 text-center text-xs font-medium text-ink-muted shadow-card transition-all hover:-translate-y-0.5 hover:text-plum hover:shadow-raised"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-plum-50 text-plum">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                {label}
+              </Link>
+            ))}
+          </section>
+        </div>
+
+        <div className="space-y-6">
+          {/* Matched jobs */}
+          <Panel title={profile.skills.length ? 'Matched for you' : 'Latest roles'} action={{ href: '/jobs', label: 'All jobs' }}>
+            {jobsError ? (
+              <Notice tone="error">{jobsError}</Notice>
+            ) : loadingJobs && jobs.length === 0 ? (
+              <div className="space-y-3">
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-14" />
+                ))}
+              </div>
+            ) : topJobs.length === 0 ? (
+              <p className="text-sm text-ink-muted">No live roles right now. Try again shortly.</p>
+            ) : (
+              <ul className="-mx-2 divide-y divide-line">
+                {topJobs.map((job) => (
+                  <li key={job.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedJob(job);
+                        router.push(`/jobs?selected=${encodeURIComponent(job.id)}`);
+                      }}
+                      className="group flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left hover:bg-sand/60"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-plum-50 text-sm font-semibold text-plum">
+                        {job.company.slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-ink group-hover:text-plum">{job.title}</span>
+                        <span className="block truncate text-xs text-ink-subtle">
+                          {job.company} · {job.location}
+                        </span>
+                      </span>
+                      {job.matchedSkills?.length ? (
+                        <span className="shrink-0 rounded-full bg-success-100 px-2 py-0.5 text-[11px] font-semibold text-success-700">
+                          {job.matchedSkills.length}/{job.skills.length} skills
+                        </span>
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 shrink-0 text-ink-subtle" aria-hidden="true" />
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          {/* Activity */}
+          <Panel title="Recent activity" action={activities.length ? { href: '/notifications', label: 'All' } : undefined}>
+            {activities.length === 0 ? (
+              <p className="flex items-center gap-2 text-sm text-ink-muted">
+                <Inbox className="h-4 w-4 text-ink-subtle" aria-hidden="true" /> Your saves, applications and drafts appear here.
+              </p>
+            ) : (
+              <ol className="relative space-y-4 border-l border-line pl-4">
+                {activities.slice(0, 5).map((a) => (
+                  <li key={a.id} className="relative">
+                    <span className="absolute -left-[1.3rem] top-1.5 h-2 w-2 rounded-full bg-coral" aria-hidden="true" />
+                    <p className="text-sm font-medium text-ink">{a.title}</p>
+                    <p className="text-xs text-ink-subtle">{[a.subtitle, timeAgo(a.timestamp)].filter(Boolean).join(' · ')}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Panel>
+
+          {!profile.resumeFileName && (
+            <div className="rounded-2xl border border-dashed border-plum-200 p-5">
+              <p className="flex items-center gap-2 font-medium text-plum">
+                <FileText className="h-4 w-4" aria-hidden="true" /> Upload your CV
+              </p>
+              <p className="mt-1 text-sm text-ink-muted">Jobora reads it and fills in your profile in about 5 seconds.</p>
+              <ButtonLink href="/profile" size="sm" className="mt-3">
+                Upload CV
+              </ButtonLink>
             </div>
-          ) : (
-            <ul className="space-y-3.5">
-              {activities.slice(0, 5).map((a) => (
-                <li key={a.id} className="flex gap-3 text-sm">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-coral" aria-hidden="true" />
-                  <span className="min-w-0">
-                    <span className="block font-medium text-ink">{a.title}</span>
-                    <span className="block text-xs text-ink-subtle">
-                      {[a.subtitle, timeAgo(a.timestamp)].filter(Boolean).join(' · ')}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
           )}
-        </Card>
         </div>
       </div>
     </AppShell>
   );
 }
 
-function Metric({
+function Panel({ title, action, children }: { title: string; action?: { href: string; label: string }; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-line bg-paper p-5 shadow-card sm:p-6" aria-label={title}>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="font-serif text-xl text-plum">{title}</h2>
+        {action && (
+          <Link href={action.href} className="text-sm font-semibold text-plum underline-offset-4 hover:underline">
+            {action.label}
+          </Link>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Kpi({
   label,
   value,
   hint,
   icon: Icon,
   href,
+  children,
 }: {
   label: string;
   value: number | string;
   hint?: string;
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
+  children?: React.ReactNode;
 }) {
   const body = (
     <>
       <div className="flex items-center justify-between">
         <span className="text-sm text-ink-muted">{label}</span>
-        <Icon className="h-4 w-4 text-ink-subtle" aria-hidden="true" />
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-plum-50 text-plum">
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
       </div>
-      <p className="mt-2 font-serif text-3xl tabular-nums text-plum">{value}</p>
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <p className="font-serif text-3xl tabular-nums text-plum">{value}</p>
+        {children}
+      </div>
       {hint && <p className="mt-1 text-xs text-ink-subtle">{hint}</p>}
     </>
   );
-  const cls = 'block rounded-lg border border-line bg-paper p-5 shadow-card';
+  const cls = 'block rounded-2xl border border-line bg-paper p-5 shadow-card';
   return href ? (
     <Link href={href} className={cn(cls, 'transition-shadow hover:shadow-raised')}>
       {body}
     </Link>
   ) : (
     <div className={cls}>{body}</div>
+  );
+}
+
+/** Tiny weekly trend line; hidden when there is nothing to show. */
+function Sparkline({ values }: { values: number[] }) {
+  if (!values.some(Boolean)) return null;
+  const max = Math.max(1, ...values);
+  const w = 72;
+  const h = 26;
+  const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - (v / max) * (h - 4) - 2}`).join(' ');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-label={`Last 6 weeks: ${values.join(', ')}`} role="img" className="shrink-0 text-coral">
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ProgressRing({ value }: { value: number }) {
+  const r = 30;
+  const c = 2 * Math.PI * r;
+  return (
+    <span className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+      <svg width="80" height="80" viewBox="0 0 80 80" className="-rotate-90" aria-hidden="true">
+        <circle cx="40" cy="40" r={r} fill="none" stroke="rgba(248,245,240,0.15)" strokeWidth="7" />
+        <circle
+          cx="40"
+          cy="40"
+          r={r}
+          fill="none"
+          stroke="#E05347"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - value / 100)}
+          className="transition-[stroke-dashoffset] duration-700"
+        />
+      </svg>
+      <span className="absolute font-serif text-xl tabular-nums">{value}%</span>
+    </span>
   );
 }

@@ -27,6 +27,7 @@ import {
 import { useAppData } from '@/context/AppDataContext';
 import { profileStrength } from '@/lib/profile';
 import { useWorkspaceTheme } from '@/lib/theme';
+import { GlobalSearch } from './GlobalSearch';
 import { cn } from '@/lib/cn';
 import { Logo } from './ui/logo';
 import { IconButton } from './ui/button';
@@ -295,7 +296,6 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
   const { authStatus } = useAppData();
   const theme = useWorkspaceTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [query, setQuery] = useState('');
 
   useEffect(() => {
     if (authStatus === 'anonymous') {
@@ -309,12 +309,6 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [drawerOpen]);
-
-  const onSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = query.trim();
-    router.push(q ? `/jobs?q=${encodeURIComponent(q)}` : '/jobs');
-  };
 
   return (
     <div className="min-h-screen bg-ivory">
@@ -362,23 +356,7 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
           <IconButton label="Open menu" onClick={() => setDrawerOpen(true)} className="lg:hidden">
             <Menu className="h-5 w-5" aria-hidden="true" />
           </IconButton>
-          <form onSubmit={onSearch} role="search" className="relative min-w-0 flex-1 sm:max-w-md">
-            <label htmlFor="global-search" className="sr-only">
-              Search jobs
-            </label>
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
-              aria-hidden="true"
-            />
-            <input
-              id="global-search"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search jobs"
-              className="control h-10 pl-9"
-            />
-          </form>
+          <GlobalSearch />
           <div className="ml-auto flex items-center gap-1">
             <Link
               href="/ai-copilot"

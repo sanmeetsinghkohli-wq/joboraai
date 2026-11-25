@@ -26,6 +26,14 @@ function profileBlock(p: Record<string, any>) {
     ['Experience', p.experience],
     ['Education', [p.degree, p.university, p.graduationYear].filter(Boolean).join(', ')],
     ['Skills', Array.isArray(p.skills) ? p.skills.join(', ') : ''],
+    ['Projects', Array.isArray(p.projects) ? p.projects.map((x: any) => `${x.name}: ${x.description} [${(x.tech || []).join(', ')}]`).join(' | ') : ''],
+    ['Certifications', Array.isArray(p.certifications) ? p.certifications.map((x: any) => [x.name, x.issuer, x.year].filter(Boolean).join(', ')).join(' | ') : ''],
+    ['Achievements', Array.isArray(p.achievements) ? p.achievements.join(' | ') : ''],
+    ['Languages', Array.isArray(p.languages) ? p.languages.join(', ') : ''],
+    ['Career goals', p.careerGoals],
+    ['Preferred locations', p.preferredLocations],
+    ['Work modes', Array.isArray(p.workModes) ? p.workModes.join(', ') : ''],
+    ['Salary expectation', p.salaryExpectation],
   ].filter(([, v]) => v && String(v).trim());
   return lines.length
     ? lines.map(([k, v]) => `${k}: ${String(v).slice(0, 4000)}`).join('\n')

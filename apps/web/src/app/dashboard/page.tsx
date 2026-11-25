@@ -21,6 +21,7 @@ import { ButtonLink } from '@/components/ui/button';
 import { Card, EmptyState, Notice, Skeleton } from '@/components/ui/primitives';
 import { useAppData } from '@/context/AppDataContext';
 import { cn } from '@/lib/cn';
+import { profileStrength } from '@/lib/profile';
 import { timeAgo } from '@/lib/format';
 import { APPLICATION_STATUSES, normalizeStatus } from '@/lib/status';
 
@@ -64,15 +65,7 @@ export default function DashboardPage() {
   const interviewRate = sent > 0 ? Math.round((interviewsOrBetter / sent) * 100) : null;
   const funnelMax = Math.max(1, ...APPLICATION_STATUSES.map((s) => counts[s] ?? 0));
 
-  const profileChecks = [
-    Boolean(profile.targetRole),
-    hasSkills,
-    Boolean(profile.location),
-    Boolean(profile.summary),
-    Boolean(profile.experience),
-    Boolean(profile.degree || profile.university),
-  ];
-  const profileStrength = Math.round((profileChecks.filter(Boolean).length / profileChecks.length) * 100);
+  const { score: profileScore, next: profileNext } = profileStrength(profile);
 
   const interviews = applications.filter((a) => normalizeStatus(a.status) === 'Interview');
   const savedNotApplied = savedJobIds.filter((id) => !applications.some((a) => a.jobId === id));
@@ -81,9 +74,9 @@ export default function DashboardPage() {
   if (!profile.targetRole || !hasSkills) {
     nextStep = {
       title: 'Add your target role and skills',
-      body: 'Every match, score and draft in Jobora is built from your profile. It takes about two minutes.',
-      cta: 'Complete profile',
-      href: '/settings',
+      body: 'Every match, score and draft in Jobora is built from your profile. Upload your CV and it fills itself in.',
+      cta: 'Set up my profile',
+      href: '/profile',
     };
   } else if (interviews.length > 0) {
     nextStep = {
@@ -166,10 +159,10 @@ export default function DashboardPage() {
         />
         <Metric
           label="Profile strength"
-          value={`${profileStrength}%`}
-          hint={profileStrength < 100 ? 'Complete it for better matches' : 'All set'}
+          value={`${profileScore}%`}
+          hint={profileNext ? `Next: ${profileNext.label.toLowerCase()}` : 'All set'}
           icon={UserRound}
-          href={profileStrength < 100 ? '/settings' : undefined}
+          href={profileNext ? `/profile#${profileNext.anchor}` : '/profile'}
         />
       </section>
 

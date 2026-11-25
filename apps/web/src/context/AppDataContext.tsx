@@ -84,6 +84,29 @@ export interface LiveUserProfile {
   connectedEmail: string;
   emailProvider: 'gmail' | 'outlook' | 'none';
   cvDecisions?: Record<string, 'pending' | 'accepted' | 'rejected'>;
+  projects: ProfileProject[];
+  certifications: ProfileCertification[];
+  /** Awards, hackathons, competitions, scholarships, publications. */
+  achievements: string[];
+  languages: string[];
+  industries: string[];
+  preferredLocations: string;
+  workModes: string[];
+  salaryExpectation: string;
+  careerGoals: string;
+}
+
+export interface ProfileProject {
+  name: string;
+  description: string;
+  tech: string[];
+  link: string;
+}
+
+export interface ProfileCertification {
+  name: string;
+  issuer: string;
+  year: string;
 }
 
 export interface ActivityItem {
@@ -149,6 +172,15 @@ const DEFAULT_EMPTY_PROFILE: LiveUserProfile = {
   connectedEmail: '',
   emailProvider: 'none',
   cvDecisions: {},
+  projects: [],
+  certifications: [],
+  achievements: [],
+  languages: [],
+  industries: [],
+  preferredLocations: '',
+  workModes: [],
+  salaryExpectation: '',
+  careerGoals: '',
 };
 
 const KEYS = {

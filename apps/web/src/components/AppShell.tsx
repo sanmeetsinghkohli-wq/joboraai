@@ -19,9 +19,11 @@ import {
   Briefcase,
   IdCard,
   TrendingUp,
+  UserRound,
   X,
 } from 'lucide-react';
 import { useAppData } from '@/context/AppDataContext';
+import { profileStrength } from '@/lib/profile';
 import { cn } from '@/lib/cn';
 import { Logo } from './ui/logo';
 import { IconButton } from './ui/button';
@@ -36,7 +38,12 @@ interface NavItem {
 }
 
 const NAV: Array<{ title?: string; items: NavItem[] }> = [
-  { items: [{ href: '/dashboard', label: 'Home', icon: LayoutDashboard }] },
+  {
+    items: [
+      { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+      { href: '/profile', label: 'My profile', icon: UserRound },
+    ],
+  },
   {
     title: 'Find',
     items: [
@@ -113,19 +120,13 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
 
 function ProfileProgress({ onNavigate }: { onNavigate?: () => void }) {
   const { profile } = useAppData();
-  const steps = [
-    { done: Boolean(profile.targetRole), label: 'Target role' },
-    { done: profile.skills.length > 0, label: 'Skills' },
-    { done: Boolean(profile.location), label: 'Location' },
-    { done: Boolean(profile.summary), label: 'Summary' },
-  ];
+  const { checks: steps, next } = profileStrength(profile);
   const done = steps.filter((s) => s.done).length;
   if (done === steps.length) return null;
-  const next = steps.find((s) => !s.done);
 
   return (
     <Link
-      href="/settings"
+      href={next ? `/profile#${next.anchor}` : '/profile'}
       onClick={onNavigate}
       className="block rounded-lg border border-line bg-paper p-3.5 transition-colors hover:border-plum-200"
     >
@@ -205,7 +206,7 @@ function UserMenu() {
           </div>
           <div className="pt-1.5">
             <MenuLink href="/settings" icon={Settings} onClick={() => setOpen(false)}>
-              Profile and settings
+              Account settings
             </MenuLink>
             <MenuLink href="/notifications" icon={Activity} onClick={() => setOpen(false)}>
               Activity

@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Download, LogOut, Trash2 } from 'lucide-react';
+import { Download, LogOut, Trash2, UserX } from 'lucide-react';
 import { AppShell } from '@/components/AppShell';
 import { useToast } from '@/components/providers';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
-import { Card, CardTitle, Notice, PageHeader } from '@/components/ui/primitives';
+import { Card, CardTitle, Field, Input, Notice, PageHeader } from '@/components/ui/primitives';
 import { useAppData } from '@/context/AppDataContext';
 import { downloadFile } from '@/lib/format';
 
@@ -18,6 +18,32 @@ export default function SettingsPage() {
   const { addToast } = useToast();
 
   const [confirmReset, setConfirmReset] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    const res = await fetch('/api/auth/account', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: deletePassword }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setDeleting(false);
+    if (!res.ok) {
+      setDeleteError(data?.error?.message || 'Your account could not be deleted. Please try again.');
+      return;
+    }
+    try {
+      localStorage.clear();
+    } catch {
+      /* storage may be unavailable */
+    }
+    router.replace('/?deleted=1');
+  };
 
   const exportData = () => {
     downloadFile(
@@ -93,6 +119,18 @@ export default function SettingsPage() {
             </Button>
           </Card>
 
+          <Card as="section" className="border-danger/30">
+            <CardTitle>Delete account</CardTitle>
+            <p className="mt-1 text-sm text-ink-muted">
+              Permanently delete your account and everything stored for it: profile, applications, saved roles and CV
+              details.
+            </p>
+            <Button variant="danger" className="mt-4 w-full" onClick={() => setDeleteOpen(true)}>
+              <UserX className="h-4 w-4" aria-hidden="true" />
+              Delete my account
+            </Button>
+          </Card>
+
           <Notice tone="info">
             Your account, profile and applications are stored securely on our database and stay in sync across your
             devices.
@@ -118,6 +156,38 @@ export default function SettingsPage() {
         }
       >
         <p className="text-sm text-ink-muted">Consider exporting a copy first.</p>
+      </Modal>
+      <Modal
+        open={deleteOpen}
+        onClose={() => {
+          setDeleteOpen(false);
+          setDeletePassword('');
+          setDeleteError('');
+        }}
+        size="sm"
+        title="Delete your account?"
+        description="This permanently deletes your account and all your data. It cannot be undone."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteOpen(false)}>
+              Keep my account
+            </Button>
+            <Button variant="danger" loading={deleting} disabled={!deletePassword} onClick={deleteAccount}>
+              Delete permanently
+            </Button>
+          </>
+        }
+      >
+        <p className="mb-4 text-sm text-ink-muted">Export your data first if you want a copy. Enter your password to confirm.</p>
+        <Field label="Password" htmlFor="delete-password" error={deleteError || undefined}>
+          <Input
+            id="delete-password"
+            type="password"
+            autoComplete="current-password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+          />
+        </Field>
       </Modal>
     </AppShell>
   );

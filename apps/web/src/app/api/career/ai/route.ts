@@ -4,6 +4,7 @@ import { getAuthenticatedUserId, withUserData } from '../../auth/_lib';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { MODES, systemPrompt, type CareerMode } from '@/lib/career-ops/prompts';
 import { scanPosting } from '@/lib/career-ops/safety';
+import { generate, llmConfigured } from '@/lib/llm';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -14,7 +15,6 @@ const Body = z.object({
   input: z.string().trim().min(1, 'Add some details first.').max(20000),
 });
 
-const MODEL = 'openai/gpt-oss-120b';
 const LONG_MODES = new Set<CareerMode>(['evaluate', 'cv', 'interview-prep', 'cover', 'linkedin', 'roadmap', 'document', 'strategy']);
 
 function profileBlock(p: Record<string, any>) {
@@ -59,8 +59,7 @@ async function POST_handler(req: NextRequest) {
   // Deterministic posting checks run whether or not AI is available.
   const flags = mode === 'evaluate' ? scanPosting(input) : [];
 
-  const key = process.env.GROQ_API_KEY;
-  if (!key) {
+  if (!llmConfigured()) {
     return NextResponse.json(
       {
         flags,
@@ -74,28 +73,12 @@ async function POST_handler(req: NextRequest) {
   }
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(45000),
-      body: JSON.stringify({
-        model: MODEL,
-        temperature: 0.3,
-        max_tokens: mode === 'mock-question' ? 200 : LONG_MODES.has(mode) ? 4000 : 2200,
-        messages: [
-          { role: 'system', content: systemPrompt(mode) },
-          {
-            role: 'user',
-            content: `CANDIDATE PROFILE\n${profileBlock(profile)}\n\n<untrusted_input>\n${input}\n</untrusted_input>`,
-          },
-        ],
-      }),
+    const out = await generate({
+      system: systemPrompt(mode),
+      user: `CANDIDATE PROFILE\n${profileBlock(profile)}\n\n<untrusted_input>\n${input}\n</untrusted_input>`,
+      maxTokens: mode === 'mock-question' ? 200 : LONG_MODES.has(mode) ? 4000 : 2200,
     });
-    if (!res.ok) throw new Error(`Groq ${res.status}`);
-    const data = await res.json();
-    const text: string = (data.choices?.[0]?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-    if (!text) throw new Error('empty');
-    return NextResponse.json({ text, flags, model: MODEL });
+    return NextResponse.json({ text: out.text, flags, model: out.model, provider: out.provider });
   } catch {
     return NextResponse.json(
       { flags, error: { code: 'AI_FAILED', message: 'The AI service did not respond. Please try again.' } },

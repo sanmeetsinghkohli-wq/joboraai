@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export interface JobMatchExplanation {
   matchScore: number;
-  engine: 'gemini-2.0-flash' | 'deterministic-profile-matcher';
+  engine: 'gemini-3.8-flash' | 'deterministic-profile-matcher';
   headline: string;
   alignedSkills: string[];
   missingOrAdjacentSkills: string[];
@@ -151,7 +151,7 @@ Summary: ${String(profile.summary || '').slice(0, 300)}`;
 
     try {
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(
           geminiKey
         )}`,
         {
@@ -180,7 +180,7 @@ Summary: ${String(profile.summary || '').slice(0, 300)}`;
                 typeof parsed.matchScore === 'number'
                   ? Math.max(60, Math.min(99, Math.round(parsed.matchScore)))
                   : fallback.matchScore,
-              engine: 'gemini-2.0-flash',
+              engine: 'gemini-3.8-flash',
               headline: parsed.headline,
               alignedSkills: Array.isArray(parsed.alignedSkills)
                 ? parsed.alignedSkills

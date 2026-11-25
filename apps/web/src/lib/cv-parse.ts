@@ -119,27 +119,16 @@ export function normaliseParsedCv(raw: Record<string, unknown>): ParsedCv {
   };
 }
 
-export async function parseCvWithAi(text: string, apiKey: string): Promise<ParsedCv> {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    signal: AbortSignal.timeout(45000),
-    body: JSON.stringify({
-      model: 'openai/gpt-oss-120b',
-      temperature: 0,
-      max_tokens: 4000,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: PROMPT },
-        { role: 'user', content: `<cv>\n${text.slice(0, 24000)}\n</cv>` },
-      ],
-    }),
+export async function parseCvWithAi(text: string): Promise<ParsedCv> {
+  const { generate } = await import('./llm');
+  const out = await generate({
+    system: PROMPT,
+    user: `<cv>\n${text.slice(0, 24000)}\n</cv>`,
+    maxTokens: 4000,
+    temperature: 0,
+    json: true,
   });
-  if (!res.ok) throw new Error(`AI parsing failed (${res.status})`);
-  const data = await res.json();
-  const content = String(data.choices?.[0]?.message?.content || '')
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/```\s*$/, '');
+  const content = out.text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
   return normaliseParsedCv(JSON.parse(content));
 }
 

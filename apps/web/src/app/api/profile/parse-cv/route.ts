@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUserId, withUserData } from '../../auth/_lib';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { extractCvText, parseCvWithAi } from '@/lib/cv-parse';
+import { llmConfigured } from '@/lib/llm';
 import { auditAts } from '@/lib/career-ops/verify-ats.mjs';
 import { textToHtml } from '@/lib/career-ops/cvHtml';
 
@@ -66,12 +67,11 @@ async function POST_handler(req: NextRequest) {
   // Deterministic ATS read of the extracted text (career-ops scorer, no AI).
   const ats = auditAts(textToHtml(text));
 
-  const key = process.env.GROQ_API_KEY;
-  if (!key) {
+  if (!llmConfigured()) {
     return NextResponse.json({ error: { message: 'CV reading is not set up on this server yet.' } }, { status: 503 });
   }
   try {
-    const parsed = await parseCvWithAi(text, key);
+    const parsed = await parseCvWithAi(text);
     return NextResponse.json({ parsed, ats: { score: ats.score, grade: ats.grade }, characters: text.length });
   } catch {
     return NextResponse.json({ error: { message: 'The AI could not read this CV. Please try again.' } }, { status: 502 });

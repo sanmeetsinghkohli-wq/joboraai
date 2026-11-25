@@ -45,6 +45,34 @@ async function kvFetch(query: string): Promise<Array<{ key: string; value: unkno
   return res.json();
 }
 
+/** Read one shared document (not tied to a user). */
+export async function kvGetShared<T>(key: string): Promise<{ value: T; updatedAt: string } | null> {
+  if (!kvEnabled) return null;
+  const res = await fetch(`${URL_}/rest/v1/jobora_kv?select=value,updated_at&key=eq.${encodeURIComponent(key)}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
+  if (!res.ok) return null;
+  const rows = (await res.json()) as Array<{ value: T; updated_at: string }>;
+  return rows[0] ? { value: rows[0].value, updatedAt: rows[0].updated_at } : null;
+}
+
+/** Write one shared document; awaited by flushPersistence like any other write. */
+export function kvSetShared(key: string, value: unknown): void {
+  if (!kvEnabled) return;
+  track(kvUpsert(key, value)).catch((e) => console.error('[persistence]', e.message));
+}
+
+/** List documents whose key starts with a prefix (admin aggregates only). */
+export async function kvList<T>(prefix: string, limit = 5000): Promise<Array<{ key: string; value: T; updated_at: string }>> {
+  if (!kvEnabled) return [];
+  const res = await fetch(
+    `${URL_}/rest/v1/jobora_kv?select=key,value,updated_at&key=like.${encodeURIComponent(`${prefix}*`)}&limit=${limit}`,
+    { headers: headers(), cache: 'no-store' }
+  );
+  return res.ok ? res.json() : [];
+}
+
 /** One cheap read to confirm the database answers. Used by /api/status for uptime checks. */
 export async function kvPing(): Promise<'ok' | 'unavailable' | 'not_configured'> {
   if (!kvEnabled) return 'not_configured';

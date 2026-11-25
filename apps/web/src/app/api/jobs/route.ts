@@ -17,6 +17,7 @@ import {
   sanitizeExternalUrl,
 } from './_providers';
 import { fetchEmployerBoardJobs } from './_employerBoards';
+import { kvGetShared, kvSetShared } from '@/lib/db/kv';
 import { inferEmploymentType } from './_providers';
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +57,10 @@ const jobsCacheStore: Map<string, JobsCacheEntry> =
     ? global.__jobora_jobs_cache
     : (global.__jobora_jobs_cache = new Map<string, JobsCacheEntry>());
 
-const CACHE_TTL_MS = 3 * 60 * 1000; // 3-minute server-side cache per query/location filter
+const CACHE_TTL_MS = 3 * 60 * 1000;
+const SNAPSHOT_KEY = 'shared:jobs-snapshot';
+/** The daily cron refreshes it; any full fetch also refreshes it. */
+const SNAPSHOT_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 3-minute server-side cache per query/location filter
 
 function matchesLocationFilter(job: LiveJobRecord, locationFilter: string): boolean {
   if (!locationFilter) return true;
@@ -173,6 +177,33 @@ async function GET_handler(req: NextRequest) {
     });
   }
 
+  // A cold instance first tries the shared snapshot (refreshed by the daily cron and
+  // by any full fetch), so most requests never hit the ~40 job boards directly.
+  if (!query && !forceRefresh) {
+    const snap = await kvGetShared<{ jobs: LiveJobRecord[]; providerDetails: ProviderHealthDetail[]; providerStatus: Record<string, 'ok' | 'degraded'> }>(SNAPSHOT_KEY).catch(() => null);
+    if (snap && Date.now() - new Date(snap.updatedAt).getTime() < SNAPSHOT_MAX_AGE_MS && snap.value.jobs?.length) {
+      const filtered = snap.value.jobs.filter((job) => matchesLocationFilter(job, locationFilter));
+      jobsCacheStore.set(cacheKey, {
+        timestamp: Date.now(),
+        jobs: filtered,
+        providerStatus: snap.value.providerStatus,
+        providerDetails: snap.value.providerDetails,
+        fallbackActive: false,
+      });
+      const merged = deduplicateJobs([...mine, ...filtered]);
+      return NextResponse.json({
+        jobs: merged,
+        total: merged.length,
+        syncedAt: snap.updatedAt,
+        cached: true,
+        fallbackActive: false,
+        providerStatus: snap.value.providerStatus,
+        providerDetails: snap.value.providerDetails,
+        restrictedPlatforms: getRestrictedPartnerStatus(),
+      });
+    }
+  }
+
   // Run all active & configured provider adapters concurrently with independent timeouts & graceful fallback
   const [
     greenhouseRes,
@@ -236,6 +267,10 @@ async function GET_handler(req: NextRequest) {
   const providerFiltered = deduplicateJobs(liveProviderJobs).filter(
     (job) => matchesQuery(job, query) && matchesLocationFilter(job, locationFilter)
   );
+
+  if (!query && liveProviderJobs.length > 0) {
+    kvSetShared(SNAPSHOT_KEY, { jobs: deduplicateJobs(liveProviderJobs), providerDetails, providerStatus });
+  }
 
   // Only shared provider results are cached — never a user's private roles.
   jobsCacheStore.set(cacheKey, {

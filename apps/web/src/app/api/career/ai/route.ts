@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { recordEvent } from '@/lib/events';
 import { z } from 'zod';
 import { getAuthenticatedUserId, withUserData } from '../../auth/_lib';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
@@ -79,6 +80,7 @@ async function POST_handler(req: NextRequest) {
       maxTokens: mode === 'mock-question' ? 200 : LONG_MODES.has(mode) ? 4000 : 2200,
       json: mode === 'cv-json',
     });
+    recordEvent('ai_tool', mode);
     return NextResponse.json({ text: out.text, flags, model: out.model, provider: out.provider });
   } catch {
     return NextResponse.json(

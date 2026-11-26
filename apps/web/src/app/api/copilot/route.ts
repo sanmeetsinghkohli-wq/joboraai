@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { recordEvent } from '@/lib/events';
 import { z } from 'zod';
 import { applicationsStore, extrasStore, getAuthenticatedUserId, profilesStore, withUserData } from '../auth/_lib';
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rateLimit';
@@ -130,6 +131,7 @@ async function POST_handler(req: NextRequest) {
       maxTokens: 900,
       temperature: 0.2,
     });
+    recordEvent('ai_tool', 'copilot');
     return NextResponse.json(
       {
         reply: out.text.trim(),

@@ -102,7 +102,7 @@ function AuthContent() {
       const parts = name.trim().split(/\s+/);
       const body =
         tab === 'signup'
-          ? { firstName: parts[0] || '', lastName: parts.slice(1).join(' '), email: email.trim(), password }
+          ? { firstName: parts[0] || '', lastName: parts.slice(1).join(' '), email: email.trim(), password, source: params?.get('from') || '' }
           : { email: email.trim(), password };
 
       const res = await fetch(`/api/auth/${tab}`, {

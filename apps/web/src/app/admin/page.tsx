@@ -6,6 +6,9 @@ import { Card, Notice, PageHeader, Skeleton } from '@/components/ui/primitives';
 import { APPLICATION_STATUSES, normalizeStatus } from '@/lib/status';
 
 interface Stats {
+  funnel: { accounts: number; profilesReady: number; trackingApplications: number };
+  last30: Record<string, number>;
+  signupSources: Record<string, number>;
   generatedAt: string;
   accounts: number;
   signupsByWeek: Array<{ week: string; count: number }>;
@@ -75,6 +78,62 @@ export default function AdminPage() {
               </Card>
             ))}
           </section>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <h2 className="mb-1 font-serif text-xl text-plum">Funnel</h2>
+              <p className="mb-4 text-xs text-ink-subtle">All time, from saved data.</p>
+              <ul className="space-y-3">
+                {[
+                  ['Accounts', stats.funnel.accounts],
+                  ['Profile ready (role + 3 skills)', stats.funnel.profilesReady],
+                  ['Tracking at least one application', stats.funnel.trackingApplications],
+                ].map(([label, value], i) => {
+                  const pct = stats.funnel.accounts ? Math.round(((value as number) / stats.funnel.accounts) * 100) : 0;
+                  return (
+                    <li key={label as string} className="text-sm">
+                      <div className="mb-1 flex justify-between">
+                        <span className="text-ink">{label}</span>
+                        <span className="tabular-nums text-ink-muted">
+                          {value}
+                          {i > 0 && ` · ${pct}%`}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-plum-50">
+                        <div className="h-2 rounded-full bg-plum" style={{ width: `${i === 0 ? 100 : pct}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Card>
+            <Card>
+              <h2 className="mb-1 font-serif text-xl text-plum">Last 30 days</h2>
+              <p className="mb-4 text-xs text-ink-subtle">Counted from events since tracking started.</p>
+              <ul className="space-y-2 text-sm">
+                {[
+                  ['Free CV checks (public)', 'cv_check'],
+                  ['“Create account” clicks after a CV check', 'cv_check_cta'],
+                  ['Sign-ups', 'signup'],
+                  ['AI tool uses', 'ai_tool'],
+                  ['Applications added', 'application_tracked'],
+                ].map(([label, key]) => (
+                  <li key={key} className="flex justify-between">
+                    <span className="text-ink">{label}</span>
+                    <span className="tabular-nums text-ink-muted">{stats.last30[key] || 0}</span>
+                  </li>
+                ))}
+              </ul>
+              {Object.keys(stats.signupSources).length > 0 && (
+                <p className="mt-4 text-xs text-ink-muted">
+                  Sign-ups by source:{' '}
+                  {Object.entries(stats.signupSources)
+                    .map(([s, n]) => `${s} ${n}`)
+                    .join(' · ')}
+                </p>
+              )}
+            </Card>
+          </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>

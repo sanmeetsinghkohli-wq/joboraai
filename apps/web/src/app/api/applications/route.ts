@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { recordEvent } from '@/lib/events';
 import { applicationsStore, getAuthenticatedUserId, withUserData } from '../auth/_lib';
 
 export const dynamic = 'force-dynamic';
@@ -163,6 +164,7 @@ async function POST_handler(req: NextRequest) {
 
     apps.unshift(newApp);
     store.set(userId, apps);
+    recordEvent('application_tracked');
     return NextResponse.json({ application: newApp }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json(

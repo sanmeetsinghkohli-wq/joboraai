@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { recordEvent } from '@/lib/events';
 import { setCookie, generateToken, hashPassword, usersStore, withUserData } from '../_lib';
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rateLimit';
 
@@ -87,6 +88,7 @@ async function POST_handler(request: NextRequest) {
 
     usersStore.set(normalizedEmail, user);
     usersStore.set(user.id, user);
+    recordEvent('signup', typeof body?.source === 'string' ? body.source : '');
 
     const token = generateToken(user.id, user.firstName, user.email, false);
 

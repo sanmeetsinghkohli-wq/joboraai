@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { flushPersistence } from '@/lib/db/kv';
+import { sendAlertDigests } from './_digest';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -16,5 +18,8 @@ export async function GET(req: Request) {
   const origin = new URL(req.url).origin;
   const res = await fetch(`${origin}/api/jobs?refresh=1`, { cache: 'no-store' });
   const data = res.ok ? await res.json() : null;
-  return NextResponse.json({ ok: res.ok, jobs: data?.total ?? 0 });
+  // The snapshot write from the jobs call has landed; now email alert digests.
+  const alerts = await sendAlertDigests().catch((e) => ({ users: 0, sent: 0, skipped: (e as Error).message }));
+  await flushPersistence();
+  return NextResponse.json({ ok: res.ok, jobs: data?.total ?? 0, alerts });
 }

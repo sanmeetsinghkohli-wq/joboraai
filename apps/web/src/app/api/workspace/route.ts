@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { emailEnabled } from '@/lib/email';
 import { extrasStore, getAuthenticatedUserId, withUserData, type UserExtras } from '../auth/_lib';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +19,7 @@ const Action = z.discriminatedUnion('action', [
     seenIds: z.array(z.string().max(200)).max(1000).default([]),
   }),
   z.object({ action: z.literal('alert.remove'), id: text(80) }),
+  z.object({ action: z.literal('alert.email'), id: text(80), enabled: z.boolean() }),
   z.object({ action: z.literal('alert.seen'), id: text(80), seenIds: z.array(z.string().max(200)).max(1000) }),
   z.object({
     action: z.literal('goals.set'),
@@ -39,7 +41,7 @@ const Action = z.discriminatedUnion('action', [
 async function GET_handler(req: NextRequest) {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return NextResponse.json({ error: { message: 'Please log in.' } }, { status: 401 });
-  return NextResponse.json(extrasStore.get(userId) ?? {});
+  return NextResponse.json({ ...(extrasStore.get(userId) ?? {}), emailAlertsAvailable: emailEnabled() });
 }
 
 /** Small, validated updates to a user's alerts, weekly goals and interview history. */
@@ -67,6 +69,15 @@ async function POST_handler(req: NextRequest) {
     case 'alert.remove':
       x.alerts = alerts.filter((al) => al.id !== a.id);
       break;
+    case 'alert.email': {
+      const target = alerts.find((al) => al.id === a.id);
+      if (!target) return NextResponse.json({ error: { message: 'Alert not found.' } }, { status: 404 });
+      target.emailEnabled = a.enabled;
+      // Start from what is already listed so the first email holds only genuinely new roles.
+      if (a.enabled && !target.emailedIds) target.emailedIds = [...target.seenIds];
+      x.alerts = alerts;
+      break;
+    }
     case 'alert.seen': {
       const target = alerts.find((al) => al.id === a.id);
       if (!target) return NextResponse.json({ error: { message: 'Alert not found.' } }, { status: 404 });
@@ -88,7 +99,7 @@ async function POST_handler(req: NextRequest) {
       break;
   }
   extrasStore.set(userId, x);
-  return NextResponse.json(x);
+  return NextResponse.json({ ...x, emailAlertsAvailable: emailEnabled() });
 }
 
 export const GET = withUserData(GET_handler);

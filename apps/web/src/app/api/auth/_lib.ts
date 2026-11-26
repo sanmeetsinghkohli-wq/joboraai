@@ -97,6 +97,11 @@ export interface JobAlert {
   techOnly: boolean;
   /** Job ids the user has already seen for this alert (newest 1000). */
   seenIds: string[];
+  /** Email a daily digest of new matches. Off unless the user turns it on. */
+  emailEnabled?: boolean;
+  /** Job ids already emailed for this alert (newest 1000). */
+  emailedIds?: string[];
+  lastEmailedAt?: string;
   createdAt: string;
 }
 export interface InterviewRecord {

@@ -5,6 +5,6 @@
  */
 export const SITE = {
   name: 'Jobora AI',
-  contactEmail: '',
+  contactEmail: 'sanmeet@devnityco.com',
   legalUpdated: '22 November 2026',
 };

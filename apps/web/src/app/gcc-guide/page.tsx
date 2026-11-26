@@ -94,6 +94,52 @@ const TERMS: Array<[string, string]> = [
   ['Nationalisation programmes', 'Emiratisation, Saudization, Qatarization and similar quotas reserve some jobs or set hiring targets for citizens.'],
 ];
 
+type Programme = { name: string; note: string; eligibility: 'all' | 'nationals' | 'check'; href?: string };
+
+/** Verified by web search in November 2026; each links to the page we checked. */
+const PROGRAMMES: Programme[] = [
+  {
+    name: 'Dubai Holding: Leaders of Tomorrow graduate programme and internships',
+    note: 'Graduate programme and internships of up to 16 weeks across the group. The next graduate cycle was announced to open in October 2026.',
+    eligibility: 'all',
+    href: 'https://www.dubaiholding.com/en/graduate-trainee-programme',
+  },
+  {
+    name: 'Qatar Foundation: Mehnaty',
+    note: 'Early-career programme. The 2026 deadline (21 August) has passed; watch for the next cycle.',
+    eligibility: 'all',
+  },
+  {
+    name: 'Dubai Business Associates',
+    note: 'Fully funded nine-month programme in Dubai. The 2026 cycle closed on 1 March 2026.',
+    eligibility: 'check',
+    href: 'https://www.consultancy-me.com/news/12280/dubais-fully-funded-graduate-training-programme-kicks-off-2026-applications-process',
+  },
+  {
+    name: 'Emirates Group: National Graduate Training Programmes',
+    note: 'Several tracks, including a Business Insights Analyst graduate programme for data and AI roles.',
+    eligibility: 'nationals',
+    href: 'https://www.emirates.com/media-centre/the-emirates-group-unlocks-new-career-opportunities-for-uae-nationals/',
+  },
+  {
+    name: 'Etihad Airways: Bedayati',
+    note: 'Six to 12 month graduate programme with mentoring. Requires completed or exempted National Service.',
+    eligibility: 'nationals',
+    href: 'https://tradearabia.com/News/489856/Etihad-Airways-opens-applications-for-Emirati-graduate-programme/TTN',
+  },
+  {
+    name: 'ADNOC: Graduate Trainee Programme',
+    note: 'Graduate trainee route into the ADNOC group. Applications usually open once a year.',
+    eligibility: 'nationals',
+  },
+];
+
+const ELIGIBILITY = {
+  all: { label: 'Open to all nationalities', cls: 'bg-success/10 text-success' },
+  nationals: { label: 'UAE nationals only', cls: 'bg-plum-50 text-plum' },
+  check: { label: 'Check eligibility', cls: 'bg-coral-50 text-coral-700' },
+} as const;
+
 const GRADUATE_SEARCHES = [
   { label: 'Graduate roles', q: 'graduate' },
   { label: 'Internships', q: 'intern' },
@@ -118,7 +164,7 @@ function GuideBody() {
       <PageHeader
         eyebrow={t('GCC career guide')}
         title={t('Working in the Gulf')}
-        description="Plain-English basics on work visas, local hiring rules and the terms recruiters use, with links to the official sources."
+        description={t('Plain-English basics on work visas, local hiring rules and the terms recruiters use, with links to the official sources.')}
       />
 
       <div className="mb-6 flex gap-3 rounded-2xl border border-coral-100 bg-coral-50 p-4 text-sm text-ink">
@@ -142,7 +188,7 @@ function GuideBody() {
                   aria-expanded={isOpen}
                   className="flex w-full items-center justify-between px-5 py-4 text-start"
                 >
-                  <span className="font-serif text-lg text-plum">{c.name}</span>
+                  <span className="font-serif text-lg text-plum">{t(c.name)}</span>
                   <span className={cn('text-ink-subtle transition-transform', isOpen && 'rotate-45')} aria-hidden="true">
                     +
                   </span>
@@ -151,12 +197,12 @@ function GuideBody() {
                   <div className="space-y-4 border-t border-line px-5 py-4 text-sm">
                     <ul className="list-disc space-y-2 ps-5 text-ink">
                       {c.points.map((p) => (
-                        <li key={p}>{p}</li>
+                        <li key={p}>{t(p)}</li>
                       ))}
                     </ul>
                     <p className="text-ink-muted">
                       <span className="font-medium text-ink">{t('Local hiring: ')}</span>
-                      {c.localHiring}
+                      {t(c.localHiring)}
                     </p>
                     <div>
                       <p className="mb-2 font-medium text-ink">{t('Official sources')}</p>
@@ -169,7 +215,7 @@ function GuideBody() {
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 text-plum underline-offset-4 hover:underline"
                             >
-                              {l.label}
+                              {t(l.label)}
                               <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                             </a>
                           </li>
@@ -187,8 +233,9 @@ function GuideBody() {
           <Card>
             <h2 className="mb-1 font-serif text-xl text-plum">{t('Graduate and early-career roles')}</h2>
             <p className="mb-4 text-sm text-ink-muted">
-              Many large Gulf employers, banks and government-linked companies run graduate and trainee programmes, usually opening
-              once a year. Some are reserved for nationals, so read the eligibility line first.
+              {t(
+                'Many large Gulf employers, banks and government-linked companies run graduate and trainee programmes, usually opening once a year. Some are reserved for nationals, so read the eligibility line first.'
+              )}
             </p>
             <div className="flex flex-wrap gap-2">
               {GRADUATE_SEARCHES.map((s) => (
@@ -197,10 +244,41 @@ function GuideBody() {
                   href={`/jobs?q=${encodeURIComponent(s.q)}`}
                   className="rounded-full border border-line px-3.5 py-1.5 text-sm font-medium text-plum hover:border-plum-200 hover:bg-plum-50"
                 >
-                  {s.label}
+                  {t(s.label)}
                 </Link>
               ))}
             </div>
+          </Card>
+
+          <Card>
+            <h2 className="mb-1 font-serif text-xl text-plum">{t('Programmes we checked')}</h2>
+            <p className="mb-4 text-xs text-ink-subtle">
+              {t('Checked in November 2026. Intakes and rules change every year, so confirm on the employer’s own page before applying.')}
+            </p>
+            <ul className="space-y-4">
+              {PROGRAMMES.map((p) => (
+                <li key={p.name} className="text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-ink">{t(p.name)}</span>
+                    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', ELIGIBILITY[p.eligibility].cls)}>
+                      {t(ELIGIBILITY[p.eligibility].label)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-ink-muted">{t(p.note)}</p>
+                  {p.href && (
+                    <a
+                      href={p.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-plum underline-offset-4 hover:underline"
+                    >
+                      {t('Source')}
+                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
           </Card>
 
           <Card>
@@ -208,8 +286,8 @@ function GuideBody() {
             <dl className="space-y-3 text-sm">
               {TERMS.map(([term, def]) => (
                 <div key={term}>
-                  <dt className="font-medium text-ink">{term}</dt>
-                  <dd className="text-ink-muted">{def}</dd>
+                  <dt className="font-medium text-ink">{t(term)}</dt>
+                  <dd className="text-ink-muted">{t(def)}</dd>
                 </div>
               ))}
             </dl>

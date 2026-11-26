@@ -3,7 +3,7 @@
 import { useT } from '@/lib/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Bell, BellPlus, X } from 'lucide-react';
+import { Bell, BellPlus, Mail, MailX, X } from 'lucide-react';
 import { useToast } from '@/components/providers';
 import { cn } from '@/lib/cn';
 import { describeAlert, newMatches, alertMatches, type AlertFilters } from '@/lib/jobAlerts';
@@ -127,6 +127,30 @@ export function JobAlertsBar({
             <button type="button" onClick={() => open(a)} className="flex items-center gap-2">
               {label}
             </button>
+            {data.emailAlertsAvailable && (
+              <button
+                type="button"
+                onClick={() =>
+                  act({ action: 'alert.email', id: a.id, enabled: !a.emailEnabled })
+                    .then(() =>
+                      addToast({
+                        title: a.emailEnabled ? t('Email off for this alert') : t('Email on for this alert'),
+                        description: a.emailEnabled ? undefined : t('You will get one email a day when there are new matches.'),
+                      })
+                    )
+                    .catch(() => {})
+                }
+                aria-pressed={Boolean(a.emailEnabled)}
+                aria-label={`${a.emailEnabled ? t('Turn off email for') : t('Turn on email for')} ${a.name}`}
+                title={a.emailEnabled ? t('Daily email is on') : t('Get a daily email')}
+                className={cn(
+                  'grid h-7 w-7 place-items-center rounded-full hover:bg-plum-50',
+                  a.emailEnabled ? 'text-plum' : 'text-ink-subtle hover:text-plum'
+                )}
+              >
+                {a.emailEnabled ? <Mail className="h-3.5 w-3.5" aria-hidden="true" /> : <MailX className="h-3.5 w-3.5" aria-hidden="true" />}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => act({ action: 'alert.remove', id: a.id }).catch(() => {})}

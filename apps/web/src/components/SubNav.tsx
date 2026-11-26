@@ -1,5 +1,6 @@
 'use client';
 
+import { trNode } from '@/lib/i18n';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/cn';
@@ -33,7 +34,7 @@ export function SubNav({ items, label }: { items: Array<{ href: string; label: s
               active ? 'border-plum text-plum' : 'border-transparent text-ink-muted hover:text-plum'
             )}
           >
-            {item.label}
+            {trNode(item.label)}
           </Link>
         );
       })}

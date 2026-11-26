@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { AR_GUIDE } from './i18n-guide';
+import { AR_PAGES } from './i18n-pages';
 
 export type Locale = 'en' | 'ar';
 const KEY = 'jobora_locale';
@@ -82,7 +84,7 @@ const AR: Record<string, string> = {
 };
 
 export function translate(locale: Locale, text: string): string {
-  return locale === 'ar' ? AR[text] ?? text : text;
+  return locale === 'ar' ? AR[text] ?? AR_GUIDE[text] ?? AR_PAGES[text] ?? text : text;
 }
 
 function readLocale(): Locale {
@@ -132,4 +134,15 @@ export function useLocale() {
 export function useT() {
   const { locale } = useContext(I18n);
   return useCallback((text: string) => translate(locale, text), [locale]);
+}
+
+/** Client-side translated text, safe to render from server components too. */
+export function Tr({ text }: { text: string }) {
+  const t = useT();
+  return <>{t(text)}</>;
+}
+
+/** Translates a node only when it is plain text. */
+export function trNode(node: React.ReactNode): React.ReactNode {
+  return typeof node === 'string' ? <Tr text={node} /> : node;
 }

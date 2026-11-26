@@ -10,6 +10,11 @@ export interface JobAlert {
   jobType: string;
   techOnly: boolean;
   seenIds: string[];
+  /** Email a daily digest of new matches. Off unless the user turns it on. */
+  emailEnabled?: boolean;
+  /** Job ids already emailed for this alert (newest 1000). */
+  emailedIds?: string[];
+  lastEmailedAt?: string;
   createdAt: string;
 }
 export interface InterviewRecord {
@@ -30,6 +35,8 @@ export interface Workspace {
   alerts?: JobAlert[];
   goals?: WeeklyGoals;
   interviews?: InterviewRecord[];
+  /** Server says email digests can be sent (Resend configured). */
+  emailAlertsAvailable?: boolean;
 }
 
 export const DEFAULT_GOALS = { applications: 5, outreach: 3, practice: 2 };

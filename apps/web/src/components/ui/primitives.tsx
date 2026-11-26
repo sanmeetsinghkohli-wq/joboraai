@@ -1,5 +1,6 @@
 import { CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { trNode } from '@/lib/i18n';
 
 /* ── Card ─────────────────────────────────────────────────────────────── */
 
@@ -18,7 +19,7 @@ export function Card({
 }
 
 export function CardTitle({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <h2 className={cn('font-serif text-xl text-plum', className)}>{children}</h2>;
+  return <h2 className={cn('font-serif text-xl text-plum', className)}>{trNode(children)}</h2>;
 }
 
 /* ── Badge ────────────────────────────────────────────────────────────── */
@@ -192,8 +193,8 @@ export function EmptyState({
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-coral-50 text-coral-700">
         {icon}
       </div>
-      <h3 className="font-serif text-xl text-plum">{title}</h3>
-      {children && <p className="mt-1.5 max-w-md text-sm text-ink-muted">{children}</p>}
+      <h3 className="font-serif text-xl text-plum">{trNode(title)}</h3>
+      {children && <p className="mt-1.5 max-w-md text-sm text-ink-muted">{trNode(children)}</p>}
       {action && <div className="mt-5 flex flex-wrap justify-center gap-2">{action}</div>}
     </div>
   );
@@ -250,9 +251,9 @@ export function PageHeader({
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
-        <h1 className="font-serif text-2xl text-plum sm:text-3xl">{title}</h1>
-        {description && <p className="mt-1.5 max-w-2xl text-sm text-ink-muted">{description}</p>}
+        {eyebrow && <p className="eyebrow mb-1">{trNode(eyebrow)}</p>}
+        <h1 className="font-serif text-2xl text-plum sm:text-3xl">{trNode(title)}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-sm text-ink-muted">{trNode(description)}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </header>

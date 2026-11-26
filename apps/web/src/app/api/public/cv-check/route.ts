@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rateLimit';
 import { auditAts } from '@/lib/career-ops/verify-ats.mjs';
-import { textToHtml } from '@/lib/career-ops/cvHtml';
+import { textToAtsHtml } from '@/lib/cvAtsHtml';
 import { readCvFile } from '@/lib/cvUpload';
 import { flushPersistence } from '@/lib/db/kv';
 import { recordEvent } from '@/lib/events';
@@ -28,27 +28,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let text = '';
+  let html = '';
   let keywords: string | undefined;
   const type = req.headers.get('content-type') || '';
   if (type.startsWith('multipart/form-data')) {
     const form = await req.formData().catch(() => null);
     const upload = await readCvFile(form?.get('file'));
     if ('error' in upload) return NextResponse.json({ error: { message: upload.error } }, { status: upload.status });
-    text = upload.text;
+    html = upload.html;
     const kw = form?.get('keywords');
     keywords = typeof kw === 'string' ? kw.slice(0, 2000) : undefined;
   } else {
     const parsed = Pasted.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) return NextResponse.json({ error: { message: 'Invalid request.' } }, { status: 400 });
-    text = parsed.data.text.trim();
+    const text = parsed.data.text.trim();
     keywords = parsed.data.keywords;
+    html = textToAtsHtml(text);
     if (text.length < 80) {
       return NextResponse.json({ error: { message: 'Paste your whole CV, including the section headings.' } }, { status: 400 });
     }
   }
 
-  const result = auditAts(textToHtml(text), { keywords: keywords?.trim() || undefined });
+  const result = auditAts(html, { keywords: keywords?.trim() || undefined });
   recordEvent('cv_check', type.startsWith('multipart') ? 'upload' : 'paste');
   await flushPersistence();
   return NextResponse.json({ score: result.score, grade: result.grade, issues: result.issues, keywordCoverage: result.keywordCoverage ?? null });

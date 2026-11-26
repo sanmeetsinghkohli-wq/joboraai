@@ -24,10 +24,24 @@ export default function CvCheckPage() {
       <CvChecker />
       <Section title="How the score works">
         <p>
-          The score comes from the open-source career-ops ATS checker. It looks at whether your text can be extracted, whether
-          your section headings and contact details are recognisable, and whether layout tricks such as tables, columns or hidden
-          text could confuse the software. No AI is used, so the same CV always gets the same score.
+          The score out of 100 comes from the open-source career-ops ATS checker, used unchanged. No AI is involved, so the same
+          CV always gets the same score. It adds up points for readable text, standard section headings (Experience, Education,
+          Skills), contact details (email and phone), and a simple layout.
         </p>
+        <p>What it can see depends on the file:</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            <strong>Word (.docx):</strong> the real structure, so tables used for layout and text inside images are caught.
+          </li>
+          <li>
+            <strong>PDF:</strong> the text and how it sits on the page, so two-column layouts are caught. Fonts and hidden text
+            inside a PDF are not checked.
+          </li>
+          <li>
+            <strong>Pasted text:</strong> headings, contact details and keywords only, because pasted text has no layout.
+          </li>
+        </ul>
+        <p>Job keywords are shown separately and never change the score.</p>
       </Section>
       <Section title="Your privacy">
         <p>

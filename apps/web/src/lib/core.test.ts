@@ -178,3 +178,88 @@ describe('admin allowlist', () => {
     expect(isAdminEmail('boss@jobora.app', '')).toBe(false);
   });
 });
+
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, HeadingLevel } from 'docx';
+import { auditAts } from './career-ops/verify-ats.mjs';
+import { docxToAtsHtml, looksLikeHeading, pdfToAtsHtml, textToAtsHtml } from './cvAtsHtml';
+
+/** A tiny hand-written PDF: each [x, y, text] is drawn in Helvetica on one page. */
+function makePdf(lines: Array<[number, number, string]>): Buffer {
+  const stream = lines.map(([x, y, t]) => `BT /F1 10 Tf ${x} ${y} Td (${t.replace(/[()\\]/g, '')}) Tj ET`).join('\n');
+  const objs = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  let out = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  objs.forEach((o, i) => {
+    offsets.push(out.length);
+    out += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  const xref = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`;
+  out += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return Buffer.from(out, 'latin1');
+}
+
+const CV_LINES = ['Aisha Khan', 'aisha@example.test +971 50 000 0000', 'EXPERIENCE', 'Data Analyst, Acme LLC', 'EDUCATION', 'BSc Computer Science', 'SKILLS', 'SQL, Python, Power BI'];
+
+describe('ATS scoring of uploads (career-ops auditAts)', () => {
+  it('recognises headings in any script, but not sentences or contact lines', () => {
+    expect(looksLikeHeading('Work Experience')).toBe(true);
+    expect(looksLikeHeading('الخبرة العملية')).toBe(true);
+    expect(looksLikeHeading('Skills:')).toBe(true);
+    expect(looksLikeHeading('Built dashboards used by 40 managers across the region.')).toBe(false);
+    expect(looksLikeHeading('aisha@example.test')).toBe(false);
+  });
+
+  // Uses the Arabic heading forms career-ops recognises (الخبرات, التعليم, مهارات).
+  // career-ops does not yet match المهارات (with the article), an upstream gap.
+  it('gives an Arabic CV its section-heading points', () => {
+    const ar = textToAtsHtml('عائشة خان\naisha@example.test +971500000000\nالخبرات\nمحللة بيانات\nالتعليم\nبكالوريوس علوم الحاسوب\nمهارات\nSQL, Python');
+    const issues = auditAts(ar).issues.map((i: { id: string }) => i.id);
+    expect(issues).not.toContain('section-headings');
+  });
+
+  it('flags a table-based Word CV that plain text would hide', async () => {
+    const cell = (t: string) => new TableCell({ children: [new Paragraph(t)] });
+    const doc = new Document({
+      sections: [
+        {
+          children: [
+            new Paragraph({ text: 'Aisha Khan', heading: HeadingLevel.TITLE }),
+            new Paragraph('aisha@example.test +971 50 000 0000'),
+            new Paragraph({ children: [new TextRun({ text: 'EXPERIENCE', bold: true })] }),
+            new Table({ rows: [new TableRow({ children: [cell('Data Analyst, Acme LLC'), cell('2024 to 2026')] })] }),
+            new Paragraph({ children: [new TextRun({ text: 'EDUCATION', bold: true })] }),
+            new Paragraph('BSc Computer Science'),
+            new Paragraph({ children: [new TextRun({ text: 'SKILLS', bold: true })] }),
+            new Paragraph('SQL, Python, Power BI'),
+          ],
+        },
+      ],
+    });
+    const html = await docxToAtsHtml(Buffer.from(await Packer.toBuffer(doc)));
+    const result = auditAts(html);
+    expect(result.issues.map((i: { id: string }) => i.id)).toContain('layout-tables');
+    expect(result.issues.map((i: { id: string }) => i.id)).not.toContain('section-headings');
+  });
+
+  it('detects a two-column PDF and leaves a single-column one alone', async () => {
+    const single: Array<[number, number, string]> = [];
+    const double: Array<[number, number, string]> = [];
+    for (let i = 0; i < 20; i++) {
+      const y = 760 - i * 18;
+      single.push([50, y, CV_LINES[i % CV_LINES.length]]);
+      double.push([40, y, CV_LINES[i % CV_LINES.length]], [330, y, `Detail line ${i}`]);
+    }
+    const one = await pdfToAtsHtml(makePdf(single), CV_LINES.join('\n'));
+    const two = await pdfToAtsHtml(makePdf(double), CV_LINES.join('\n'));
+    expect(one.multiColumn).toBe(false);
+    expect(two.multiColumn).toBe(true);
+    expect(auditAts(two.html).issues.map((i: { id: string }) => i.id)).toContain('multi-column');
+  });
+});

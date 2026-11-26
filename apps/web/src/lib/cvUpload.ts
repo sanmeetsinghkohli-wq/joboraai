@@ -1,9 +1,10 @@
 import { extractCvText } from './cv-parse';
+import { docxToAtsHtml, pdfToAtsHtml, textToAtsHtml } from './cvAtsHtml';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = ['pdf', 'docx', 'txt'];
 
-export type CvUploadResult = { text: string } | { error: string; status: number };
+export type CvUploadResult = { text: string; html: string; multiColumn: boolean } | { error: string; status: number };
 
 /** Validates an uploaded CV (type, size, file signature) and extracts its text. */
 export async function readCvFile(file: FormDataEntryValue | null | undefined): Promise<CvUploadResult> {
@@ -29,5 +30,8 @@ export async function readCvFile(file: FormDataEntryValue | null | undefined): P
       status: 422,
     };
   }
-  return { text };
+  // HTML for career-ops' ATS scorer, keeping whatever structure the file really has.
+  if (ext === 'docx') return { text, html: await docxToAtsHtml(buffer), multiColumn: false };
+  if (ext === 'pdf') return { text, ...(await pdfToAtsHtml(buffer, text)) };
+  return { text, html: textToAtsHtml(text), multiColumn: false };
 }

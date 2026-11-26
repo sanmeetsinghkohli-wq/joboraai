@@ -1,0 +1,2 @@
+# career-ops scripts start with #!; keep LF so tools that strip the #! line work on Windows.
+*.mjs text eol=lf

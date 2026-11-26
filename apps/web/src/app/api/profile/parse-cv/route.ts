@@ -5,7 +5,6 @@ import { parseCvWithAi } from '@/lib/cv-parse';
 import { readCvFile } from '@/lib/cvUpload';
 import { llmConfigured } from '@/lib/llm';
 import { auditAts } from '@/lib/career-ops/verify-ats.mjs';
-import { textToHtml } from '@/lib/career-ops/cvHtml';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -26,10 +25,10 @@ async function POST_handler(req: NextRequest) {
   const form = await req.formData().catch(() => null);
   const upload = await readCvFile(form?.get('file'));
   if ('error' in upload) return NextResponse.json({ error: { message: upload.error } }, { status: upload.status });
-  const { text } = upload;
+  const { text, html } = upload;
 
   // Deterministic ATS read of the extracted text (career-ops scorer, no AI).
-  const ats = auditAts(textToHtml(text));
+  const ats = auditAts(html);
 
   if (!llmConfigured()) {
     return NextResponse.json({ error: { message: 'CV reading is not set up on this server yet.' } }, { status: 503 });

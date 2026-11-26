@@ -62,7 +62,11 @@ export default function OutboxPage() {
     <AppShell>
       <PageHeader
         title="Outbox"
-        description="Emails Jobora has prepared. Nothing is sent until you press Approve & send on that email."
+        description={
+          gmail && !gmail.available
+            ? 'Emails Jobora has prepared. Review each one, then copy it or open it in your own mail app to send.'
+            : 'Emails Jobora has prepared. Nothing is sent until you press Approve & send on that email.'
+        }
         actions={
           <ButtonLink href="/email-composer" variant="secondary">
             <Mail className="h-4 w-4" aria-hidden="true" />
@@ -71,7 +75,7 @@ export default function OutboxPage() {
         }
       />
 
-      {gmail && !gmail.connected && (
+      {gmail && !gmail.connected && gmail.available && (
         <Notice tone="info" className="mb-6" title={gmail.available ? 'Connect Gmail to send from here' : 'Sending from Jobora is not switched on yet'}>
           {gmail.available ? (
             <>
@@ -119,6 +123,7 @@ export default function OutboxPage() {
                     key={item.id}
                     item={item}
                     canSend={Boolean(gmail?.connected)}
+                    gmailAvailable={Boolean(gmail?.available)}
                     onChange={replace}
                     onRemoved={(id) => setItems((all) => (all ?? []).filter((i) => i.id !== id))}
                     onSent={(it) => {
@@ -164,6 +169,7 @@ export default function OutboxPage() {
 function DraftCard({
   item,
   canSend,
+  gmailAvailable,
   onChange,
   onRemoved,
   onSent,
@@ -171,6 +177,7 @@ function DraftCard({
 }: {
   item: OutboxItem;
   canSend: boolean;
+  gmailAvailable: boolean;
   onChange: (item: OutboxItem) => void;
   onRemoved: (id: string) => void;
   onSent: (item: OutboxItem) => void;
@@ -259,6 +266,7 @@ function DraftCard({
           </Notice>
         )}
         <div className="mt-5 flex flex-wrap gap-2">
+          {gmailAvailable && (
           <Button
             onClick={approveAndSend}
             loading={busy === 'send'}
@@ -268,6 +276,7 @@ function DraftCard({
             <Send className="h-4 w-4" aria-hidden="true" />
             Approve &amp; send
           </Button>
+          )}
           {dirty && (
             <Button
               variant="secondary"

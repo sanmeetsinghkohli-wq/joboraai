@@ -46,6 +46,9 @@ export function GmailConnectionCard() {
     addToast({ title: 'Gmail disconnected', description: 'Jobora can no longer send email for you.' });
   };
 
+  // Hidden entirely until Gmail sending is configured for the site.
+  if (status && !status.available) return null;
+
   return (
     <Card as="section">
       <CardTitle>Send from Gmail</CardTitle>

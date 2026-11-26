@@ -20,8 +20,10 @@ export const AR_PAGES: Record<string, string> = {
   'Delete account': 'حذف الحساب',
   Details: 'التفاصيل',
   'Document studio': 'استوديو المستندات',
-  'Draft an application or follow-up email. Add it to your outbox to send from your connected Gmail after you approve it, or open it in your own mail app.':
-    'اكتب رسالة تقديم أو متابعة. أضفها إلى صندوق الصادر لتُرسل من Gmail المرتبط بعد موافقتك، أو افتحها في تطبيق البريد لديك.',
+  'Draft an application or follow-up email. Add it to your outbox to review it, or open it in your own mail app.':
+    'اكتب رسالة تقديم أو متابعة. أضفها إلى صندوق الصادر لمراجعتها، أو افتحها في تطبيق البريد لديك.',
+  'Emails Jobora has prepared. Review each one, then copy it or open it in your own mail app to send.':
+    'رسائل جهّزها Jobora. راجع كل رسالة، ثم انسخها أو افتحها في تطبيق البريد لديك لإرسالها.',
   Email: 'البريد الإلكتروني',
   'Emails Jobora has prepared. Nothing is sent until you press Approve & send on that email.':
     'رسائل جهّزها Jobora. لا يُرسل شيء حتى تضغط «موافقة وإرسال» على الرسالة.',

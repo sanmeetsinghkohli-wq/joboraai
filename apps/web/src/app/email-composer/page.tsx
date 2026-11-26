@@ -109,7 +109,7 @@ export default function EmailPage() {
       return;
     }
     logActivity('mail', 'Added an email to your outbox', selectedJob ? selectedJob.company : subject);
-    addToast({ type: 'success', title: 'Added to your outbox', description: 'Review it and press Approve & send.' });
+    addToast({ type: 'success', title: 'Added to your outbox', description: 'Review it there before you send it.' });
     router.push('/outbox');
   };
 
@@ -126,7 +126,7 @@ export default function EmailPage() {
     <AppShell>
       <PageHeader
         title="Email"
-        description="Draft an application or follow-up email. Add it to your outbox to send from your connected Gmail after you approve it, or open it in your own mail app."
+        description="Draft an application or follow-up email. Add it to your outbox to review it, or open it in your own mail app."
       />
 
       <div className="mx-auto max-w-3xl space-y-5">

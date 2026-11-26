@@ -56,7 +56,7 @@ const CARDS: {
   {
     href: '/email-composer',
     title: 'Apply with Your Email',
-    body: 'Connect Gmail and Jobora prepares each application and follow-up email for you. You review it and press Approve & send; nothing goes out on its own.',
+    body: 'Jobora drafts each application and follow-up email from your profile and keeps them in your outbox. You review every one and send it yourself; nothing goes out on its own.',
     icon: (
       <>
         <rect height="16" rx="2" width="20" x="2" y="4" />

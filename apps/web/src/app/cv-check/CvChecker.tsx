@@ -26,6 +26,13 @@ function countCtaClick() {
   }
 }
 
+/** "cv-check", or "cv-check-uowd" when the page was opened from a tagged link such as ?from=uowd. */
+function signupSource(): string {
+  if (typeof window === 'undefined') return 'cv-check';
+  const tag = (new URLSearchParams(window.location.search).get('from') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 25);
+  return tag ? `cv-check-${tag}` : 'cv-check';
+}
+
 export function CvChecker() {
   const [mode, setMode] = useState<'upload' | 'paste'>('upload');
   const [file, setFile] = useState<File | null>(null);
@@ -222,7 +229,7 @@ export function CvChecker() {
                 GCC and India, and tracks every application. Free.
               </p>
               <Link
-                href="/auth?tab=signup&from=cv-check"
+                href={`/auth?tab=signup&from=${encodeURIComponent(signupSource())}`}
                 onClick={countCtaClick}
                 className="mt-4 inline-flex h-11 items-center rounded-full bg-[#E05347] px-6 text-sm font-semibold text-white hover:bg-[#C9443A]"
               >

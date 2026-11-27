@@ -3,13 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowIcon, FOCUS, Line } from './shared';
-import { useStaticLayout } from '../use-render-tier';
+import { useBackground3d, useStaticLayout } from '../use-render-tier';
 import { StaticResume } from '../ResumeCss';
 
 const FACTS = ['No credit card required', 'Upload PDF or DOCX', 'Nothing sends without your OK'];
 
 export function Hero({ onWatchTour }: { onWatchTour?: () => void }) {
   const isStatic = useStaticLayout();
+  const background = useBackground3d();
 
   return (
     <section id="hero" data-scroll-section="hero" className="relative lg:min-h-[100svh] flex flex-col overflow-hidden">
@@ -29,7 +30,7 @@ export function Hero({ onWatchTour }: { onWatchTour?: () => void }) {
               </Line>
             </h1>
             <p className="lp-fade text-lg md:text-xl text-[#63555F] leading-relaxed max-w-xl" style={{ ['--d' as string]: '0.35s' }}>
-              Jobora finds roles that fit you, tailors your CV and cover letter to each one, and sends it from your own Gmail once you approve it.
+              Jobora finds roles that fit you, tailors your CV and cover letter to each one, and tracks every application. Nothing is sent without your OK.
             </p>
             <div className="lp-fade flex flex-wrap items-center gap-4" style={{ ['--d' as string]: '0.45s' }}>
               <Link
@@ -67,7 +68,7 @@ export function Hero({ onWatchTour }: { onWatchTour?: () => void }) {
           </div>
           {/* Right half belongs to the fixed resume layer. Static tier draws its own flat copy. */}
           <div className="lg:col-span-6 hidden lg:flex justify-center" data-hero-resume-slot>
-            {isStatic && <StaticResume kind="front" className="w-[300px]" />}
+            {isStatic && !background && <StaticResume kind="front" className="w-[300px]" />}
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import { subscribe } from './scroll-state';
-import { downgradeTier, useRenderTier } from './use-render-tier';
+import { downgradeTier, useBackground3d, useRenderTier } from './use-render-tier';
 import { ResumeCss } from './ResumeCss';
 
 const ResumeCanvas = dynamic(() => import('./three/ResumeCanvas'), {
@@ -27,6 +27,7 @@ class CanvasBoundary extends Component<{ children: ReactNode }, { failed: boolea
 
 export function ResumeStage() {
   const tier = useRenderTier();
+  const background = useBackground3d();
   const [ready, setReady] = useState(false);
 
   // Mount the WebGL chunk only after first paint, when the browser is idle.
@@ -77,15 +78,17 @@ export function ResumeStage() {
 
   return (
     <>
+      {/* On phones the CTA paints its own plum background, so this layer is only for wide screens. */}
       <div
         ref={plum}
         aria-hidden="true"
         className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-br from-[#2A1728] via-[#331C30] to-[#2A1728]"
-        style={{ clipPath: 'inset(100% 0 0 0)' }}
+        style={{ clipPath: 'inset(100% 0 0 0)', display: background ? 'none' : undefined }}
       >
         <div className="absolute -right-24 -bottom-24 w-[28rem] h-[28rem] bg-[#E05347]/20 rounded-full blur-3xl" />
       </div>
-      <div aria-hidden="true" className="fixed inset-0 z-0 pointer-events-none">
+      {/* On phones the scene plays behind the text, softened so the copy stays readable. */}
+      <div aria-hidden="true" className="fixed inset-0 z-0 pointer-events-none" style={background ? { opacity: 0.32 } : undefined}>
         {tier === 'webgl' ? (ready ? (
             <CanvasBoundary>
               <ResumeCanvas />

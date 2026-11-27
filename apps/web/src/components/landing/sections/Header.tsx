@@ -24,7 +24,7 @@ export function Header() {
         <Link aria-label="Jobora AI Home" className={`flex items-center gap-2.5 group rounded-full ${FOCUS}`} href="/">
           <Logo className="transition-transform group-hover:scale-[1.03] [&_svg]:h-9 [&_svg]:w-9" />
         </Link>
-        <nav aria-label="Primary" className="hidden lg:flex items-center gap-6 xl:gap-8 text-[15px] font-medium text-[#574B53]">
+        <nav aria-label="Primary" className="hidden xl:flex items-center gap-6 2xl:gap-8 whitespace-nowrap text-[15px] font-medium text-[#574B53]">
           {NAV.map((n) =>
             n.hash ? (
               <a key={n.label} className={`hover:text-[#E05347] transition-colors rounded ${FOCUS}`} href={n.href}>
@@ -39,7 +39,7 @@ export function Header() {
         </nav>
         <div className="flex items-center gap-3 sm:gap-5">
           <Link
-            className={`text-sm font-semibold text-[#2A1728] hover:text-[#E05347] transition-colors hidden sm:inline-block rounded ${FOCUS}`}
+            className={`text-sm font-semibold whitespace-nowrap text-[#2A1728] hover:text-[#E05347] transition-colors hidden sm:inline-block rounded ${FOCUS}`}
             href="/auth?tab=login"
           >
             Log in
@@ -54,7 +54,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setOpen(!open)}
-            className={`lg:hidden p-2 rounded-lg text-[#2A1728] hover:bg-[#EDE5E1] transition-colors ${FOCUS}`}
+            className={`xl:hidden p-2 rounded-lg text-[#2A1728] hover:bg-[#EDE5E1] transition-colors ${FOCUS}`}
             aria-label="Toggle mobile navigation"
             aria-expanded={open}
             aria-controls="mobile-nav"
@@ -66,7 +66,7 @@ export function Header() {
       {open && (
         <div
           id="mobile-nav"
-          className="lg:hidden border-t border-[#EDE5E1] bg-[#FAF6F2] px-6 py-4 flex flex-col gap-3 text-sm font-medium text-[#2A1728]"
+          className="xl:hidden border-t border-[#EDE5E1] bg-[#FAF6F2] px-6 py-4 flex flex-col gap-3 text-sm font-medium text-[#2A1728]"
         >
           {NAV.filter((n) => n.label !== 'About').map((n) =>
             n.hash ? (

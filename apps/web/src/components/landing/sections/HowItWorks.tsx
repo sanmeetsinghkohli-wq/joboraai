@@ -3,7 +3,7 @@
 import React from 'react';
 import { Line } from './shared';
 import { useSectionStep } from '../scroll-state';
-import { useStaticLayout } from '../use-render-tier';
+import { useBackground3d, useStaticLayout } from '../use-render-tier';
 import { StaticResume } from '../ResumeCss';
 
 const STEPS = [
@@ -15,6 +15,7 @@ const STEPS = [
 
 export function HowItWorks() {
   const isStatic = useStaticLayout();
+  const background = useBackground3d();
   // The sticky track is 300vh, so the pinned part is ~2/3 of local progress.
   // Quantized to 40 rail steps so the section re-renders at most 40 times per pass, not every frame.
   const RAIL = 40;
@@ -68,7 +69,7 @@ export function HowItWorks() {
                 </p>
               </div>
             </div>
-            <div className="lg:col-span-6 flex justify-center">{isStatic && <StaticResume kind="back" className="w-full max-w-xs" />}</div>
+            <div className="lg:col-span-6 flex justify-center">{isStatic && !background && <StaticResume kind="back" className="w-full max-w-xs" />}</div>
           </div>
         </div>
       </div>

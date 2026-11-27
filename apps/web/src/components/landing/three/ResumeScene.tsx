@@ -195,7 +195,12 @@ export default function ResumeScene() {
     const rightExt = RESUME_W / 2;
     let S = pose.scale * respScale;
     let px: number;
-    if (pose.pos[0] > 0) {
+    if (aspect < 0.9) {
+      // Portrait phones: the scene is a background behind the text, so centre the
+      // resume and size it to about 70% of the screen width.
+      S = Math.min(pose.scale, (0.7 * vw) / (leftExt + rightExt));
+      px = 0;
+    } else if (pose.pos[0] > 0) {
       // right-hand slot: 57%..95% of screen width (offsets from centre, as fractions of vw)
       const slotL = 0.07 * vw;
       const slotR = 0.45 * vw;

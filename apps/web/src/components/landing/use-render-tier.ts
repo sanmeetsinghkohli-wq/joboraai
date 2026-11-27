@@ -5,6 +5,7 @@ export type RenderTier = 'webgl' | 'css' | 'static';
 let override: RenderTier | null = null; // runtime downgrade
 let resolved: RenderTier = 'static';
 let ready = false; // true once the client has measured the environment
+let narrow = false; // phones and tablets: normal-flow layout, 3D plays as a background
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((f) => f());
 
@@ -28,24 +29,29 @@ function hasWebGL(): boolean {
 
 function compute(): RenderTier {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'static';
-  // Phones and tablets get the normal-flow layout: no fixed resume layer, no pinned 300vh scroll tracks.
-  if (window.innerWidth < 1024) return 'static';
   if (!hasWebGL()) return 'css';
   const nav = navigator as Navigator & {
     deviceMemory?: number;
     connection?: { saveData?: boolean };
   };
-  if (
-    window.innerWidth < 1024 ||
-    (nav.hardwareConcurrency && nav.hardwareConcurrency <= 4) ||
-    (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) ||
-    nav.connection?.saveData
-  )
-    return 'css';
+  if (nav.connection?.saveData) return 'css';
+  const cores = nav.hardwareConcurrency;
+  const mem = nav.deviceMemory;
+  // Phones usually report 6-8 cores and 4 GB; desktops need a little more headroom
+  // because the scene is larger. The fps watchdog still downgrades a slow device.
+  const phone = window.innerWidth < 1024;
+  const minCores = phone ? 6 : 5;
+  const minMem = phone ? 4 : 5;
+  if ((cores && cores < minCores) || (mem !== undefined && mem < minMem)) return 'css';
   return 'webgl';
 }
 
 function apply(): void {
+  const nowNarrow = window.innerWidth < 1024;
+  if (nowNarrow !== narrow) {
+    narrow = nowNarrow;
+    emit();
+  }
   let t = compute();
   if (override && RANK[override] < RANK[t]) t = override;
   if (t !== resolved) {
@@ -108,7 +114,22 @@ export function useStaticLayout(): boolean {
   }, []);
   return useSyncExternalStore(
     subscribeTier,
-    () => ready && resolved === 'static',
+    () => ready && (resolved === 'static' || narrow),
+    () => false,
+  );
+}
+
+/**
+ * True on phones and tablets when the 3D CV and background are playing behind
+ * the normal-flow layout. Sections then skip their inline CV pictures.
+ */
+export function useBackground3d(): boolean {
+  useEffect(() => {
+    start();
+  }, []);
+  return useSyncExternalStore(
+    subscribeTier,
+    () => ready && narrow && resolved !== 'static',
     () => false,
   );
 }

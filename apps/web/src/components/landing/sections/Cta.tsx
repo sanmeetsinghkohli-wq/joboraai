@@ -33,7 +33,7 @@ export function Cta() {
               </Line>
             </h2>
             <p className="text-base sm:text-lg text-[#EDE5E1] max-w-xl">
-              Set your preferences, tailor your first CV and send it from your own Gmail once you approve it. Free to start.
+              Set your preferences, tailor your first CV and track your first applications. Free to start.
             </p>
             <div className="flex flex-col sm:flex-row items-start gap-4">
               <Link

@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Line, FOCUS } from './shared';
 import { useSectionStep } from '../scroll-state';
-import { useStaticLayout } from '../use-render-tier';
+import { useBackground3d, useStaticLayout } from '../use-render-tier';
 import { StaticResume } from '../ResumeCss';
 
 const STEPS = [
@@ -80,6 +80,7 @@ const CARDS: {
 
 export function Features() {
   const isStatic = useStaticLayout();
+  const background = useBackground3d();
   // The sticky track is 300vh of a ~370vh section, so the pinned part is ~54% of local progress.
   const step = useSectionStep('features', 3, 0.54);
   const active = isStatic ? -1 : Math.min(2, step);
@@ -122,7 +123,7 @@ export function Features() {
                 })}
               </ol>
             </div>
-            <div className="lg:col-span-6 flex justify-center">{isStatic && <StaticResume kind="layers" className="w-full max-w-sm" />}</div>
+            <div className="lg:col-span-6 flex justify-center">{isStatic && !background && <StaticResume kind="layers" className="w-full max-w-sm" />}</div>
           </div>
         </div>
       </div>

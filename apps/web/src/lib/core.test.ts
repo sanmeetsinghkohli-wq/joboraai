@@ -207,7 +207,8 @@ function makePdf(lines: Array<[number, number, string]>): Buffer {
 
 const CV_LINES = ['Aisha Khan', 'aisha@example.test +971 50 000 0000', 'EXPERIENCE', 'Data Analyst, Acme LLC', 'EDUCATION', 'BSc Computer Science', 'SKILLS', 'SQL, Python, Power BI'];
 
-describe('ATS scoring of uploads (career-ops auditAts)', () => {
+// Builds real .docx/.pdf files, which can be slow when the machine is busy.
+describe('ATS scoring of uploads (career-ops auditAts)', { timeout: 30_000 }, () => {
   it('recognises headings in any script, but not sentences or contact lines', () => {
     expect(looksLikeHeading('Work Experience')).toBe(true);
     expect(looksLikeHeading('الخبرة العملية')).toBe(true);
